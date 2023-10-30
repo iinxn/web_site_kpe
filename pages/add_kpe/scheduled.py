@@ -550,7 +550,6 @@ class Scheduled(Container):
 #TODO: These two functions for blocked message
     def show_blocked(self):
       # try:
-        latest_version_array = []
       
         date = datetime.datetime.now()
         formatted_date = date.strftime("%d%m%Y")
@@ -563,77 +562,98 @@ class Scheduled(Container):
         #*FOR AUTO ID INCRIPTION
         cursor = connection.cursor()
         cursor.execute(f"SELECT max(kpe_id) FROM kpe_table;")
-        max_kpe_id = cursor.fetchone()
+        max_kpe_id = cursor.fetchone()[0]
         
         query_select = 'SELECT plan_indicators_id FROM planned_value'
         cursor.execute(query_select)
         indicator_original_list = cursor.fetchall()
         indicators = [item[0] for item in indicator_original_list]
         
-        print(indicators)
-        for indicator in indicators:
-          query_select = 'SELECT number_of_version FROM planned_value WHERE plan_indicators_id = {}'.format(indicator)
+        query_select = """
+        SELECT
+            plan_user_id,
+            plan_indicators_id,
+            MAX(number_of_version) AS latest_version
+        FROM planned_value
+        GROUP BY
+            plan_user_id,
+            plan_indicators_id
+        ORDER BY plan_indicators_id
+        """
+        cursor.execute(query_select)
+        latest_number_of_version_with_user_indicator_ids = cursor.fetchall()
+        # Loop through the results of the first query
+        for specialist_id, indicator_id, latest_version in latest_number_of_version_with_user_indicator_ids:
+
+
+        # Получение данных из planned_value
+          query_select = """
+              SELECT plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year,
+                    KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4
+              FROM planned_value
+              WHERE
+              number_of_version = '{}'
+              AND plan_indicators_id = {}
+              AND plan_user_id = {}
+          """.format(latest_version, indicator_id, specialist_id)
           cursor.execute(query_select)
-          latest_version = cursor.fetchone()[0]
-          # latest_version_array.append(latest_version)
-          # print(latest_version_array)
-          print(latest_version)
+          data = cursor.fetchone()
 
+          if data:
+              plan_indicators_id, user_id, units_id, first_qr_value, second_qr_value, third_qr_value, fourth_qr_value, year, weight_1, weight_2, weight_3, weight_4 = data
+              cursor.execute(f"SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_indicators_id = {int(indicator_id)} AND kpe_user_id = {int(specialist_id)}")
+              max_version = cursor.fetchone()[0]
 
-        # # Получение данных из planned_value
-        # query_select = """
-        #     SELECT plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year,
-        #           KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4
-        #     FROM planned_value
-        #     WHERE number_of_version = '{}';
-        # """.format(latest_version)
-        # cursor.execute(query_select)
-        # data = cursor.fetchone()
+              # Check if max_version has the expected format (3 hyphen-separated parts)
+              if max_version and len(max_version.split('-')) >= 3:
+                  current_version = int(max_version.split('-')[2])
+              else:
+                  current_version = 0  # Start with version 1 if the format is unexpected or max_version is None
 
-        # if data:
-        #     plan_indicators_id, user_id, units_id, first_qr_value, second_qr_value, third_qr_value, fourth_qr_value, year, weight_1, weight_2, weight_3, weight_4 = data
-        #     check_query = """
-        #         SELECT number_of_version
-        #         FROM planned_value
-        #         WHERE plan_indicators_id = {}
-        #     # """.format(indicator)
-        #     cursor.execute(check_query)
-        #     existing_versions = cursor.fetchone()[0]
-        #     print(existing_versions)
-        #     # Создание номера версии
-        #     number_of_version_get = existing_versions.split("-")
-        #     print(number_of_version_get)
-        #     try:
-        #       if existing_versions is not None:
-        #           number_of_current_version = int(number_of_version_get[2])
-        #       else:
-        #           number_of_current_version = 0  # Если номер версии не найден, начнем с 0
-        #       number_of_verison_plus = f"{1}-{formatted_date}-{number_of_current_version + 1}"
-        #     except:
-        #       number_of_verison_plus = f"{1}-{formatted_date}-{1}"
+              number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
 
-        #     # Вставка данных в kpe_table
-        #     insert_query_to_kpe_table = "INSERT INTO kpe_table (kpe_id, kpe_indicators_id, kpe_user_id, kpe_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4, number_of_version, plan_number_of_version) VALUES ({}+1, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, '{}','{}');".format(
-        #         int(max_kpe_id),
-        #         int(plan_indicators_id),
-        #         int(user_id),
-        #         int(units_id),
-        #         int(first_qr_value),
-        #         int(second_qr_value),
-        #         int(third_qr_value),
-        #         int(fourth_qr_value),
-        #         int(year),
-        #         int(weight_1),
-        #         int(weight_2),
-        #         int(weight_3),
-        #         int(weight_4),
-        #         str(number_of_verison_plus),
-        #         str(latest_version)
-        #     )
-        #     print("SQL Query:", insert_query_to_kpe_table)
+              # Вставка данных в kpe_table
+              insert_query_to_kpe_table = """
+              INSERT INTO
+                kpe_table (
+                  kpe_id, 
+                  kpe_indicators_id, 
+                  kpe_user_id, 
+                  kpe_units_id, 
+                  1st_quater_value, 
+                  2nd_quater_value, 
+                  3rd_quater_value, 
+                  4th_quater_value, 
+                  year, 
+                  KPE_weight_1, 
+                  KPE_weight_2, 
+                  KPE_weight_3, 
+                  KPE_weight_4, 
+                  number_of_version, 
+                  plan_number_of_version
+                  )
+              VALUES ({}+1, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, '{}','{}');
+              """.format(
+                  int(max_kpe_id),
+                  int(plan_indicators_id),
+                  int(user_id),
+                  int(units_id),
+                  int(first_qr_value),
+                  int(second_qr_value),
+                  int(third_qr_value),
+                  int(fourth_qr_value),
+                  int(year),
+                  int(weight_1),
+                  int(weight_2),
+                  int(weight_3),
+                  int(weight_4),
+                  str(number_of_verison_plus),
+                  str(latest_version)
+              )
+              print("SQL Query:", insert_query_to_kpe_table)
 
-        #     cursor.execute(insert_query_to_kpe_table)
-        #     print("Success")
+              cursor.execute(insert_query_to_kpe_table)
+              print("Success")
 
     def close_dlg_block(self, e):
       self.page.dialog = self.alter_dialog_block
@@ -681,20 +701,18 @@ class Scheduled(Container):
               units_id = cursor.fetchone()[0]
               
               # Определите максимальное значение номера версии для данного показателя
-              cursor.execute(f"SELECT MAX(number_of_version) FROM planned_value WHERE plan_indicators_id = {int(indicator_id)}")
-              # max_version = cursor.fetchone()[0]
+              # Determine the maximum version for the current indicator and user combination
+              cursor.execute(f"SELECT MAX(number_of_version) FROM planned_value WHERE plan_indicators_id = {int(indicator_id)} AND plan_user_id = {int(user_id)}")
+              max_version = cursor.fetchone()[0]
 
-              # Если max_version равен None (то есть нет записей для этого показателя), начните с 1
-              number_of_version_get = cursor.fetchone()[0]
-              current_version = number_of_version_get.split("-")
-              try:
-                if current_version is not None:
-                    number_of_current_version = int(current_version[2])
-                else:
-                    number_of_current_version = 0  # Если номер версии не найден, начнем с 0
-                number_of_verison_plus = f"{1}-{formatted_date}-{number_of_current_version + 1}"
-              except:
-                number_of_verison_plus = f"{1}-{formatted_date}-{1}"
+              # Check if max_version has the expected format (3 hyphen-separated parts)
+              if max_version and len(max_version.split('-')) >= 3:
+                  current_version = int(max_version.split('-')[2])
+              else:
+                  current_version = 0  # Start with version 1 if the format is unexpected or max_version is None
+
+              number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
+
 
               query = """
                   INSERT INTO planned_value (plan_id, plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4, number_of_version)

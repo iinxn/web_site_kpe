@@ -353,8 +353,11 @@ class Report(Container):
         self.alter_dialog_succes.open = False
         print("Вы закрыли модульное окно успеха")
         self.page.update()
-  
-  #TODO: FOR Premium calculation
+
+
+
+
+#TODO: FOR Premium calculation
     def open_dialog(self):
       self.page.dialog = self.alter_dialog
       self.alter_dialog.open = True
@@ -426,7 +429,7 @@ class Report(Container):
           WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}'
           ORDER BY kt.kpe_id ASC
       """
-
+      print(query)
           # Определите структуру колонок для "Премии"
       columns = [
           DataColumn(Text("№ пп."), numeric=True),
@@ -554,8 +557,11 @@ class Report(Container):
       self.page.dialog = self.alter_dialog_kpe
       self.alter_dialog_kpe.open = False
       self.page.update()
-    
+
+
+
 #TODO: SUMMARY TABLE
+#! THIS TABLE DOESN'T WORK
     def open_dialog_summary(self):
       self.page.dialog = self.alter_dialog_summary
       self.alter_dialog_summary.open = True
