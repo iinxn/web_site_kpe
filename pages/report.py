@@ -37,6 +37,8 @@ class Report(Container):
 
             for row in results:
                 dropdown_options_departments.append(dropdown.Option(row[0]))
+            dropdown_options_departments.append(dropdown.Option("Все управления"))
+                
         except Exception as e:
             print(f"Error fetching data from the database: {str(e)}")
         
@@ -139,7 +141,7 @@ class Report(Container):
                   width=700,
                   controls=[
                     self.report_quater,
-                    # self.report_depart
+                    self.report_depart
                   ]
                 ),
                 actions=[
@@ -574,6 +576,9 @@ class Report(Container):
       query_select = 'SELECT MAX(number_of_version) FROM kpe_table'
       cursor.execute(query_select)
       latest_version = cursor.fetchone()[0]
+      
+      
+      
       quater = self.report_quater.content.value
 
       if quater == "1 квартал":
@@ -589,25 +594,57 @@ class Report(Container):
           quater_column = "4th_quater_value"
           weight_column = "KPE_weight_4"
       
-      query = f"""
-              SELECT
-                  ROW_NUMBER() OVER () AS `порядковый номер`,
-                  'агентство по труду и занятости населения Сахалинской области' AS `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
-                  nd.name AS `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
-                  s.position AS `Должность`,
-                  s.full_name AS `ФИО`,
-                  SUM((kt.{weight_column} / 100) * ((av.value * 100) / kt.`{quater_column}`)) AS `Процент выполнения`
-              FROM kpe_table AS kt
-              INNER JOIN specialists AS s ON kt.kpe_user_id = s.specialist_id
-              INNER JOIN name_of_department AS nd ON s.specialist_department_id = nd.department_id
-              INNER JOIN actual_value AS av ON kt.kpe_user_id = av.actual_users_id
-              WHERE kt.number_of_version = {latest_version}
-              GROUP BY
-                  `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
-                  `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
-                  `Должность`,
-                  `ФИО`
-          """
+      if self.report_depart.content.value == "Все управления":
+        query = f"""
+                SELECT
+                    ROW_NUMBER() OVER () AS `порядковый номер`,
+                    'агентство по труду и занятости населения Сахалинской области' AS `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
+                    nd.name AS `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
+                    s.position AS `Должность`,
+                    s.full_name AS `ФИО`,
+                    SUM( (kt.`{weight_column}` / 100) * ( (av.value * 100) / kt.`{quater_column}`
+                        )
+                    ) AS `Процент выполнения`
+                FROM kpe_table AS kt
+                    INNER JOIN specialists AS s ON kt.kpe_user_id = s.specialist_id
+                    INNER JOIN name_of_department AS nd ON s.specialist_department_id = nd.department_id
+                    INNER JOIN actual_value AS av ON kt.kpe_user_id = av.actual_users_id AND kt.kpe_indicators_id = av.actual_indicators_id
+                WHERE
+                    kt.number_of_version = '{latest_version}'
+                GROUP BY
+                    `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
+                    `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
+                    `Должность`,
+                    `ФИО`
+            """
+      else:
+        query_select_dep_id = "SELECT department_id FROM name_of_department WHERE name = '{}'".format(self.report_depart.content.value)
+        cursor.execute(query_select_dep_id)
+        department_id = cursor.fetchone()[0]
+        
+        query = f"""
+                SELECT
+                    ROW_NUMBER() OVER () AS `порядковый номер`,
+                    'агентство по труду и занятости населения Сахалинской области' AS `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
+                    nd.name AS `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
+                    s.position AS `Должность`,
+                    s.full_name AS `ФИО`,
+                    SUM( (kt.`{weight_column}` / 100) * ( (av.value * 100) / kt.`{quater_column}`
+                        )
+                    ) AS `Процент выполнения`
+                FROM kpe_table AS kt
+                    INNER JOIN specialists AS s ON kt.kpe_user_id = s.specialist_id
+                    INNER JOIN name_of_department AS nd ON s.specialist_department_id = nd.department_id
+                    INNER JOIN actual_value AS av ON kt.kpe_user_id = av.actual_users_id AND kt.kpe_indicators_id = av.actual_indicators_id
+                WHERE
+                    kt.number_of_version = '{latest_version}'
+                    AND s.specialist_department_id = {department_id}
+                GROUP BY
+                    `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
+                    `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
+                    `Должность`,
+                    `ФИО`
+            """
           # Определите структуру колонок для "Премии"
       columns = [
           DataColumn(Text("""№
