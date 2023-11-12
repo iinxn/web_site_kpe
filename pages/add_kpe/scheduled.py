@@ -33,6 +33,7 @@ class Scheduled(Container):
 
             # Add "Нет в списке" option at the end
             self.dropdown_options_indicators.append(dropdown.Option('Нет в списке'))
+            self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
         except Exception as e:
             print(f"Error fetching data from the database: {str(e)}")
 #*SELECT QUERY TO DISPLAY UNITS FROM DB
@@ -583,77 +584,90 @@ class Scheduled(Container):
         cursor.execute(query_select)
         latest_number_of_version_with_user_indicator_ids = cursor.fetchall()
         # Loop through the results of the first query
+        
+        cursor.execute(f"SELECT MAX(number_of_version) FROM kpe_table") # WHERE kpe_indicators_id = {int(indicator_id)} AND kpe_user_id = {int(specialist_id)}
+        max_version = cursor.fetchone()[0]
+
+        # Check if max_version has the expected format (3 hyphen-separated parts)
+        if max_version and len(max_version.split('-')) >= 3:
+            current_version = int(max_version.split('-')[2])
+        else:
+            current_version = 0  # Start with version 1 if the format is unexpected or max_version is None
+
+        number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
+        
         for specialist_id, indicator_id, latest_version in latest_number_of_version_with_user_indicator_ids:
+          query_exists = """
+              SELECT 1
+              FROM kpe_table
+              WHERE kpe_user_id = {}
+              AND kpe_indicators_id = {}
+              AND number_of_version = '{}'
+          """.format(specialist_id, indicator_id, latest_version)
+          cursor.execute(query_exists)
+          data_exists = cursor.fetchone()
+          if not data_exists:
+            # Получение данных из planned_value
+            query_select = """
+                SELECT plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year,
+                      KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4
+                FROM planned_value
+                WHERE
+                number_of_version = '{}'
+                AND plan_indicators_id = {}
+                AND plan_user_id = {}
+            """.format(latest_version, indicator_id, specialist_id)
+            cursor.execute(query_select)
+            data = cursor.fetchone()
 
+            if data:
+                plan_indicators_id, user_id, units_id, first_qr_value, second_qr_value, third_qr_value, fourth_qr_value, year, weight_1, weight_2, weight_3, weight_4 = data
+                
 
-        # Получение данных из planned_value
-          query_select = """
-              SELECT plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year,
-                    KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4
-              FROM planned_value
-              WHERE
-              number_of_version = '{}'
-              AND plan_indicators_id = {}
-              AND plan_user_id = {}
-          """.format(latest_version, indicator_id, specialist_id)
-          cursor.execute(query_select)
-          data = cursor.fetchone()
+                # Вставка данных в kpe_table
+                insert_query_to_kpe_table = """
+                INSERT INTO
+                  kpe_table (
+                    kpe_id, 
+                    kpe_indicators_id, 
+                    kpe_user_id, 
+                    kpe_units_id, 
+                    1st_quater_value, 
+                    2nd_quater_value, 
+                    3rd_quater_value, 
+                    4th_quater_value, 
+                    year, 
+                    KPE_weight_1, 
+                    KPE_weight_2, 
+                    KPE_weight_3, 
+                    KPE_weight_4, 
+                    number_of_version, 
+                    plan_number_of_version
+                    )
+                VALUES ({}+1, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, '{}','{}');
+                """.format(
+                    int(max_kpe_id),
+                    int(plan_indicators_id),
+                    int(user_id),
+                    int(units_id),
+                    int(first_qr_value),
+                    int(second_qr_value),
+                    int(third_qr_value),
+                    int(fourth_qr_value),
+                    int(year),
+                    int(weight_1),
+                    int(weight_2),
+                    int(weight_3),
+                    int(weight_4),
+                    str(number_of_verison_plus),
+                    str(latest_version)
+                )
+                print("SQL Query:", insert_query_to_kpe_table)
 
-          if data:
-              plan_indicators_id, user_id, units_id, first_qr_value, second_qr_value, third_qr_value, fourth_qr_value, year, weight_1, weight_2, weight_3, weight_4 = data
-              cursor.execute(f"SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_indicators_id = {int(indicator_id)} AND kpe_user_id = {int(specialist_id)}")
-              max_version = cursor.fetchone()[0]
-
-              # Check if max_version has the expected format (3 hyphen-separated parts)
-              if max_version and len(max_version.split('-')) >= 3:
-                  current_version = int(max_version.split('-')[2])
-              else:
-                  current_version = 0  # Start with version 1 if the format is unexpected or max_version is None
-
-              number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
-
-              # Вставка данных в kpe_table
-              insert_query_to_kpe_table = """
-              INSERT INTO
-                kpe_table (
-                  kpe_id, 
-                  kpe_indicators_id, 
-                  kpe_user_id, 
-                  kpe_units_id, 
-                  1st_quater_value, 
-                  2nd_quater_value, 
-                  3rd_quater_value, 
-                  4th_quater_value, 
-                  year, 
-                  KPE_weight_1, 
-                  KPE_weight_2, 
-                  KPE_weight_3, 
-                  KPE_weight_4, 
-                  number_of_version, 
-                  plan_number_of_version
-                  )
-              VALUES ({}+1, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, '{}','{}');
-              """.format(
-                  int(max_kpe_id),
-                  int(plan_indicators_id),
-                  int(user_id),
-                  int(units_id),
-                  int(first_qr_value),
-                  int(second_qr_value),
-                  int(third_qr_value),
-                  int(fourth_qr_value),
-                  int(year),
-                  int(weight_1),
-                  int(weight_2),
-                  int(weight_3),
-                  int(weight_4),
-                  str(number_of_verison_plus),
-                  str(latest_version)
-              )
-              print("SQL Query:", insert_query_to_kpe_table)
-
-              cursor.execute(insert_query_to_kpe_table)
-              print("Success")
+                cursor.execute(insert_query_to_kpe_table)
+                print("Success")
+            else:
+              print("All data is in kpe_table")
 
     def close_dlg_block(self, e):
       self.page.dialog = self.alter_dialog_block

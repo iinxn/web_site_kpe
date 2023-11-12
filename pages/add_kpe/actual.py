@@ -51,7 +51,7 @@ class Actual(Container):
         self.cb_menu_spec = Container(
             padding=40,
             content=Dropdown(
-                # label='Выберите наименование показателя',
+                label='Выберите наименование показателя',
                 # max_width=200,
                 width=400,
                 color="black",
@@ -503,6 +503,13 @@ class Actual(Container):
         connection.commit()
         self.show_success_dialog()
         print("Запись успешно добавлена в базу данных")
+        self.cb_menu_spec.content.value = ''
+        self.cb_quter_menu.content.value = ''
+        self.plan_value_box.content.value = ''
+        self.plan_weight_value_box.content.value = '' 
+        self.textfiled_input_actual_value.content.value = ''
+        self.page.update()
+        
       except Exception as e:
           self.show_error_dialog()
           print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
@@ -535,7 +542,7 @@ class Actual(Container):
             weight_column = "KPE_weight_4"
         
         # Query to retrieve the plan value based on indicator and quarter
-        query = f"SELECT {quarter_column}, {weight_column} FROM planned_value WHERE plan_indicators_id = {int(indicator_id)} AND plan_user_id = {int(user_id)};"
+        query = f"SELECT {quarter_column}, {weight_column} FROM kpe_table WHERE kpe_indicators_id = {int(indicator_id)} AND kpe_user_id = {int(user_id)};"
         cursor.execute(query)
         
         result = cursor.fetchone()
@@ -549,16 +556,16 @@ class Actual(Container):
           # print(query)
           # print(result)
           # print(plan_value, weight_value)
-          
+          # self.cb_menu_spec.content.disabled = False
           self.page.update()
+          
         else:
           # self.use_truncated_options = False
-          self.cb_menu_spec.content.value = ""
           # self.cb_menu_spec.content.option = self.dropdown_options_indicators
           self.show_not_find_dialog()
           print("Запись не найдена в базе данных")
-          self.cb_menu_spec.content.disabled = False
           self.page.update()
+          
       except Exception as e:
           self.show_error_dialog()
           print(f"Ошибка при добавлении записи в базу данных: {str(e)}")

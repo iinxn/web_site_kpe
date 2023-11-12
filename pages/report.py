@@ -3,9 +3,10 @@ from utils.colors import *
 from service.connection import *
 import datetime
 import re
-from openpyxl import Workbook
-from openpyxl.utils.dataframe import dataframe_to_rows
-import pandas as pd
+import openpyxl
+from openpyxl.styles import Font
+from tkinter.filedialog import asksaveasfilename
+
 
 class Report(Container):
     def __init__(self, page: Page):
@@ -15,6 +16,10 @@ class Report(Container):
         self.alignment = alignment.center
         self.expand = True
         self.bgcolor = tea_green
+        
+        # self.file_picker = FilePicker()
+        # page.overlay.append(self.file_picker)
+        # page.update()
 
         dropdown_options_specialists = []
         dropdown_options_departments = []
@@ -284,6 +289,7 @@ class Report(Container):
                                           )
                                         ]
                                     ),
+                                    # on_click=lambda _: self.file_picker.pick_files()
                                     on_click=self.export_report_to_excel
                                   )
                               ]
@@ -425,10 +431,11 @@ class Report(Container):
               {weight_column},
               multiIf({quater_column} <= av.value, {weight_column} / 100, 0) AS bonus_share
           FROM kpe_table AS kt
-          INNER JOIN actual_value AS av ON kt.kpe_indicators_id = av.actual_id
+          INNER JOIN actual_value AS av ON kt.kpe_indicators_id = av.actual_indicators_id
           INNER JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
           INNER JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
           WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}'
+          AND av.actual_users_id = kt.kpe_user_id
           ORDER BY kt.kpe_id ASC
       """
       print(query)
@@ -539,7 +546,7 @@ class Report(Container):
       
       cursor.execute(query)
       results = cursor.fetchall()
-
+      # print(results)
       query_result = results
 
       data_rows = []
@@ -553,7 +560,7 @@ class Report(Container):
       self.page.dialog = self.alter_dialog_kpe
       self.alter_dialog_kpe.open = False
       self.page.update()
-      
+      # self.export_report_to_excel(results)
 
     def close_dlg_kpe(self, e):
       self.page.dialog = self.alter_dialog_kpe
@@ -723,184 +730,33 @@ class Report(Container):
 
 
     def export_report_to_excel(self, e):
+      # print(results)
+      # workbook = openpyxl.Workbook()
+      # sheet = workbook.active
+
+      # headers = ["п/п", "Наименование показателя", "Ед.изм.", "1 кв.", "2 кв.", "3 кв.", "4 кв.", "год", "Вес КПЭ 1 кв.", "Вес КПЭ 2 кв.", "Вес КПЭ 3 кв.", "Вес КПЭ 4 кв."]
+
+      # for col, header in enumerate(headers, start=1):
+      #     sheet.cell(row=1, column=col).value = header
+
+      # for i, row_data in enumerate(results, start=2):
+      #     for col, value in enumerate(row_data, start=1):
+      #         sheet.cell(row=i, column=col).value = value
+
+      
+      # sheet.column_dimensions["B"].width = 20  # Adjust the width of column "B"
+      # sheet['B1'].font = Font(bold=True)  # Set "Наименование показателя" as bold
+      # filename = "D:/tniki/Desktop/output.xlsx"
+      # filename = asksaveasfilename(
+      #     defaultextension=".xlsx",
+      #     filetypes=[("Excel Files", "*.xlsx")],
+      #     title="Save As",
+      #     initialfile="output.xlsx"
+      # )
+      # print(filename)
+
+      # if filename:
+      #     workbook.save(filename)
+      
+
       self.show_success_dialog()
-#       cursor = connection.cursor()
-
-#       # Определите SQL-запрос для получения данных, как показано в вашем коде
-
-#       cursor = connection.cursor()
-#       cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
-#       user_id = cursor.fetchone()[0]
-      
-#       query_select = 'SELECT number_of_version FROM kpe_table'
-#       cursor.execute(query_select)
-#       version_numbers = cursor.fetchall()
-
-#       indicator_versions = {}
-
-#       def extract_and_convert_date(version):
-#           match = re.search(r'-(\d{8})-(\d+)', version)
-#           if match:
-#               date_str = match.group(1)
-#               date = datetime.datetime.strptime(date_str, '%d%m%Y')
-#               version_number = int(match.group(2))
-#               return date, version, version_number
-#           return None
-
-#       for version_tuple in version_numbers:
-#         version = version_tuple[0]  # Получить второй элемент кортежа, который должен быть строкой
-#         date_version = extract_and_convert_date(version)
-#         if date_version is not None:
-#             date, version, version_number = date_version
-#             if version not in indicator_versions:
-#                 indicator_versions[version] = [(date, version, version_number)]
-#             else:
-#                 indicator_versions[version].append((date, version, version_number))
-
-
-#       for version, versions in indicator_versions.items():
-#           versions.sort(key=lambda x: (x[0], x[2]), reverse=True)
-#           latest_date, latest_version, latest_version_number = versions[0]
-#       query = f"""
-#           SELECT
-#               ROW_NUMBER() OVER () AS "порядковый номер",
-#               ni.name AS indicator_name,
-#               um.type AS unit_of_measurement,
-#               kt.1st_quater_value,
-#               kt.2nd_quater_value,
-#               kt.3rd_quater_value,
-#               kt.4th_quater_value,
-#               kt.year,
-#               kt.KPE_weight_1,
-#               kt.KPE_weight_2,
-#               kt.KPE_weight_3,
-#               kt.KPE_weight_4
-#           FROM kpe_table AS kt
-#           JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
-#           JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
-#           WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}'
-#           ORDER BY kt.kpe_id;
-#       """
-      
-#       # kt.plan_number_of_version,
-#       # kt.number_of_version
-#       # Определите структуру колонок для "Карта КПЭ"
-#       columns = [
-#           DataColumn(Text("п/п"), numeric=True),
-#           DataColumn(Text("Наименование показателя")),
-#           DataColumn(Text("Ед.изм.")),
-#           DataColumn(Text("""1
-# кв."""), numeric=True),
-#           DataColumn(Text("""2
-# кв."""), numeric=True),
-#           DataColumn(Text("""3
-# кв."""), numeric=True),
-#           DataColumn(Text("""4
-# кв."""), numeric=True),
-#           DataColumn(Text("год")),
-#           DataColumn(Text("""   Вес КПЭ 
-# 1 кв."""), numeric=True),
-#           DataColumn(Text("""   Вес КПЭ 
-# 2 кв."""), numeric=True),
-#           DataColumn(Text("""   Вес КПЭ 
-# 3 кв."""), numeric=True),
-#           DataColumn(Text("""   Вес КПЭ 
-# 4 кв."""), numeric=True),
-#       ]
-#       self.number_of_version_kpe.content.value = latest_version
-      
-#       cursor.execute(query)
-#       results = cursor.fetchall()
-
-#       # Создайте Pandas DataFrame с результатами запроса
-#       data_df = pd.DataFrame(results, columns=[
-#           "п/п",
-#           "Наименование показателя",
-#           "Ед.изм.",
-#           "1 квартал",
-#           "2 квартал",
-#           "3 квартал",
-#           "4 квартал",
-#           "год",
-#           "Вес КПЭ 1 квартал",
-#           "Вес КПЭ 2 квартал",
-#           "Вес КПЭ 3 квартал",
-#           "Вес КПЭ 4 квартал"
-#       ])
-
-#       # Запросите у пользователя путь и имя файла для сохранения
-#       file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
-
-#       if file_path:
-#           # Создайте новую рабочую книгу и лист
-#           workbook = openpyxl.Workbook()
-#           sheet = workbook.active
-
-#           # Запишите данные из DataFrame в лист
-#           for row in dataframe_to_rows(data_df, index=False, header=True):
-#               sheet.append(row)
-
-#           # Сохраните книгу по указанному пути
-#           workbook.save(file_path)
-
-#           print(f"Отчет успешно сохранен в {file_path}")
-        # output_path = "D:/tniki/Documents/projects/KPE/templates/output.xlsx"
-        # cursor = connection.cursor()
-        # # Создайте новую рабочую книгу и лист
-        # workbook = Workbook()
-        # sheet = workbook.active
-
-        # # Здесь вставьте код для извлечения данных из базы данных в Pandas DataFrame
-        # # Это предполагает, что у вас уже есть DataFrame с данными для экспорта
-
-        # # Ваш SQL-запрос для извлечения данных из базы данных
-        # query = """
-        # SELECT
-        #           kt.kpe_id,
-        #           ni.name AS indicator_name,
-        #           um.type AS unit_of_measurement,
-        #           kt.1st_quater_value,
-        #           kt.2nd_quater_value,
-        #           kt.3rd_quater_value,
-        #           kt.4th_quater_value,
-        #           kt.year,
-        #           kt.KPE_weight_1,
-        #           kt.KPE_weight_2,
-        #           kt.KPE_weight_3,
-        #           kt.KPE_weight_4
-        #       FROM kpe_table AS kt
-        #       JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
-        #       JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
-        #       WHERE kt.kpe_user_id = 1
-        #       ORDER BY kt.kpe_id;
-        # """
-
-        # cursor.execute(query)
-        # results = cursor.fetchall()
-
-        # # Затем, используя Pandas DataFrame, создайте таблицу данных
-        # data_df = pd.DataFrame(results, columns=[
-        #     "п/п",
-        #     "Наименование показателя",
-        #     "Ед.изм.",
-        #     "1 квартал",
-        #     "2 квартал",
-        #     "3 квартал",
-        #     "4 квартал",
-        #     "год",
-        #     "Вес КПЭ 1 квартал",
-        #     "Вес КПЭ 2 квартал",
-        #     "Вес КПЭ 3 квартал",
-        #     "Вес КПЭ 4 квартал"
-        # ])
-
-        # # Сначала запишите заголовки в лист
-        # for col_num, header in enumerate(data_df.columns, 1):
-        #     sheet.cell(row=1, column=col_num, value=header)
-
-        # # Затем запишите данные в лист с использованием Pandas DataFrame
-        # for row in dataframe_to_rows(data_df, index=False, header=False):
-        #     sheet.append(row)
-
-        # # Сохраните книгу
-        # workbook.save(output_path)
