@@ -6,7 +6,18 @@ import re
 import openpyxl
 from openpyxl.styles import Font
 from tkinter.filedialog import asksaveasfilename
+from flask import Flask, send_file
+from tempfile import NamedTemporaryFile
 
+# app = Flask(__name__)
+
+# @app.route('/report')
+# def render_report():
+#     # Instantiate your Flet page
+#     report_page = Report()
+
+#     # Render and return the Flet page
+#     return report_page.render()
 
 class Report(Container):
     def __init__(self, page: Page):
@@ -290,7 +301,7 @@ class Report(Container):
                                         ]
                                     ),
                                     # on_click=lambda _: self.file_picker.pick_files()
-                                    on_click=self.export_report_to_excel
+                                    # on_click=self.export_report_to_excel
                                   )
                               ]
                             )
@@ -376,50 +387,58 @@ class Report(Container):
       cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
       user_id = cursor.fetchone()[0]
       
-      query_select = 'SELECT number_of_version FROM kpe_table'
+      # query_select = 'SELECT number_of_version FROM kpe_table'
+      # cursor.execute(query_select)
+      # version_numbers = cursor.fetchall()
+
+      # indicator_versions = {}
+
+      # def extract_and_convert_date(version):
+      #     match = re.search(r'-(\d{8})-(\d+)', version)
+      #     if match:
+      #         date_str = match.group(1)
+      #         date = datetime.datetime.strptime(date_str, '%d%m%Y')
+      #         version_number = int(match.group(2))
+      #         return date, version, version_number
+      #     return None
+
+      # for version_tuple in version_numbers:
+      #   version = version_tuple[0]  # Получить второй элемент кортежа, который должен быть строкой
+      #   date_version = extract_and_convert_date(version)
+      #   if date_version is not None:
+      #       date, version, version_number = date_version
+      #       if version not in indicator_versions:
+      #           indicator_versions[version] = [(date, version, version_number)]
+      #       else:
+      #           indicator_versions[version].append((date, version, version_number))
+
+
+      # for version, versions in indicator_versions.items():
+      #     versions.sort(key=lambda x: (x[0], x[2]), reverse=True)
+      #     latest_date, latest_version, latest_version_number = versions[0]
+      
+      query_select = f'SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = {user_id}'
       cursor.execute(query_select)
-      version_numbers = cursor.fetchall()
-
-      indicator_versions = {}
-
-      def extract_and_convert_date(version):
-          match = re.search(r'-(\d{8})-(\d+)', version)
-          if match:
-              date_str = match.group(1)
-              date = datetime.datetime.strptime(date_str, '%d%m%Y')
-              version_number = int(match.group(2))
-              return date, version, version_number
-          return None
-
-      for version_tuple in version_numbers:
-        version = version_tuple[0]  # Получить второй элемент кортежа, который должен быть строкой
-        date_version = extract_and_convert_date(version)
-        if date_version is not None:
-            date, version, version_number = date_version
-            if version not in indicator_versions:
-                indicator_versions[version] = [(date, version, version_number)]
-            else:
-                indicator_versions[version].append((date, version, version_number))
-
-
-      for version, versions in indicator_versions.items():
-          versions.sort(key=lambda x: (x[0], x[2]), reverse=True)
-          latest_date, latest_version, latest_version_number = versions[0]
+      latest_version = cursor.fetchone()[0]
       
       quater = self.report_quater.content.value
 
       if quater == "1 квартал":
           quater_column = "`1st_quater_value`"
           weight_column = "KPE_weight_1"
+          actual_quater_value = "1-й квартал"
       elif quater == "2 квартал":
           quater_column = "`2nd_quater_value`"
           weight_column = "KPE_weight_2"
+          actual_quater_value = "2-й квартал"
       elif quater == "3 квартал":
           quater_column = "`3rd_quater_value`"
           weight_column = "KPE_weight_3"
+          actual_quater_value = "3-й квартал"
       else:
           quater_column = "`4th_quater_value`"
           weight_column = "KPE_weight_4"
+          actual_quater_value = "4-й квартал"
 
       query = f"""
           SELECT
@@ -436,6 +455,7 @@ class Report(Container):
           INNER JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
           WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}'
           AND av.actual_users_id = kt.kpe_user_id
+          AND av.quarter_number = '{actual_quater_value}'
           ORDER BY kt.kpe_id ASC
       """
       print(query)
@@ -729,34 +749,32 @@ class Report(Container):
       
 
 
-    def export_report_to_excel(self, e):
-      # print(results)
-      # workbook = openpyxl.Workbook()
-      # sheet = workbook.active
+    # def export_report_to_excel(self, results):
+    #     # Assuming `results` is already defined
+        
+    #     workbook = openpyxl.Workbook()
+    #     sheet = workbook.active
 
-      # headers = ["п/п", "Наименование показателя", "Ед.изм.", "1 кв.", "2 кв.", "3 кв.", "4 кв.", "год", "Вес КПЭ 1 кв.", "Вес КПЭ 2 кв.", "Вес КПЭ 3 кв.", "Вес КПЭ 4 кв."]
+    #     headers = ["п/п", "Наименование показателя", "Ед.изм.", "1 кв.", "2 кв.", "3 кв.", "4 кв.", "год", "Вес КПЭ 1 кв.", "Вес КПЭ 2 кв.", "Вес КПЭ 3 кв.", "Вес КПЭ 4 кв."]
 
-      # for col, header in enumerate(headers, start=1):
-      #     sheet.cell(row=1, column=col).value = header
+    #     for col, header in enumerate(headers, start=1):
+    #         sheet.cell(row=1, column=col).value = header
 
-      # for i, row_data in enumerate(results, start=2):
-      #     for col, value in enumerate(row_data, start=1):
-      #         sheet.cell(row=i, column=col).value = value
+    #     for i, row_data in enumerate(results, start=2):
+    #         for col, value in enumerate(row_data, start=1):
+    #             sheet.cell(row=i, column=col).value = value
 
-      
-      # sheet.column_dimensions["B"].width = 20  # Adjust the width of column "B"
-      # sheet['B1'].font = Font(bold=True)  # Set "Наименование показателя" as bold
-      # filename = "D:/tniki/Desktop/output.xlsx"
-      # filename = asksaveasfilename(
-      #     defaultextension=".xlsx",
-      #     filetypes=[("Excel Files", "*.xlsx")],
-      #     title="Save As",
-      #     initialfile="output.xlsx"
-      # )
-      # print(filename)
+    #     temp_file = NamedTemporaryFile(delete=False, suffix=".xlsx")
+    #     filename = temp_file.name
 
-      # if filename:
-      #     workbook.save(filename)
-      
+    #     workbook.save(filename)
+    #     temp_file.close()
 
-      self.show_success_dialog()
+    #     self.page.dialog = self.alter_dialog_succes
+    #     self.page.dialog.title = Text("Download Excel")
+    #     self.page.dialog.content = TextButton("Download Excel", on_click=lambda x: self.download_excel(filename))
+    #     self.page.dialog.open = True
+    #     self.page.update()
+
+    # def download_excel(self, filename):
+    #     return send_file(filename, as_attachment=True)

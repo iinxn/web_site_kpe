@@ -518,6 +518,7 @@ class Actual(Container):
       try:
         cursor = connection.cursor()
         #*FOR USER DATA INFORMATION
+        
         cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.cb_specialist_menu.content.value)}';")
         user_id = cursor.fetchone()[0]
         #* Get the plan_indicators_id based on the selected indicator name
@@ -526,6 +527,10 @@ class Actual(Container):
         cursor.execute(f"SELECT indicators_id FROM name_of_indicators WHERE name LIKE '{selected_indicator_without_dots}%'")
         
         indicator_id = cursor.fetchone()[0]
+        
+        
+        cursor.execute(f"SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_indicators_id = {int(indicator_id)} AND kpe_user_id = {int(user_id)}")
+        max_version = cursor.fetchone()[0]
         
         selected_quarter = self.cb_quter_menu.content.value
         if selected_quarter == "1-й квартал":
@@ -542,7 +547,7 @@ class Actual(Container):
             weight_column = "KPE_weight_4"
         
         # Query to retrieve the plan value based on indicator and quarter
-        query = f"SELECT {quarter_column}, {weight_column} FROM kpe_table WHERE kpe_indicators_id = {int(indicator_id)} AND kpe_user_id = {int(user_id)};"
+        query = f"SELECT {quarter_column}, {weight_column} FROM kpe_table WHERE kpe_indicators_id = {int(indicator_id)} AND kpe_user_id = {int(user_id)} AND number_of_version = '{max_version}';"
         cursor.execute(query)
         
         result = cursor.fetchone()

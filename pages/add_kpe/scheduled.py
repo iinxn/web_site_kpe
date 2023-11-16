@@ -666,6 +666,7 @@ class Scheduled(Container):
 
                 cursor.execute(insert_query_to_kpe_table)
                 print("Success")
+                self.specialist_menu_box.content.value = ""
             else:
               print("All data is in kpe_table")
 
@@ -683,7 +684,7 @@ class Scheduled(Container):
 #TODO: This is a insert function for add new data to planned table
     def insert_into_db(self, e): 
       if self.end_edit == False:
-        # try:
+        try:
               date = datetime.datetime.now()
               formatted_date = date.strftime("%d%m%Y")
               # print(formatted_date)
@@ -763,12 +764,12 @@ class Scheduled(Container):
               self.cb_menu_spec.content.value = ''
               # self.cb_menu_spec.content.option = self.dropdown_options_indicators
               self.units_menu_box.content.value = ""
-              self.specialist_menu_box.content.value = ""
+              # self.specialist_menu_box.content.value = ""
               print("Запись успешно добавлена в базу данных")
 
-        # except Exception as e:
-        #     self.show_error_dialog()
-        #     print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
+        except Exception as e:
+            self.show_error_dialog()
+            print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
       else:
         print("Blocked")
 
