@@ -289,7 +289,7 @@ class Report(Container):
                                         ]
                                     ),
                                     # on_click=lambda _: self.file_picker.pick_files()
-                                    # on_click=self.export_report_to_excel
+                                    on_click=self.export_report_to_excel
                                   )
                               ]
                             )
@@ -553,6 +553,7 @@ class Report(Container):
       self.number_of_version_kpe.content.value = latest_version
       
       cursor.execute(query)
+      global results
       results = cursor.fetchall()
       # print(results)
       query_result = results
@@ -568,7 +569,7 @@ class Report(Container):
       self.page.dialog = self.alter_dialog_kpe
       self.alter_dialog_kpe.open = False
       self.page.update()
-      self.export_report_to_excel(results)
+      # self.export_report_to_excel(results)
 
     def close_dlg_kpe(self, e):
       self.page.dialog = self.alter_dialog_kpe
@@ -743,7 +744,23 @@ class Report(Container):
 
 
 
-    def export_report_to_excel(self, results):
+    def export_report_to_excel(self, e):
+        global results
+      
+        cursor = connection.cursor()
+        
+        cursor.execute(f"""
+        SELECT sp.position, di.name
+        FROM specialists AS sp
+            INNER JOIN name_of_department AS di ON di.department_id = sp.specialist_department_id
+        WHERE sp.full_name = '{str(self.report_spec.content.value)}'
+        """)
+        potition_name_dep = cursor.fetchone()
+        print(potition_name_dep)
+        print(potition_name_dep[0])
+        print(potition_name_dep[1])
+      
+      
         print(results)
         workbook = openpyxl.Workbook()
         sheet = workbook.active
@@ -809,8 +826,10 @@ class Report(Container):
         # for row in sheet.iter_rows(min_row=1, max_col=sheet.max_column, max_row=sheet.max_row):
         #     for cell in row:
         #         cell.alignment = Alignment(horizontal='center', vertical='center')
-        last_row = sheet.max_row + 1
-        sheet.cell(row=last_row, column=1).value = "You have created an Excel file"
+        last_row = sheet.max_row + 2
+        print(potition_name_dep[0])
+        print(potition_name_dep[1])
+        sheet.cell(row=last_row, column=1).value = "{} {} _______________________ {}".format(potition_name_dep[0], potition_name_dep[1], self.report_spec.content.value)
         sheet.merge_cells(f'A{last_row}:I{last_row}')  # Merge the cells for the record
         sheet.row_dimensions[last_row].height = 40  # Set the height for the new row (2 cm)
 
