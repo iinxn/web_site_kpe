@@ -24,7 +24,7 @@ class Main(UserControl):
     
     def init_helper(self,):
         self.page.on_route_change = self.on_route_change
-        self.page.go('/login')
+        self.page.go('/home')
 
     def on_route_change(self, route):
         new_page = {

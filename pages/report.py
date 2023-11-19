@@ -4,20 +4,8 @@ from service.connection import *
 import datetime
 import re
 import openpyxl
-from openpyxl.styles import Font
-from tkinter.filedialog import asksaveasfilename
-from flask import Flask, send_file
-from tempfile import NamedTemporaryFile
+from openpyxl.styles import Font, Alignment
 
-# app = Flask(__name__)
-
-# @app.route('/report')
-# def render_report():
-#     # Instantiate your Flet page
-#     report_page = Report()
-
-#     # Render and return the Flet page
-#     return report_page.render()
 
 class Report(Container):
     def __init__(self, page: Page):
@@ -580,7 +568,7 @@ class Report(Container):
       self.page.dialog = self.alter_dialog_kpe
       self.alter_dialog_kpe.open = False
       self.page.update()
-      # self.export_report_to_excel(results)
+      self.export_report_to_excel(results)
 
     def close_dlg_kpe(self, e):
       self.page.dialog = self.alter_dialog_kpe
@@ -611,15 +599,19 @@ class Report(Container):
       if quater == "1 квартал":
           quater_column = "1st_quater_value"
           weight_column = "KPE_weight_1"
+          actual_quater_value = "1-й квартал"
       elif quater == "2 квартал":
           quater_column = "2nd_quater_value"
           weight_column = "KPE_weight_2"
+          actual_quater_value = "2-й квартал"
       elif quater == "3 квартал":
           quater_column = "3rd_quater_value"
           weight_column = "KPE_weight_3"
+          actual_quater_value = "3-й квартал"
       else:
           quater_column = "4th_quater_value"
           weight_column = "KPE_weight_4"
+          actual_quater_value = "4-й квартал"
       
       if self.report_depart.content.value == "Все управления":
         query = f"""
@@ -638,6 +630,7 @@ class Report(Container):
                     INNER JOIN actual_value AS av ON kt.kpe_user_id = av.actual_users_id AND kt.kpe_indicators_id = av.actual_indicators_id
                 WHERE
                     kt.number_of_version = '{latest_version}'
+                    AND av.quarter_number = '{actual_quater_value}'
                 GROUP BY
                     `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
                     `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
@@ -746,35 +739,85 @@ class Report(Container):
       else:
           print("Invalid report type")
 
-      
 
 
-    # def export_report_to_excel(self, results):
-    #     # Assuming `results` is already defined
+
+
+    def export_report_to_excel(self, results):
+        print(results)
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        headers = ["п/п", "Наименование показателя", "Ед.изм.", "1 кв.", "2 кв.", "3 кв.", "4 кв.", "год", "Вес КПЭ 1 кв.", "Вес КПЭ 2 кв.", "Вес КПЭ 3 кв.", "Вес КПЭ 4 кв."]
+
+        for col, header in enumerate(headers, start=1):
+            sheet.cell(row=8, column=col).value = header
+
+        # Merge cells D1 to I1 and add the specified phrase
+        sheet.merge_cells('D1:I1')
+        merged_cell = sheet['D1']
+        merged_cell.alignment = Alignment(horizontal='center', vertical='center')  # Center the text
+
+        # Set the value for one of the constituent cells
+        sheet['D1'].value = "УТВЕРЖДАЮ\nРуководитель агентства по труду и занятости населения Сахалинской области"
+        sheet.row_dimensions[1].height = 40
+        sheet['D1'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+
+        # Repeat this pattern for other merged cells
+        sheet.merge_cells('D2:I2')
+        sheet['D2'].value = "______________Т.Г. Бабич"
+        sheet['D2'].alignment = Alignment(horizontal='center', vertical='center')
+
+        sheet.merge_cells('D3:I3')
+        sheet['D3'].value = '"__" _________20__ года'
+        sheet['D3'].alignment = Alignment(horizontal='center', vertical='center')
+
+        long_text = (
+            "КАРТА КЛЮЧЕВЫХ ПОКАЗАТЕЛЕЙ ЭФФЕКТИВНОСТИ ПРОФЕССИОНАЛЬНОЙ СЛУЖЕБНОЙ ДЕЯТЕЛЬНОСТИ "
+            "ГОСУДАРСТВЕННОГО ГРАЖДАНСКОГО СЛУЖАЩЕГО САХАЛИНСКОЙ ОБЛАСТИ"
+        )
         
-    #     workbook = openpyxl.Workbook()
-    #     sheet = workbook.active
+        # Merge the cells for the long text
+        sheet.merge_cells('A4:I4')
+        
+        # Set the value for the merged cell (only set in the top-left cell of the merged range)
+        sheet['A4'].value = long_text
+        sheet['A4'].font = Font(bold=True)
+        sheet['A4'].alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
 
-    #     headers = ["п/п", "Наименование показателя", "Ед.изм.", "1 кв.", "2 кв.", "3 кв.", "4 кв.", "год", "Вес КПЭ 1 кв.", "Вес КПЭ 2 кв.", "Вес КПЭ 3 кв.", "Вес КПЭ 4 кв."]
+        sheet.row_dimensions[4].height = 40  # Set the height for row 4 (2 cm)
 
-    #     for col, header in enumerate(headers, start=1):
-    #         sheet.cell(row=1, column=col).value = header
+        sheet.merge_cells('A5:I5')
+        sheet['A5'].value = 'Агентство по труду и занятости населения Сахалинской области'
+        sheet['A5'].font = Font(bold=True)
+        sheet['A5'].alignment = Alignment(horizontal='center', vertical='center')
 
-    #     for i, row_data in enumerate(results, start=2):
-    #         for col, value in enumerate(row_data, start=1):
-    #             sheet.cell(row=i, column=col).value = value
+        sheet.merge_cells('A6:I6')
+        sheet['A6'].value = f'Карта КПЭ на 2023 год консультанта управления технологии и контроля оказания услуг в сфере занятости {str(self.report_spec.content.value)}'
+        sheet['A6'].font = Font(bold=True)
+        sheet['A6'].alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
 
-    #     temp_file = NamedTemporaryFile(delete=False, suffix=".xlsx")
-    #     filename = temp_file.name
+        sheet.row_dimensions[6].height = 40  # Set the height for row 6 (2 cm)
 
-    #     workbook.save(filename)
-    #     temp_file.close()
+        for i, row_data in enumerate(results, start=9):  # Start the data from row 9
+            for col, value in enumerate(row_data, start=1):
+                sheet.cell(row=i, column=col).value = value
 
-    #     self.page.dialog = self.alter_dialog_succes
-    #     self.page.dialog.title = Text("Download Excel")
-    #     self.page.dialog.content = TextButton("Download Excel", on_click=lambda x: self.download_excel(filename))
-    #     self.page.dialog.open = True
-    #     self.page.update()
+        sheet.column_dimensions["B"].width = 20  # Adjust the width of column "B"
+        sheet['B8'].font = Font(bold=True)  # Set "Наименование показателя" as bold
 
-    # def download_excel(self, filename):
-    #     return send_file(filename, as_attachment=True)
+        # Set alignment for the entire sheet
+        # for row in sheet.iter_rows(min_row=1, max_col=sheet.max_column, max_row=sheet.max_row):
+        #     for cell in row:
+        #         cell.alignment = Alignment(horizontal='center', vertical='center')
+        last_row = sheet.max_row + 1
+        sheet.cell(row=last_row, column=1).value = "You have created an Excel file"
+        sheet.merge_cells(f'A{last_row}:I{last_row}')  # Merge the cells for the record
+        sheet.row_dimensions[last_row].height = 40  # Set the height for the new row (2 cm)
+
+        filename = "D:/tniki/Desktop/output1.xlsx"
+        print(filename)
+
+        if filename:
+            workbook.save(filename)
+
+        self.show_success_dialog()
