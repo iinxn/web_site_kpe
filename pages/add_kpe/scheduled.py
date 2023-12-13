@@ -338,7 +338,7 @@ class Scheduled(Container):
                                 ),
                                 Container(
                                     content=Text(
-                                    value='Плановое',
+                                    value='Ввести карту КПЭ',
                                     size=18,
                                     color='white',
                                     text_align='center',
@@ -585,18 +585,22 @@ class Scheduled(Container):
         latest_number_of_version_with_user_indicator_ids = cursor.fetchall()
         # Loop through the results of the first query
         
-        cursor.execute(f"SELECT MAX(number_of_version) FROM kpe_table") # WHERE kpe_indicators_id = {int(indicator_id)} AND kpe_user_id = {int(specialist_id)}
-        max_version = cursor.fetchone()[0]
-
-        # Check if max_version has the expected format (3 hyphen-separated parts)
-        if max_version and len(max_version.split('-')) >= 3:
-            current_version = int(max_version.split('-')[2])
-        else:
-            current_version = 0  # Start with version 1 if the format is unexpected or max_version is None
-
-        number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
+        
         
         for specialist_id, indicator_id, latest_version in latest_number_of_version_with_user_indicator_ids:
+          cursor.execute(f"SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_indicators_id = {int(indicator_id)} AND kpe_user_id = {int(specialist_id)}")
+          max_version = cursor.fetchone()[0]
+          # Check if max_version has the expected format (3 hyphen-separated parts)
+          if max_version and len(max_version.split('-')) >= 3:
+              current_version = int(max_version.split('-')[2])
+          else:
+              current_version = 0  # Start with version 1 if the format is unexpected or max_version is None
+
+          number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
+          
+          
+          
+          max_kpe_id +=1
           query_exists = """
               SELECT 1
               FROM kpe_table
@@ -609,7 +613,7 @@ class Scheduled(Container):
           if not data_exists:
             # Получение данных из planned_value
             query_select = """
-                SELECT plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year,
+                SELECT plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, status,
                       KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4
                 FROM planned_value
                 WHERE
@@ -621,7 +625,7 @@ class Scheduled(Container):
             data = cursor.fetchone()
 
             if data:
-                plan_indicators_id, user_id, units_id, first_qr_value, second_qr_value, third_qr_value, fourth_qr_value, year, weight_1, weight_2, weight_3, weight_4 = data
+                plan_indicators_id, user_id, units_id, first_qr_value, second_qr_value, third_qr_value, fourth_qr_value, year, status, weight_1, weight_2, weight_3, weight_4 = data
                 
 
                 # Вставка данных в kpe_table
@@ -636,7 +640,8 @@ class Scheduled(Container):
                     2nd_quater_value, 
                     3rd_quater_value, 
                     4th_quater_value, 
-                    year, 
+                    year,
+                    status,
                     KPE_weight_1, 
                     KPE_weight_2, 
                     KPE_weight_3, 
@@ -644,7 +649,7 @@ class Scheduled(Container):
                     number_of_version, 
                     plan_number_of_version
                     )
-                VALUES ({}+1, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, '{}','{}');
+                VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, '{}', {}, {}, {}, {}, '{}','{}');
                 """.format(
                     int(max_kpe_id),
                     int(plan_indicators_id),
@@ -655,6 +660,7 @@ class Scheduled(Container):
                     int(third_qr_value),
                     int(fourth_qr_value),
                     int(year),
+                    str(status),
                     int(weight_1),
                     int(weight_2),
                     int(weight_3),
@@ -662,7 +668,7 @@ class Scheduled(Container):
                     str(number_of_verison_plus),
                     str(latest_version)
                 )
-                print("SQL Query:", insert_query_to_kpe_table)
+                # print("SQL Query:", insert_query_to_kpe_table)
 
                 cursor.execute(insert_query_to_kpe_table)
                 print("Success")
@@ -730,8 +736,8 @@ class Scheduled(Container):
 
 
               query = """
-                  INSERT INTO planned_value (plan_id, plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4, number_of_version)
-                  VALUES ({}+1, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},'{}');
+                  INSERT INTO planned_value (plan_id, plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, status, KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4, number_of_version)
+                  VALUES ({}+1, {}, {}, {}, {}, {}, {}, {}, {},'{}', {}, {}, {}, {},'{}');
               """.format(
                   int(max_id),
                   int(indicator_id),
@@ -742,6 +748,7 @@ class Scheduled(Container):
                   int(self.third_qr_box.content.value),
                   int(self.fourtht_qr_box.content.value),
                   int(self.year_box.content.value),
+                  "Активно",
                   int(self.weight_first_qr_box.content.value),
                   int(self.weight_second_qr_box.content.value),
                   int(self.weight_third_qr_box.content.value),

@@ -86,7 +86,7 @@ class Card(Container):
                                       controls=[
                                         Container(
                                           Text(
-                                            value='Плановое',
+                                            value='Ввести карту КПЭ',
                                             size=16,
                                             color=white,
                                             text_align='center',
@@ -96,6 +96,30 @@ class Card(Container):
                                       ]
                                   ),
                                   on_click=lambda x: x == self.page.go('/scheduled')
+                                ),
+                                
+                                ElevatedButton(
+                                  # text='Заполнить карту КПЭ',
+                                  color=white,
+                                  bgcolor='#5B7553',
+                                  width=400,
+                                  height=200,
+                                  content=Column(
+                                    horizontal_alignment='center',
+                                    alignment='center',
+                                      controls=[
+                                        Container(
+                                          Text(
+                                            value='Ввести изменение в карту КПЭ',
+                                            size=16,
+                                            color=white,
+                                            text_align='center',
+                                            weight='bold',
+                                          )
+                                        )
+                                      ]
+                                  ),
+                                  on_click=lambda x: x == self.page.go('/edit_kpe')
                                 ),
                                 
                                 # Container(height=0),
@@ -110,7 +134,7 @@ class Card(Container):
                                       controls=[
                                         Container(
                                           Text(
-                                            value='Фактическое',
+                                            value='Ввести результат исполнения мероприятий КПЭ',
                                             size=16,
                                             color=white,
                                             text_align='center',

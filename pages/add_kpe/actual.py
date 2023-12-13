@@ -239,7 +239,7 @@ class Actual(Container):
                                 ),
                                 Container(
                                     content=Text(
-                                    value='Фактическое',
+                                    value='Ввести результат исполнения мероприятий КПЭ',
                                     size=18,
                                     color='white',
                                     text_align='center',

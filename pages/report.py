@@ -444,6 +444,7 @@ class Report(Container):
           WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}'
           AND av.actual_users_id = kt.kpe_user_id
           AND av.quarter_number = '{actual_quater_value}'
+          AND kt.status = 'Активно'
           ORDER BY kt.kpe_id ASC
       """
       print(query)
@@ -499,10 +500,12 @@ class Report(Container):
       cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
       user_id = cursor.fetchone()[0]
       
-      query_select = 'SELECT MAX(number_of_version) FROM kpe_table'
+      query_select = "SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = {}".format(user_id)
       cursor.execute(query_select)
       latest_version = cursor.fetchone()[0]
-
+      print(user_id)
+      print(latest_version)
+      
       query = f"""
           SELECT
               ROW_NUMBER() OVER () AS "порядковый номер",
@@ -520,10 +523,10 @@ class Report(Container):
           FROM kpe_table AS kt
           JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
           JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
-          WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}'
+          WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно'
           ORDER BY kt.kpe_id;
       """
-
+      print(query)
       
       # kt.plan_number_of_version,
       # kt.number_of_version
@@ -622,7 +625,7 @@ class Report(Container):
                     nd.name AS `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
                     s.position AS `Должность`,
                     s.full_name AS `ФИО`,
-                    SUM( (kt.`{weight_column}` / 100) * ( (av.value * 100) / kt.`{quater_column}`
+                    SUM( (kt.`{weight_column}` / 100) * ( (av.value * 100) / NULLIF(kt.`{quater_column}`, 0)
                         )
                     ) AS `Процент выполнения`
                 FROM kpe_table AS kt
@@ -632,6 +635,7 @@ class Report(Container):
                 WHERE
                     kt.number_of_version = '{latest_version}'
                     AND av.quarter_number = '{actual_quater_value}'
+                    AND kt.status = 'Активно'
                 GROUP BY
                     `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
                     `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
@@ -650,7 +654,7 @@ class Report(Container):
                     nd.name AS `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
                     s.position AS `Должность`,
                     s.full_name AS `ФИО`,
-                    SUM( (kt.`{weight_column}` / 100) * ( (av.value * 100) / kt.`{quater_column}`
+                    SUM( (kt.`{weight_column}` / 100) * ( (av.value * 100) / NULLIF(kt.`{quater_column}`, 0)
                         )
                     ) AS `Процент выполнения`
                 FROM kpe_table AS kt
@@ -660,6 +664,8 @@ class Report(Container):
                 WHERE
                     kt.number_of_version = '{latest_version}'
                     AND s.specialist_department_id = {department_id}
+                    AND av.quarter_number = '{actual_quater_value}'
+                    AND kt.status = 'Активно'
                 GROUP BY
                     `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
                     `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
@@ -809,7 +815,7 @@ class Report(Container):
         sheet['A5'].alignment = Alignment(horizontal='center', vertical='center')
 
         sheet.merge_cells('A6:I6')
-        sheet['A6'].value = f'Карта КПЭ на 2023 год консультанта управления технологии и контроля оказания услуг в сфере занятости {str(self.report_spec.content.value)}'
+        sheet['A6'].value = f'Карта КПЭ на 2023 год {str(potition_name_dep[0]).lower()}a {str(potition_name_dep[1]).lower()} {str(self.report_spec.content.value)}'
         sheet['A6'].font = Font(bold=True)
         sheet['A6'].alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
 
@@ -829,7 +835,7 @@ class Report(Container):
         last_row = sheet.max_row + 2
         print(potition_name_dep[0])
         print(potition_name_dep[1])
-        sheet.cell(row=last_row, column=1).value = "{} {} _______________________ {}".format(potition_name_dep[0], potition_name_dep[1], self.report_spec.content.value)
+        sheet.cell(row=last_row, column=1).value = "{} {} _______________________ {}".format(potition_name_dep[0], str(potition_name_dep[1]).lower(), self.report_spec.content.value)
         sheet.merge_cells(f'A{last_row}:I{last_row}')  # Merge the cells for the record
         sheet.row_dimensions[last_row].height = 40  # Set the height for the new row (2 cm)
 

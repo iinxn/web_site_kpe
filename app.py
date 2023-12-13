@@ -14,6 +14,7 @@ from pages.handbook.specialists_handbook import SpecialistsHandbook
 from pages.handbook.scheduled_view import ScheduledView
 from pages.handbook.department import Department
 from pages.handbook.users import Users
+from pages.add_kpe.edit_kpe import EditKPE
 
 
 class Main(UserControl):
@@ -24,7 +25,7 @@ class Main(UserControl):
     
     def init_helper(self,):
         self.page.on_route_change = self.on_route_change
-        self.page.go('/home')
+        self.page.go('/login')
 
     def on_route_change(self, route):
         new_page = {
@@ -43,6 +44,7 @@ class Main(UserControl):
             "/scheduled_handbook": ScheduledView,
             "/department": Department,
             "/users": Users,
+            "/edit_kpe": EditKPE,
         }[self.page.route](self.page)
 
         self.page.views.clear()
