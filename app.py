@@ -1,31 +1,32 @@
 from flet import *
-from pages.login import Login
-from pages.home import Home
-from pages.add_kpe.card import Card
-from pages.add_kpe.scheduled import Scheduled
+
 from pages.add_kpe.actual import Actual
-from pages.handbook.handbook import Handbook
-from pages.handbook.add import Add
-from pages.report import Report
-from pages.settings.settings import Settings
-from pages.settings.monitoring import Monitoring
-from pages.handbook.measurement_handbook import MeasurementHandbook
-from pages.handbook.specialists_handbook import SpecialistsHandbook
-from pages.handbook.scheduled_view import ScheduledView
-from pages.handbook.department import Department
-from pages.handbook.users import Users
+from pages.add_kpe.card import Card
 from pages.add_kpe.edit_kpe import EditKPE
+from pages.add_kpe.scheduled import Scheduled
+from pages.handbook.add import Add
+from pages.handbook.department import Department
+from pages.handbook.handbook import Handbook
+from pages.handbook.measurement_handbook import MeasurementHandbook
+from pages.handbook.scheduled_view import ScheduledView
+from pages.handbook.specialists_handbook import SpecialistsHandbook
+from pages.handbook.users import Users
+from pages.home import Home
+from pages.login import Login
+from pages.report import Report
+from pages.settings.monitoring import Monitoring
+from pages.settings.settings import Settings
 
 
 class Main(UserControl):
-    def __init__(self, page: Page,):
-        super().__init__( )
+    def __init__(self, page: Page, ):
+        super().__init__()
         self.page = page
         self.init_helper()
-    
-    def init_helper(self,):
+
+    def init_helper(self, ):
         self.page.on_route_change = self.on_route_change
-        self.page.go('/login')
+        self.page.go('/home')
 
     def on_route_change(self, route):
         new_page = {
@@ -51,5 +52,7 @@ class Main(UserControl):
         self.page.views.append(
             View(route, [new_page])
         )
+
+
 # app(target=Main, assets_dir='assets')
 app(target=Main, assets_dir='assets', view=WEB_BROWSER)
