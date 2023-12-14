@@ -259,7 +259,7 @@ class Actual(Container):
                     content=Column(
                         expand=True,
                         # alignment='center',
-                        horizontal_alignment='center',
+                        # horizontal_alignment='center',
                         controls=[
                             # *1ST ROW
                             Container(height=50),
@@ -468,7 +468,7 @@ class Actual(Container):
             indicator_id = cursor.fetchone()[0]
 
             cursor.execute(
-                f"SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_indicators_id = {int(indicator_id)} AND kpe_user_id = {int(user_id)}")
+                f"SELECT MAX(number_of_version) FROM actual_value WHERE actual_indicators_id = {int(indicator_id)} AND actual_users_id = {int(user_id)}")
             max_version = cursor.fetchone()[0]
             # Check if max_version has the expected format (3 hyphen-separated parts)
             if max_version and len(max_version.split('-')) >= 3:
