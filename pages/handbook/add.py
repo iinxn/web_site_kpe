@@ -347,16 +347,16 @@ class Add(Container):
         data_rows = []
 
         for row in query_result:
-          cells = [DataCell(Text(str(value))) for value in row]
-          data_row = DataRow(cells=cells)
+            cells = [DataCell(Text(str(value))) for value in row]
+            data_row = DataRow(cells=cells)
+            checkbox_1 = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
+            cells.append(DataCell(checkbox_1))
 
-          # Create a Checkbox for the third column
-          checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-          cells.append(DataCell(checkbox))
+            data_rows.append(data_row)
 
-          data_rows.append(data_row)
         # After you fetch new data from the database and create data_rows, update the DataTable like this:
         self.data_table.rows = data_rows
+        self.selected_rows.clear()
         self.page.dialog = self.alter_dialog_add_new_specialists
         self.alter_dialog_add_new_specialists.open = False
         self.page.update()

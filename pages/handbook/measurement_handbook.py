@@ -282,7 +282,10 @@ class MeasurementHandbook(Container):
         cursor.execute(query)
 
         # Fetch the updated data from the database
-        cursor.execute('SELECT * FROM units_of_measurement ORDER BY measurement_id')
+
+        query_select = 'SELECT * FROM units_of_measurement ORDER BY measurement_id'
+
+        cursor.execute(query_select)
         results = cursor.fetchall()
         query_result = results
         data_rows = []
@@ -290,15 +293,14 @@ class MeasurementHandbook(Container):
         for row in query_result:
             cells = [DataCell(Text(str(value))) for value in row]
             data_row = DataRow(cells=cells)
-
-            # Create a Checkbox for the third column
-            checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-            cells.append(DataCell(checkbox))
+            checkbox_1 = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
+            cells.append(DataCell(checkbox_1))
 
             data_rows.append(data_row)
 
         # After you fetch new data from the database and create data_rows, update the DataTable like this:
         self.data_table.rows = data_rows
+        self.selected_rows.clear()
         self.page.dialog = self.alter_dialog_add_new_specialists
         self.alter_dialog_add_new_specialists.open = False
         self.page.update()
