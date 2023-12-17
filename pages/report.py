@@ -334,38 +334,17 @@ class Report(Container):
             f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
         user_id = cursor.fetchone()[0]
 
-        # query_select = 'SELECT number_of_version FROM kpe_table'
-        # cursor.execute(query_select)
-        # version_numbers = cursor.fetchall()
+        # cursor.execute()
 
-        # indicator_versions = {}
-
-        # def extract_and_convert_date(version):
-        #     match = re.search(r'-(\d{8})-(\d+)', version)
-        #     if match:
-        #         date_str = match.group(1)
-        #         date = datetime.datetime.strptime(date_str, '%d%m%Y')
-        #         version_number = int(match.group(2))
-        #         return date, version, version_number
-        #     return None
-
-        # for version_tuple in version_numbers:
-        #   version = version_tuple[0]  # Получить второй элемент кортежа, который должен быть строкой
-        #   date_version = extract_and_convert_date(version)
-        #   if date_version is not None:
-        #       date, version, version_number = date_version
-        #       if version not in indicator_versions:
-        #           indicator_versions[version] = [(date, version, version_number)]
-        #       else:
-        #           indicator_versions[version].append((date, version, version_number))
-
-        # for version, versions in indicator_versions.items():
-        #     versions.sort(key=lambda x: (x[0], x[2]), reverse=True)
-        #     latest_date, latest_version, latest_version_number = versions[0]
-
-        query_select = f'SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = {user_id}'
-        cursor.execute(query_select)
+        query_select_kpe = f'SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = {user_id}'# AND kpe_indicators_id = {}
+        cursor.execute(query_select_kpe)
         latest_version = cursor.fetchone()[0]
+
+        query_select_actual = f'SELECT MAX(number_of_version) FROM actual_value WHERE actual_users_id = {user_id}'# AND kpe_indicators_id = {}
+        cursor.execute(query_select_actual)
+        latest_version_actual = cursor.fetchone()[0]
+
+        print(latest_version_actual, latest_version)
 
         quater = self.report_quater.content.value
 
@@ -401,8 +380,9 @@ class Report(Container):
           INNER JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
           WHERE kt.kpe_user_id = {user_id} 
           AND kt.number_of_version = '{latest_version}'
-          AND av.number_of_version = '{latest_version}'
+          AND av.number_of_version = '{latest_version_actual}'
           AND av.actual_users_id = kt.kpe_user_id
+          AND av.actual_indicators_id = kt.kpe_indicators_id
           AND av.quarter_number = '{actual_quater_value}'
           AND kt.status = 'Активно'
           ORDER BY kt.kpe_id ASC
@@ -551,6 +531,9 @@ class Report(Container):
         query_select = 'SELECT MAX(number_of_version) FROM kpe_table'
         cursor.execute(query_select)
         latest_version = cursor.fetchone()[0]
+        query_select_actual = f'SELECT MAX(number_of_version) FROM actual_value'
+        cursor.execute(query_select_actual)
+        latest_version_actual = cursor.fetchone()[0]
 
         quater = self.report_quater.content.value
 
@@ -589,7 +572,7 @@ class Report(Container):
                 WHERE
                     kt.number_of_version = '{latest_version}'
                     AND av.quarter_number = '{actual_quater_value}'
-                    AND av.number_of_version = '{latest_version}'
+                    AND av.number_of_version = '{latest_version_actual}'
                     AND kt.status = 'Активно'
                 GROUP BY
                     `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
@@ -619,7 +602,7 @@ class Report(Container):
                     INNER JOIN actual_value AS av ON kt.kpe_user_id = av.actual_users_id AND kt.kpe_indicators_id = av.actual_indicators_id
                 WHERE
                     kt.number_of_version = '{latest_version}'
-                    AND av.number_of_version = '{latest_version}'
+                    AND av.number_of_version = '{latest_version_actual}'
                     AND s.specialist_department_id = {department_id}
                     AND av.quarter_number = '{actual_quater_value}'
                     AND kt.status = 'Активно'
