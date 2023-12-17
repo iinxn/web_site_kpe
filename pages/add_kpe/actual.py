@@ -572,20 +572,21 @@ class Actual(Container):
         search_text = self.search_input.content.value.lower()
         filtered_options = []
 
-        if self.dropdown_options_indicators is not None:
-            for option in self.dropdown_options_indicators:
-                if option is not None and option.text is not None:
-                    if re.search(rf'{search_text}', option.text.lower()):
+        if self.dropdown_options_indicators_truncated is not None:
+            for option in self.dropdown_options_indicators_truncated:
+                if option is not None and option.key is not None:
+                    if search_text.lower() in option.key.lower():
                         filtered_options.append(option)
         else:
             print("Dropdown options are None")
 
         if not search_text:
-            filtered_options = self.dropdown_options_indicators
+            filtered_options = self.dropdown_options_indicators_truncated
 
-        print("Search Text:", search_text)  # Отладочное сообщение
-        print("Filtered options:", filtered_options)  # Отладочное сообщение
+        print("Search Text:", search_text)  # Debugging message
+        print("Filtered options:", [option.key for option in filtered_options])  # Debugging message
 
         self.cb_menu_spec.content.options = filtered_options
-
         self.page.update()
+
+
