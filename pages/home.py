@@ -18,10 +18,9 @@ class Home(Container):
                     bgcolor='#5B7553',
                     # border_radius=15,
                     content=Column(
-                        horizontal_alignment='center',  # Align the text to the right
+                        horizontal_alignment='center',
                         controls=[
                           Container(
-                            # alignment='center',
                             content=Row(
                               alignment='spaceBetween',
                               controls=[

@@ -1,7 +1,5 @@
 import datetime
-
 from flet import *
-
 from service.connection import *
 from utils.colors import *
 
@@ -16,6 +14,7 @@ class EditKPE(Container):
         self.bgcolor = tea_green
 
         self.selected_rows = set()
+        self.sql_query = []
         self.data_table = DataTable(
             columns=[
                 DataColumn(Text("п/п"), numeric=True),
@@ -39,8 +38,6 @@ class EditKPE(Container):
                 DataColumn(Text("""   Вес КПЭ 
 4 кв."""), numeric=True),
                 DataColumn(Text("Выбор")),
-                # DataColumn(Text("Редактировать")),
-                # DataColumn(Text("Удалить")),
             ],
             rows=[],
             border=border.all(1, "black"),
@@ -248,10 +245,19 @@ class EditKPE(Container):
         )
 
         # *ALTERDIALOGS
-        self.alter_dialog_succes = AlertDialog(
+        self.alter_dialog_block = AlertDialog(
             modal=True,
-            actions=[TextButton("OK", on_click=self.close_dlg_succes)],
+            actions=[TextButton("OK", on_click=self.close_dlg_block)],
             on_dismiss=lambda e: print("Modal dialog dismissed!")
+        )
+        self.alter_dialog_are_you_sure = AlertDialog(
+            modal=True,
+            title=Text("Подтверждение"),
+            content=Text("Вы точно уверены?"),
+            actions=[
+                TextButton("Да", on_click=self.insert_all_data_from_array),
+                TextButton("Нет", on_click=self.close_are_you_sure_dialoge)
+            ]
         )
         self.alter_dialog_edit = AlertDialog(
             modal=True,
@@ -352,7 +358,7 @@ class EditKPE(Container):
                             alignment='center',
                             controls=[
                                 self.cb_menu_spec,
-                                self.specialist_menu_box
+                                # self.specialist_menu_box
                             ]
                         )
                     ),
@@ -536,6 +542,7 @@ class EditKPE(Container):
                                                 on_click=self.show_kpe_table
                                             ),
                                         ),
+
                                         Container(width=300),
                                         Container(
                                             content=ElevatedButton(
@@ -644,22 +651,46 @@ class EditKPE(Container):
                                 padding=padding.all(20),
                             ),
                             Container(height=50),
+                            Container(
+                                content=ElevatedButton(
+                                    color=white,
+                                    bgcolor='#5B7553',
+                                    width=250,
+                                    height=70,
+                                    content=Column(
+                                        horizontal_alignment='center',
+                                        alignment='center',
+                                        controls=[
+                                            Container(
+                                                Text(
+                                                    value='Подтвердить изменения',
+                                                    size=16,
+                                                    color=white,
+                                                    text_align='center',
+                                                    weight='bold',
+                                                )
+                                            )
+                                        ]
+                                    ),
+                                    on_click=self.open_are_you_sure_dialoge
+                                ),
+                            ),
                         ],
                     )
                 ),
             ]
         )
 
-    def show_success_dialog(self, content_text, title_text):
-        self.page.dialog = self.alter_dialog_succes
-        self.alter_dialog_succes.content = Text(f"{content_text}")
-        self.alter_dialog_succes.title = Text(f"{title_text}")
-        self.alter_dialog_succes.open = True
+    def show_block_dialog(self, content_text, title_text):
+        self.page.dialog = self.alter_dialog_block
+        self.alter_dialog_block.content = Text(f"{content_text}")
+        self.alter_dialog_block.title = Text(f"{title_text}")
+        self.alter_dialog_block.open = True
         self.page.update()
 
-    def close_dlg_succes(self, e):
-        self.page.dialog = self.alter_dialog_succes
-        self.alter_dialog_succes.open = False
+    def close_dlg_block(self, e):
+        self.page.dialog = self.alter_dialog_block
+        self.alter_dialog_block.open = False
         print("Вы закрыли модульное окно успеха")
         self.page.update()
 
@@ -670,7 +701,7 @@ class EditKPE(Container):
             f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
         user_id = cursor.fetchone()[0]
 
-        query_select = "SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = '{}'".format(user_id)
+        query_select = "SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = '{}';".format(user_id)
         cursor.execute(query_select)
         latest_version = cursor.fetchone()[0]
 
@@ -691,7 +722,8 @@ class EditKPE(Container):
         FROM kpe_table AS kt
         JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
         JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
-        WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно';
+        WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно'
+        ORDER BY kpe_id;
       """
 
         cursor.execute(query_select)
@@ -703,23 +735,18 @@ class EditKPE(Container):
             cells = [DataCell(Text(str(value))) for value in row]
             data_row = DataRow(cells=cells)
 
-            # Create a Checkbox for the third column
             checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-
             cells.append(DataCell(checkbox))
-
             data_rows.append(data_row)
-
-        # After you fetch new data from the database and create data_rows, update the DataTable like this:
         self.data_table.rows = data_rows
         self.page.update()
 
-    def show_alter_dialog(self, e):
+    def show_alter_dialog_add_new_specialists(self, e):
         self.page.dialog = self.alter_dialog_add_new_specialists
         self.page.dialog.open = True
         self.page.update()
 
-    def close_dlg(self, e):
+    def close_dlg_add_new_specialists(self, e):
         self.page.dialog = self.alter_dialog_add_new_specialists
         self.page.dialog.open = False
         self.page.update()
@@ -734,9 +761,6 @@ class EditKPE(Container):
             print("no")
 
     def show_edit_dialog(self):
-        # if not self.selected_rows:
-        #     self.show_error_dialog("Вы не выбрали строку в таблице")
-        # else:
         selected_row = next(iter(self.selected_rows))
         self.first_qr_box.content.value = selected_row[3]
         self.second_qr_box.content.value = selected_row[4]
@@ -747,194 +771,124 @@ class EditKPE(Container):
         self.weight_second_qr_box.content.value = selected_row[9]
         self.weight_third_qr_box.content.value = selected_row[10]
         self.weight_fourth_qr_box.content.value = selected_row[11]
-        # self.dp_units.content.value = selected_row[1]
         self.page.dialog = self.alter_dialog_edit
         self.alter_dialog_edit.open = True
         self.page.update()
 
     def edit_name_in_table(self, e):
-        date = datetime.datetime.now()
+        try:
+            selected_row = next(iter(self.selected_rows))
+            cursor = connection.cursor()
 
-        selected_row = next(iter(self.selected_rows))
-        cursor = connection.cursor()
-
-        sql_select = "SELECT kpe_id FROM kpe_table WHERE 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {}".format(
-            selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8],
-            selected_row[9], selected_row[10], selected_row[11])
-        cursor.execute(sql_select)
-        kpe_id = cursor.fetchone()[0]
-        print(kpe_id)
-        sql_select_indicator = "SELECT kpe_indicators_id FROM kpe_table WHERE kpe_id = {}".format(kpe_id)
-        cursor.execute(sql_select_indicator)
-        indicators_id = cursor.fetchone()[0]
-
-        cursor.execute(f"SELECT number_of_version FROM kpe_table WHERE kpe_id = {kpe_id}")
-        max_version = cursor.fetchone()[0]
-        # Check if max_version has the expected format (3 hyphen-separated parts)
-        if max_version and len(max_version.split('-')) >= 3:
-            current_version = int(max_version.split('-')[2])
-        else:
-            current_version = 0  # Start with version 1 if the format is unexpected or max_version is None
-
-        formatted_date = max_version.split('-')[1]
-        number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
-        print(number_of_verison_plus)
-
-        # Use the UPDATE statement to modify the record
-        query_1st_qr = "ALTER TABLE kpe_table UPDATE 1st_quater_value = {} WHERE kpe_id = {}".format(
-            self.first_qr_box.content.value, kpe_id)
-        print(indicators_id)
-        print(kpe_id)
-        print(query_1st_qr)
-        query_2nd_qr = "ALTER TABLE kpe_table UPDATE 2nd_quater_value = {} WHERE kpe_id = {}".format(
-            self.second_qr_box.content.value, kpe_id)
-        query_3rd_qr = "ALTER TABLE kpe_table UPDATE 3rd_quater_value = {} WHERE kpe_id = {}".format(
-            self.third_qr_box.content.value, kpe_id)
-        query_4th_qr = "ALTER TABLE kpe_table UPDATE 4th_quater_value = {} WHERE kpe_id = {}".format(
-            self.fourtht_qr_box.content.value, kpe_id)
-        query_year = "ALTER TABLE kpe_table UPDATE year = {} WHERE kpe_id = {}".format(self.year_box.content.value,
-                                                                                       kpe_id)
-        query_weight_firts_qr = "ALTER TABLE kpe_table UPDATE KPE_weight_1 = {} WHERE kpe_id = {}".format(
-            self.weight_first_qr_box.content.value, kpe_id)
-        query_weight_second_qr = "ALTER TABLE kpe_table UPDATE KPE_weight_2 = {} WHERE kpe_id = {}".format(
-            self.weight_second_qr_box.content.value, kpe_id)
-        query_weight_third_qr = "ALTER TABLE kpe_table UPDATE KPE_weight_3 = {} WHERE kpe_id = {}".format(
-            self.weight_third_qr_box.content.value, kpe_id)
-        query_weight_fourth_qr = "ALTER TABLE kpe_table UPDATE KPE_weight_4 = {} WHERE kpe_id = {}".format(
-            self.weight_fourth_qr_box.content.value, kpe_id)
-        query_number_of_version = "ALTER TABLE kpe_table UPDATE number_of_version = '{}' WHERE kpe_id = {}".format(
-            str(number_of_verison_plus), kpe_id)
-        print(query_number_of_version)
-        cursor.execute(query_1st_qr)
-        cursor.execute(query_2nd_qr)
-        cursor.execute(query_3rd_qr)
-        cursor.execute(query_4th_qr)
-        cursor.execute(query_year)
-        cursor.execute(query_weight_firts_qr)
-        cursor.execute(query_weight_second_qr)
-        cursor.execute(query_weight_third_qr)
-        cursor.execute(query_weight_fourth_qr)
-        cursor.execute(query_number_of_version)
-
-        self.page.dialog = self.alter_dialog_edit
-        self.alter_dialog_edit.open = False
-
-        # # Fetch the updated data from the database
-        # cursor = connection.cursor()
-        # cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
-        # user_id = cursor.fetchone()[0]
-
-        # query_select = "SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = '{}'".format(user_id)
-        # cursor.execute(query_select)
-        # latest_version = cursor.fetchone()[0]
-
-        # query_select = f"""
-        #   SELECT
-        #       ROW_NUMBER() OVER () AS "порядковый номер",
-        #       ni.name AS indicator_name,
-        #       um.type AS unit_of_measurement,
-        #       kt.1st_quater_value,
-        #       kt.2nd_quater_value,
-        #       kt.3rd_quater_value,
-        #       kt.4th_quater_value,
-        #       kt.year,
-        #       kt.KPE_weight_1,
-        #       kt.KPE_weight_2,
-        #       kt.KPE_weight_3,
-        #       kt.KPE_weight_4
-        #   FROM kpe_table AS kt
-        #   JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
-        #   JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
-        #   WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно';
-        # """
-
-        # cursor.execute(query_select)
-        # results = cursor.fetchall()
-        # query_result = results
-        # data_rows = []
-
-        # for row in query_result:
-        #   cells = [DataCell(Text(str(value))) for value in row]
-        #   data_row = DataRow(cells=cells)
-        #   # Create a Checkbox for the third column
-        #   checkbox_1 = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-        #   cells.append(DataCell(checkbox_1))
-        #   data_rows.append(data_row)
-
-        # # After you fetch new data from the database and create data_rows, update the DataTable like this:
-        # self.data_table.rows = data_rows
-        # self.show_success_dialog("Запись была успешно изменена", "Успешно")
-
-        self.page.update()
-
-    def delete_name_in_table(self, e):
-        cursor = connection.cursor()
-
-        for selected_row in self.selected_rows:
-            sql_select = "SELECT kpe_id FROM kpe_table WHERE 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {}".format(
+            sql_select = "SELECT kpe_id FROM kpe_table WHERE 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
                 selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8],
                 selected_row[9], selected_row[10], selected_row[11])
             cursor.execute(sql_select)
             kpe_id = cursor.fetchone()[0]
             print(kpe_id)
-            query_status = "ALTER TABLE kpe_table UPDATE status = 'Неактивно' WHERE kpe_id = {}".format(kpe_id)
 
-            cursor.execute(query_status)
+            cursor.execute(f"SELECT number_of_version FROM kpe_table WHERE kpe_id = {kpe_id};")
+            max_version = cursor.fetchone()[0]
+            if max_version and len(max_version.split('-')) >= 3:
+                current_version = int(max_version.split('-')[2])
+            else:
+                current_version = 0
+            formatted_date = max_version.split('-')[1]
+            number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
+            print(number_of_verison_plus)
+            if self.first_qr_box.content.value != selected_row[3]:
+                query_1st_qr = "ALTER TABLE kpe_table UPDATE 1st_quater_value = {} WHERE kpe_id = {};".format(self.first_qr_box.content.value, kpe_id)
+                self.sql_query.append(query_1st_qr)
+                self.page.dialog = self.alter_dialog_edit
+                self.alter_dialog_edit.open = False
 
-        self.show_success_dialog("Запись была успешно удалена", "Успешно")
-        # Fetch the updated data from the database
+            if self.second_qr_box.content.value != selected_row[4]:
+                query_2nd_qr = "ALTER TABLE kpe_table UPDATE 2nd_quater_value = {} WHERE kpe_id = {};".format(self.second_qr_box.content.value, kpe_id)
+                self.sql_query.append(query_2nd_qr)
+                self.page.dialog = self.alter_dialog_edit
+                self.alter_dialog_edit.open = False
+
+            if self.third_qr_box.content.value != selected_row[5]:
+                query_3rd_qr = "ALTER TABLE kpe_table UPDATE 3rd_quater_value = {} WHERE kpe_id = {};".format(self.third_qr_box.content.value, kpe_id)
+                self.sql_query.append(query_3rd_qr)
+                self.page.dialog = self.alter_dialog_edit
+                self.alter_dialog_edit.open = False
+
+            if self.fourtht_qr_box.content.value != selected_row[6]:
+                query_4th_qr = "ALTER TABLE kpe_table UPDATE 4th_quater_value = {} WHERE kpe_id = {};".format(self.fourtht_qr_box.content.value, kpe_id)
+                self.sql_query.append(query_4th_qr)
+                self.page.dialog = self.alter_dialog_edit
+                self.alter_dialog_edit.open = False
+
+            if self.year_box.content.value != selected_row[7]:
+                query_year = "ALTER TABLE kpe_table UPDATE year = {} WHERE kpe_id = {};".format(self.year_box.content.value, kpe_id)
+                self.sql_query.append(query_year)
+                self.page.dialog = self.alter_dialog_edit
+                self.alter_dialog_edit.open = False
+
+            if self.weight_first_qr_box.content.value != selected_row[8]:
+                query_weight_firts_qr = "ALTER TABLE kpe_table UPDATE KPE_weight_1 = {} WHERE kpe_id = {};".format(self.weight_first_qr_box.content.value, kpe_id)
+                self.sql_query.append(query_weight_firts_qr)
+                self.page.dialog = self.alter_dialog_edit
+                self.alter_dialog_edit.open = False
+
+            if self.weight_second_qr_box.content.value != selected_row[9]:
+                query_weight_second_qr = "ALTER TABLE kpe_table UPDATE KPE_weight_2 = {} WHERE kpe_id = {};".format(self.weight_second_qr_box.content.value, kpe_id)
+                self.sql_query.append(query_weight_second_qr)
+                self.page.dialog = self.alter_dialog_edit
+                self.alter_dialog_edit.open = False
+
+            if self.weight_third_qr_box.content.value != selected_row[10]:
+                query_weight_third_qr = "ALTER TABLE kpe_table UPDATE KPE_weight_3 = {} WHERE kpe_id = {};".format(self.weight_third_qr_box.content.value, kpe_id)
+                self.sql_query.append(query_weight_third_qr)
+                self.page.dialog = self.alter_dialog_edit
+                self.alter_dialog_edit.open = False
+
+            if self.weight_fourth_qr_box.content.value != selected_row[11]:
+                query_weight_fourth_qr = "ALTER TABLE kpe_table UPDATE KPE_weight_4 = {} WHERE kpe_id = {};".format(self.weight_fourth_qr_box.content.value, kpe_id)
+                self.sql_query.append(query_weight_fourth_qr)
+                self.page.dialog = self.alter_dialog_edit
+                self.alter_dialog_edit.open = False
+            else:
+                print("Поля никак не изменились")
+            query_number_of_version = "ALTER TABLE kpe_table UPDATE number_of_version = '{}' WHERE kpe_id = {};".format(str(number_of_verison_plus), kpe_id)
+            self.sql_query.append(query_number_of_version)
+            self.first_qr_box.content.value = ""
+            self.second_qr_box.content.value = ""
+            self.third_qr_box.content.value = ""
+            self.fourtht_qr_box.content.value = ""
+            self.year_box.content.value = ""
+            self.weight_first_qr_box.content.value = ""
+            self.weight_second_qr_box.content.value = ""
+            self.weight_third_qr_box.content.value = ""
+            self.weight_fourth_qr_box.content.value = ""
+            self.cb_menu_spec.content.value = ""
+            self.show_block_dialog("Данные были успешно изменены", "Успешно")
+            self.page.update()
+        except:
+            self.show_block_dialog("При измение данных произошла ошибка", "Ошибка")
+
+    def delete_name_in_table(self, e):
         cursor = connection.cursor()
-        cursor.execute(
-            f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
-        user_id = cursor.fetchone()[0]
 
-        query_select = "SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = '{}'".format(user_id)
-        cursor.execute(query_select)
-        latest_version = cursor.fetchone()[0]
+        for selected_row in self.selected_rows:
+            sql_select = "SELECT kpe_id FROM kpe_table WHERE 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
+                selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8],
+                selected_row[9], selected_row[10], selected_row[11])
+            cursor.execute(sql_select)
+            kpe_id = cursor.fetchone()[0]
+            print(kpe_id)
+            query_status = "ALTER TABLE kpe_table UPDATE status = 'Неактивно' WHERE kpe_id = {};".format(kpe_id)
+            self.sql_query.append(query_status)
 
-        query_select = f"""
-          SELECT
-              ROW_NUMBER() OVER () AS "порядковый номер",
-              ni.name AS indicator_name,
-              um.type AS unit_of_measurement,
-              kt.1st_quater_value,
-              kt.2nd_quater_value,
-              kt.3rd_quater_value,
-              kt.4th_quater_value,
-              kt.year,
-              kt.KPE_weight_1,
-              kt.KPE_weight_2,
-              kt.KPE_weight_3,
-              kt.KPE_weight_4
-          FROM kpe_table AS kt
-          JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
-          JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
-          WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно';
-        """
-
-        cursor.execute(query_select)
-        results = cursor.fetchall()
-        query_result = results
-        data_rows = []
-
-        for row in query_result:
-            cells = [DataCell(Text(str(value))) for value in row]
-            data_row = DataRow(cells=cells)
-
-            # Create a Checkbox for the third column
-            checkbox_1 = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-            cells.append(DataCell(checkbox_1))
-
-            data_rows.append(data_row)
-
-        # After you fetch new data from the database and create data_rows, update the DataTable like this:
-        self.data_table.rows = data_rows
+        self.show_block_dialog("Запись была успешно удалена", "Успешно")
+        print(self.sql_query)
         self.page.update()
 
     def stay_name_in_table(self, e):
         cursor = connection.cursor()
         for selected_row in self.selected_rows:
-            sql_select = "SELECT kpe_id FROM kpe_table WHERE 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {}".format(
+            sql_select = "SELECT kpe_id FROM kpe_table WHERE 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
                 selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8],
                 selected_row[9], selected_row[10], selected_row[11])
             cursor.execute(sql_select)
@@ -942,72 +896,22 @@ class EditKPE(Container):
 
             date = datetime.datetime.now()
 
-            cursor.execute(f"SELECT number_of_version FROM kpe_table WHERE kpe_id = {kpe_id}")
+            cursor.execute(f"SELECT number_of_version FROM kpe_table WHERE kpe_id = {kpe_id};")
             max_version = cursor.fetchone()[0]
-            # Check if max_version has the expected format (3 hyphen-separated parts)
             if max_version and len(max_version.split('-')) >= 3:
                 current_version = int(max_version.split('-')[2])
             else:
-                current_version = 0  # Start with version 1 if the format is unexpected or max_version is None
+                current_version = 0
 
             formatted_date = max_version.split('-')[1]
             number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
             print(number_of_verison_plus)
 
             print(kpe_id)
-            query_number_of_version = "ALTER TABLE kpe_table UPDATE number_of_version = '{}' WHERE kpe_id = {}".format(
-                str(number_of_verison_plus), kpe_id)
-
-            cursor.execute(query_number_of_version)
-
-        # Fetch the updated data from the database
-        cursor = connection.cursor()
-        cursor.execute(
-            f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
-        user_id = cursor.fetchone()[0]
-
-        query_select = "SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = '{}'".format(user_id)
-        cursor.execute(query_select)
-        latest_version = cursor.fetchone()[0]
-
-        query_select = f"""
-          SELECT
-              ROW_NUMBER() OVER () AS "порядковый номер",
-              ni.name AS indicator_name,
-              um.type AS unit_of_measurement,
-              kt.1st_quater_value,
-              kt.2nd_quater_value,
-              kt.3rd_quater_value,
-              kt.4th_quater_value,
-              kt.year,
-              kt.KPE_weight_1,
-              kt.KPE_weight_2,
-              kt.KPE_weight_3,
-              kt.KPE_weight_4
-          FROM kpe_table AS kt
-          JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
-          JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
-          WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно';
-        """
-
-        cursor.execute(query_select)
-        results = cursor.fetchall()
-        query_result = results
-        data_rows = []
-
-        for row in query_result:
-            cells = [DataCell(Text(str(value))) for value in row]
-            data_row = DataRow(cells=cells)
-
-            # Create a Checkbox for the third column
-            checkbox_1 = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-            cells.append(DataCell(checkbox_1))
-
-            data_rows.append(data_row)
-
-        # After you fetch new data from the database and create data_rows, update the DataTable like this:
-        self.data_table.rows = data_rows
-        self.show_success_dialog("Записи были оставлены", "Успешно")
+            query_number_of_version = "ALTER TABLE kpe_table UPDATE number_of_version = '{}' WHERE kpe_id = {};".format(str(number_of_verison_plus), kpe_id)
+            self.sql_query.append(query_number_of_version)
+        print(self.sql_query)
+        self.show_block_dialog("Записи были оставлены", "Успешно")
         self.page.update()
 
     def close_edit_dialog(self, e):
@@ -1029,7 +933,7 @@ class EditKPE(Container):
             cursor = connection.cursor()
             cursor.execute(f"SELECT max(indicators_id) FROM name_of_indicators;")
             max_id = cursor.fetchone()[0]
-            query = "INSERT INTO TABLE name_of_indicators (indicators_id, name) VALUES ({},'{}')".format(
+            query = "INSERT INTO TABLE name_of_indicators (indicators_id, name) VALUES ({},'{}');".format(
                 int(max_id) + 1, self.textfiled_input_new_indicator.content.value)
             cursor.execute(query)
             print("Запись успешно добавлена в базу данных")
@@ -1051,85 +955,214 @@ class EditKPE(Container):
 
     def add_new_specialist(self, e):
         # *FOR USER DATA INFORMATION
-        cursor = connection.cursor()
-        cursor.execute(
-            f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.specialist_menu_box.content.value)}';")
-        user_id = cursor.fetchone()[0]
+        try:
+            cursor = connection.cursor()
+            cursor.execute(
+                f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
+            user_id = cursor.fetchone()[0]
 
-        # *FOR AUTO ID INCRIPTION
-        cursor = connection.cursor()
-        cursor.execute(f"SELECT MAX(kpe_id) FROM kpe_table")
-        max_kpe_id = cursor.fetchone()[0]
-        # *FOR INDICATORS
-        selected_indicator = self.cb_menu_spec.content.value
-        cursor = connection.cursor()
-        selected_indicator_without_dots = selected_indicator.replace(".", "")
-        cursor.execute(
-            f"SELECT indicators_id FROM name_of_indicators WHERE name LIKE '{selected_indicator_without_dots}%'")
-        indicator_id = cursor.fetchone()[0]
-        # *FRO PLAN_INDICATOR
-        cursor = connection.cursor()
-        cursor.execute(f"SELECT kpe_indicators_id FROM kpe_table")
-        kpe_indicator_id = cursor.fetchone()
-        # *FOR UNITS
-        # selected_unit = self.units_menu_box.content.value
-        cursor = connection.cursor()
-        # cursor.execute(f"SELECT measurement_id FROM name_of_indicators WHERE name LIKE '{selected_indicator}%'")
-        cursor.execute(
-            f"SELECT measurement_id FROM name_of_indicators WHERE name LIKE '{selected_indicator_without_dots}%'")
-        units_id = cursor.fetchone()[0]
+            # *FOR AUTO ID INCRIPTION
+            cursor = connection.cursor()
+            cursor.execute(f"SELECT MAX(kpe_id) FROM kpe_table")
+            max_kpe_id = cursor.fetchone()[0]
+            # *FOR INDICATORS
+            selected_indicator = self.cb_menu_spec.content.value
+            cursor = connection.cursor()
+            selected_indicator_without_dots = selected_indicator.replace(".", "")
+            cursor.execute(
+                f"SELECT indicators_id FROM name_of_indicators WHERE name LIKE '{selected_indicator_without_dots}%';")
+            indicator_id = cursor.fetchone()[0]
+            # *FRO PLAN_INDICATOR
+            cursor = connection.cursor()
+            cursor.execute(f"SELECT kpe_indicators_id FROM kpe_table;")
+            kpe_indicator_id = cursor.fetchone()
+            # *FOR UNITS
+            # selected_unit = self.units_menu_box.content.value
+            cursor = connection.cursor()
+            # cursor.execute(f"SELECT measurement_id FROM name_of_indicators WHERE name LIKE '{selected_indicator}%'")
+            cursor.execute(
+                f"SELECT measurement_id FROM name_of_indicators WHERE name LIKE '{selected_indicator_without_dots}%';")
+            units_id = cursor.fetchone()[0]
 
-        # Определите максимальное значение номера версии для данного показателя
-        # Determine the maximum version for the current indicator and user combination
-        cursor.execute(f"SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = {int(user_id)}")
-        max_version = cursor.fetchone()[0]
-        print(max_version)
-        insert_query_to_kpe_table = """
-      INSERT INTO
-        kpe_table (
-          kpe_id, 
-          kpe_indicators_id, 
-          kpe_user_id, 
-          kpe_units_id, 
-          1st_quater_value, 
-          2nd_quater_value, 
-          3rd_quater_value, 
-          4th_quater_value, 
-          year,
-          status,
-          KPE_weight_1, 
-          KPE_weight_2, 
-          KPE_weight_3, 
-          KPE_weight_4, 
-          number_of_version
-          )
-      VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, '{}', {}, {}, {}, {}, '{}');
-      """.format(
-            int(max_kpe_id + 1),
-            int(indicator_id),
-            int(user_id),
-            int(units_id),
-            int(self.first_qr_box.content.value),
-            int(self.second_qr_box.content.value),
-            int(self.third_qr_box.content.value),
-            int(self.fourtht_qr_box.content.value),
-            int(self.year_box.content.value),
-            str("Активно"),
-            int(self.weight_first_qr_box.content.value),
-            int(self.weight_second_qr_box.content.value),
-            int(self.weight_third_qr_box.content.value),
-            int(self.weight_fourth_qr_box.content.value),
-            str(max_version)
-        )
-        # print("SQL Query:", insert_query_to_kpe_table)
+            # Определите максимальное значение номера версии для данного показателя
+            # Determine the maximum version for the current indicator and user combination
+            cursor.execute(f"SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = {int(user_id)};")
+            max_version = cursor.fetchone()[0]
+            print(max_version)
+            insert_query_to_kpe_table = """
+          INSERT INTO kpe_table (
+              kpe_id, 
+              kpe_indicators_id, 
+              kpe_user_id, 
+              kpe_units_id, 
+              1st_quater_value, 
+              2nd_quater_value, 
+              3rd_quater_value, 
+              4th_quater_value, 
+              year,
+              status,
+              KPE_weight_1, 
+              KPE_weight_2, 
+              KPE_weight_3, 
+              KPE_weight_4, 
+              number_of_version
+              )
+          VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, '{}', {}, {}, {}, {}, '{}');
+          """.format(
+                int(max_kpe_id + 1),
+                int(indicator_id),
+                int(user_id),
+                int(units_id),
+                int(self.first_qr_box.content.value),
+                int(self.second_qr_box.content.value),
+                int(self.third_qr_box.content.value),
+                int(self.fourtht_qr_box.content.value),
+                int(self.year_box.content.value),
+                str("Активно"),
+                int(self.weight_first_qr_box.content.value),
+                int(self.weight_second_qr_box.content.value),
+                int(self.weight_third_qr_box.content.value),
+                int(self.weight_fourth_qr_box.content.value),
+                str(max_version)
+            )
+            cursor.execute(insert_query_to_kpe_table)
+            print("Success")
+            self.first_qr_box.content.value = ""
+            self.second_qr_box.content.value = ""
+            self.third_qr_box.content.value = ""
+            self.fourtht_qr_box.content.value = ""
+            self.year_box.content.value = ""
+            self.weight_first_qr_box.content.value = ""
+            self.weight_second_qr_box.content.value = ""
+            self.weight_third_qr_box.content.value = ""
+            self.weight_fourth_qr_box.content.value = ""
+            self.cb_menu_spec.content.value = ""
+            self.page.dialog = self.alter_dialog_add_new
+            self.alter_dialog_add_new.open = False
 
-        cursor.execute(insert_query_to_kpe_table)
-        print("Success")
-        self.page.dialog = self.alter_dialog_add_new
-        self.alter_dialog_add_new.open = False
-        self.page.update()
+            cursor = connection.cursor()
+            cursor.execute(
+                f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
+            user_id = cursor.fetchone()[0]
+
+            query_select = "SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = '{}'".format(user_id)
+            cursor.execute(query_select)
+            latest_version = cursor.fetchone()[0]
+
+            query_select = f"""
+                      SELECT
+                          ROW_NUMBER() OVER () AS "порядковый номер",
+                          ni.name AS indicator_name,
+                          um.type AS unit_of_measurement,
+                          kt.1st_quater_value,
+                          kt.2nd_quater_value,
+                          kt.3rd_quater_value,
+                          kt.4th_quater_value,
+                          kt.year,
+                          kt.KPE_weight_1,
+                          kt.KPE_weight_2,
+                          kt.KPE_weight_3,
+                          kt.KPE_weight_4
+                      FROM kpe_table AS kt
+                      JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
+                      JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
+                      WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно';
+                    """
+
+            cursor.execute(query_select)
+            results = cursor.fetchall()
+            query_result = results
+            data_rows = []
+
+            for row in query_result:
+                cells = [DataCell(Text(str(value))) for value in row]
+                data_row = DataRow(cells=cells)
+
+                # Create a Checkbox for the third column
+                checkbox_1 = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
+                cells.append(DataCell(checkbox_1))
+
+                data_rows.append(data_row)
+
+            # After you fetch new data from the database and create data_rows, update the DataTable like this:
+            self.data_table.rows = data_rows
+            self.page.update()
+        except:
+            self.show_block_dialog("При внесение новой записи произошла ошибка", "Ошибка")
 
     def close_new_kpe_dialog(self, e):
         self.page.dialog = self.alter_dialog_add_new
         self.alter_dialog_add_new.open = False
         self.page.update()
+
+    def open_are_you_sure_dialoge(self,e):
+        self.page.dialog = self.alter_dialog_are_you_sure
+        self.alter_dialog_are_you_sure.open = True
+        self.page.update()
+
+
+    def close_are_you_sure_dialoge(self,e):
+        self.page.dialog = self.alter_dialog_are_you_sure
+        self.alter_dialog_are_you_sure.open = False
+        self.page.update()
+
+
+    def insert_all_data_from_array(self, e):
+        try:
+            cursor = connection.cursor()
+            for queryes in self.sql_query:
+                cursor.execute(queryes)
+            self.sql_query.clear()
+            print(self.sql_query)
+            cursor.execute(
+                f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
+            user_id = cursor.fetchone()[0]
+
+            query_select = "SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = '{}'".format(user_id)
+            cursor.execute(query_select)
+            latest_version = cursor.fetchone()[0]
+
+            query_select = f"""
+                              SELECT
+                                  ROW_NUMBER() OVER () AS "порядковый номер",
+                                  ni.name AS indicator_name,
+                                  um.type AS unit_of_measurement,
+                                  kt.1st_quater_value,
+                                  kt.2nd_quater_value,
+                                  kt.3rd_quater_value,
+                                  kt.4th_quater_value,
+                                  kt.year,
+                                  kt.KPE_weight_1,
+                                  kt.KPE_weight_2,
+                                  kt.KPE_weight_3,
+                                  kt.KPE_weight_4
+                              FROM kpe_table AS kt
+                              JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
+                              JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
+                              WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно'
+                              ORDER BY kpe_id;
+                            """
+
+            cursor.execute(query_select)
+            results = cursor.fetchall()
+            query_result = results
+            data_rows = []
+
+            for row in query_result:
+                cells = [DataCell(Text(str(value))) for value in row]
+                data_row = DataRow(cells=cells)
+
+                # Create a Checkbox for the third column
+                checkbox_1 = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
+                cells.append(DataCell(checkbox_1))
+
+                data_rows.append(data_row)
+
+            # After you fetch new data from the database and create data_rows, update the DataTable like this:
+            self.data_table.rows = data_rows
+            self.page.dialog = self.alter_dialog_are_you_sure
+            self.alter_dialog_are_you_sure.open = False
+            self.page.update()
+            self.selected_rows.clear()
+        except:
+            self.show_block_dialog("При подтверждение изменённой вами информации произошла ошибка", "Ошибка")

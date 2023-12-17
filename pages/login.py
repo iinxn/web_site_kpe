@@ -85,21 +85,15 @@ class Login(Container):
                             self.login_box,
                             self.password_box,
                             Container(height=0),
-                            Container(
-                                alignment=alignment.center,
+                            ElevatedButton(
                                 bgcolor='#5B7553',
-                                height=40,
-                                border_radius=30,
-                                content=Text(
-                                    value='Войти'
-                                ),
+                                width=450,
+                                height=60,
+                                text='Войти',
+                                color='#F0F0F0',
                                 on_click=self.login
                             ),
                             self.error_box,
-
-                            # TextField(label="Логин", width=500,color='black'),
-                            # TextField(label="Пароль", password=True, can_reveal_password=True, width=500),
-                            # ElevatedButton(text='Войти', color='white', width=200, height=50)
                         ]
                     )
                 )
