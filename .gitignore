@@ -3,3 +3,13 @@
 /__pycache__/
 /templates/
 __pycache__
+pages/__pycache__/home.cpython-310.pyc
+pages/__pycache__/login.cpython-310.pyc
+pages/__pycache__/report.cpython-310.pyc
+pages/add_kpe/__pycache__/actual.cpython-310.pyc
+pages/add_kpe/__pycache__/edit_kpe.cpython-310.pyc
+pages/handbook/__pycache__/add.cpython-310.pyc
+pages/handbook/__pycache__/department.cpython-310.pyc
+pages/handbook/__pycache__/measurement_handbook.cpython-310.pyc
+pages/handbook/__pycache__/specialists_handbook.cpython-310.pyc
+service/__pycache__/connection.cpython-310.pyc
