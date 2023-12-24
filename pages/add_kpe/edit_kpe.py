@@ -863,7 +863,7 @@ class EditKPE(Container):
             self.weight_third_qr_box.content.value = ""
             self.weight_fourth_qr_box.content.value = ""
             self.cb_menu_spec.content.value = ""
-            self.show_block_dialog("Данные были успешно изменены", "Успешно")
+            self.show_block_dialog("Данные были успешно занесены в список изменений", "Успешно")
             self.page.update()
         except:
             self.show_block_dialog("При измение данных произошла ошибка", "Ошибка")
@@ -881,7 +881,7 @@ class EditKPE(Container):
             query_status = "ALTER TABLE kpe_table UPDATE status = 'Неактивно' WHERE kpe_id = {};".format(kpe_id)
             self.sql_query.append(query_status)
 
-        self.show_block_dialog("Запись была успешно удалена", "Успешно")
+        self.show_block_dialog("Запись была успешно занесены в список удаления", "Успешно")
         print(self.sql_query)
         self.page.update()
 
@@ -911,7 +911,7 @@ class EditKPE(Container):
             query_number_of_version = "ALTER TABLE kpe_table UPDATE number_of_version = '{}' WHERE kpe_id = {};".format(str(number_of_verison_plus), kpe_id)
             self.sql_query.append(query_number_of_version)
         print(self.sql_query)
-        self.show_block_dialog("Записи были оставлены", "Успешно")
+        self.show_block_dialog("Выбранные данные были успешно оставлены", "Успешно")
         self.page.update()
 
     def close_edit_dialog(self, e):

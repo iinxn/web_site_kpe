@@ -13,3 +13,6 @@ pages/handbook/__pycache__/department.cpython-310.pyc
 pages/handbook/__pycache__/measurement_handbook.cpython-310.pyc
 pages/handbook/__pycache__/specialists_handbook.cpython-310.pyc
 service/__pycache__/connection.cpython-310.pyc
+pages/settings/__pycache__/monitoring.cpython-310.pyc
+pages/settings/__pycache__/settings.cpython-310.pyc
+utils/__pycache__/colors.cpython-310.pyc
