@@ -1016,7 +1016,7 @@ class Report(Container):
             sheet.column_dimensions["F"].width = 25
             
             #Rows height
-            sheet.row_dimensions[1].height = 34
+            sheet.row_dimensions[1].height = 44
             sheet.row_dimensions[2].height = 68
             sheet.row_dimensions[3].height = 108
             
