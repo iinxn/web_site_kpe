@@ -53,6 +53,8 @@ class EditKPE(Container):
         self.dropdown_options_indicators_truncated = []
         dropdown_options_specialists_1 = []
         dropdown_options_specialists_2 = []
+        dropdown_options_units = []
+
         # * SPECIALIST ARRAY
         try:
             cursor = connection.cursor()
@@ -79,6 +81,17 @@ class EditKPE(Container):
         except Exception as e:
             print(f"Error fetching data from the database: {str(e)}")
 
+        # * SELECT UNITS NAME FROM MEASUREMNT TABLE
+        try:
+            cursor = connection.cursor()
+            cursor.execute('SELECT type FROM units_of_measurement ORDER BY measurement_id')
+            results = cursor.fetchall()
+
+            for row in results:
+                dropdown_options_units.append(dropdown.Option(row[0]))
+        except Exception as e:
+            print(f"Error fetching data from the database: {str(e)}")
+
         # *DROPDOWNS
         self.report_spec = Container(
             content=Dropdown(
@@ -93,6 +106,14 @@ class EditKPE(Container):
                 color='black',
                 options=dropdown_options_specialists_2
             )
+        )
+        self.units_menu_box = Container(
+            content=Dropdown(
+                hint_text='Выберите измерения',
+                color="black",
+                width=300,
+                options=dropdown_options_units,  # Set the options from the fetched data
+            ),
         )
         self.first_qr_box = Container(
             content=TextField(
@@ -240,7 +261,7 @@ class EditKPE(Container):
                     size=14,
                     color='black',
                 ),
-                width=100
+                width=400
             ),
         )
 
@@ -421,7 +442,17 @@ class EditKPE(Container):
         self.alter_dialog_no_in_list = AlertDialog(
             modal=True,
             title=Text("Добавление показателя в справочник"),
-            content=self.textfiled_input_new_indicator,
+            content=Container(
+                width=800,
+                content=Row(
+                    spacing='30',
+                    alignment='center',
+                    controls=[
+                        self.textfiled_input_new_indicator,
+                        self.units_menu_box
+                    ]
+                )
+            ),
             actions=[
                 TextButton("Добавить", on_click=self.alter_dialoge_input_data),
                 TextButton("Назад", on_click=self.close_dlg_new_indicator),
@@ -931,14 +962,39 @@ class EditKPE(Container):
     def alter_dialoge_input_data(self, e):
         try:
             cursor = connection.cursor()
+            cursor.execute(
+                f"SELECT measurement_id FROM units_of_measurement WHERE type = '{self.units_menu_box.content.value}'")
+            units_id = cursor.fetchone()[0]
             cursor.execute(f"SELECT max(indicators_id) FROM name_of_indicators;")
             max_id = cursor.fetchone()[0]
-            query = "INSERT INTO TABLE name_of_indicators (indicators_id, name) VALUES ({},'{}');".format(
-                int(max_id) + 1, self.textfiled_input_new_indicator.content.value)
+            query = "INSERT INTO TABLE name_of_indicators (indicators_id, measurement_id, name) VALUES ({}+1,{},'{}')".format(
+                int(max_id), units_id, self.textfiled_input_new_indicator.content.value)
             cursor.execute(query)
             print("Запись успешно добавлена в базу данных")
-            self.page.dialog = self.alter_dialog
-            self.alter_dialog.open = False
+            self.textfiled_input_new_indicator.content.value = ''
+            self.units_menu_box.content.value = ''
+            self.cb_menu_spec.content.value = ''
+
+            # clear indicators cb and add new data
+            self.dropdown_options_indicators_truncated.clear()
+            try:
+                cursor = connection.cursor()
+                cursor.execute('SELECT name FROM name_of_indicators ORDER BY indicators_id')
+                results = cursor.fetchall()
+                max_length = 40
+                for row in results:
+                    truncated_text = row[0] if len(row[0]) <= max_length else row[0][:max_length] + "..."
+                    self.dropdown_options_indicators_truncated.append(dropdown.Option(truncated_text))
+
+                # Add "Нет в списке" option at the end
+                self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
+            except Exception as e:
+                print(f"Error fetching data from the database: {str(e)}")
+
+            self.page.dialog = self.alter_dialog_no_in_list
+            self.alter_dialog_no_in_list.open = False
+            self.page.dialog = self.alter_dialog_add_new
+            self.alter_dialog_add_new.open = True
             self.page.update()
         except Exception as e:
             print(f"Ошибка при добавлении записи в базу данных: {str(e)}")

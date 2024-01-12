@@ -18,8 +18,9 @@ class Scheduled(Container):
         self.use_truncated_options = True
         self.dropdown_options_indicators = []
         self.dropdown_options_indicators_truncated = []
-        dropdown_options_units = []
         dropdown_options_specialists = []
+        dropdown_options_units = []
+        
         # *SELECT QUERY TO DIPLAY NAMES OF INDICATORS FROM DB
         try:
             cursor = connection.cursor()
@@ -197,7 +198,7 @@ class Scheduled(Container):
                     size=14,
                     color='black',
                 ),
-                width=100
+                width=400
             ),
         )
         # *DROPDOWN MENU
@@ -217,7 +218,7 @@ class Scheduled(Container):
             content=Dropdown(
                 hint_text='Выберите измерения',
                 color="black",
-                width=330,
+                width=300,
                 options=dropdown_options_units,  # Set the options from the fetched data
             ),
         )
@@ -233,7 +234,17 @@ class Scheduled(Container):
         self.alter_dialog = AlertDialog(
             modal=True,
             title=Text("Добавление показателя в справочник"),
-            content=self.textfiled_input_new_indicator,
+            content=Container(
+                width=800,
+                content = Row(
+                    spacing='30',
+                    alignment='center',
+                    controls=[
+                        self.textfiled_input_new_indicator,
+                        self.units_menu_box
+                    ]
+                )
+            ),
             actions=[
                 TextButton("Добавить", on_click=self.alter_dialoge_input_data),
                 TextButton("Назад", on_click=self.close_dlg),
@@ -498,12 +509,35 @@ class Scheduled(Container):
     def alter_dialoge_input_data(self, e):
         try:
             cursor = connection.cursor()
+            cursor.execute(f"SELECT measurement_id FROM units_of_measurement WHERE type = '{self.units_menu_box.content.value}'")
+            units_id = cursor.fetchone()[0]
             cursor.execute(f"SELECT max(indicators_id) FROM name_of_indicators;")
             max_id = cursor.fetchone()[0]
-            query = "INSERT INTO TABLE name_of_indicators (indicators_id, name) VALUES ({},'{}')".format(
-                int(max_id) + 1, self.textfiled_input_new_indicator.content.value)
+            query = "INSERT INTO TABLE name_of_indicators (indicators_id, measurement_id, name) VALUES ({}+1,{},'{}')".format(
+                int(max_id), units_id, self.textfiled_input_new_indicator.content.value)
             cursor.execute(query)
             print("Запись успешно добавлена в базу данных")
+            self.textfiled_input_new_indicator.content.value = ''
+            self.units_menu_box.content.value = ''
+            self.cb_menu_spec.content.value = ''
+            #clear indicators cb and add new data
+            self.dropdown_options_indicators_truncated.clear()
+            try:
+                cursor = connection.cursor()
+                cursor.execute('SELECT name FROM name_of_indicators ORDER BY indicators_id')
+                results = cursor.fetchall()
+                max_length = 40
+                for row in results:
+                    truncated_text = row[0] if len(row[0]) <= max_length else row[0][:max_length] + "..."
+                    self.dropdown_options_indicators.append(dropdown.Option(row[0]))
+                    self.dropdown_options_indicators_truncated.append(dropdown.Option(truncated_text))
+
+                # Add "Нет в списке" option at the end
+                self.dropdown_options_indicators.append(dropdown.Option('Нет в списке'))
+                self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
+            except Exception as e:
+                print(f"Error fetching data from the database: {str(e)}")
+
             self.page.dialog = self.alter_dialog
             self.alter_dialog.open = False
             self.page.update()

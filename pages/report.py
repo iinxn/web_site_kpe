@@ -664,12 +664,17 @@ class Report(Container):
     def form_report(self, e):
         selected_report_type = self.report_template.content.value
         if selected_report_type == "Карта КПЭ":
+            self.report_spec.content.value = ''
             self.open_dialog_kpe()
         # * РАСЧЕТ ПРЕМИИ
         elif selected_report_type == "Расчет премии":
+            self.report_spec.content.value = ''
+            self.report_quater.content.value = ''
             self.open_dialog()
         # *СВОДНЫЕ ДАННЫЕ ПО ИСПОЛНЕНИЮ
         elif selected_report_type == "Сводные данные по исполнению":
+            self.report_quater.content.value = ''
+            self.report_depart.content.value = ''
             self.open_dialog_summary()
         else:
             print("Вы не выбрали шаблон отчета")
