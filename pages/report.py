@@ -367,7 +367,7 @@ class Report(Container):
 
         query = f"""
           SELECT
-              ROW_NUMBER() OVER () AS "порядковый номер",
+              ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
               ni.name AS indicator_name,
               um.type AS unit_of_measurement,
               {quater_column},
@@ -447,7 +447,7 @@ class Report(Container):
 
         query = f"""
           SELECT
-              ROW_NUMBER() OVER () AS "порядковый номер",
+              ROW_NUMBER() OVER (ORDER BY kt.kpe_id) AS "порядковый номер",
               ni.name AS indicator_name,
               um.type AS unit_of_measurement,
               kt.1st_quater_value,

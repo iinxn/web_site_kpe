@@ -738,7 +738,7 @@ class EditKPE(Container):
 
         query_select = f"""
         SELECT
-            ROW_NUMBER() OVER () AS "порядковый номер",
+            ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
             ni.name AS indicator_name,
             um.type AS unit_of_measurement,
             kt.1st_quater_value,
@@ -901,11 +901,16 @@ class EditKPE(Container):
 
     def delete_name_in_table(self, e):
         cursor = connection.cursor()
-
         for selected_row in self.selected_rows:
-            sql_select = "SELECT kpe_id FROM kpe_table WHERE 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
-                selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8],
-                selected_row[9], selected_row[10], selected_row[11])
+            cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
+            user_id = cursor.fetchone()[0]
+            indicator = f"SELECT indicators_id FROM name_of_indicators WHERE name LIKE '{selected_row[1]}'"
+            # print(indicator)
+            cursor.execute(indicator)
+            indicator_id = cursor.fetchone()[0]
+            # print(indicator_id)
+            sql_select = "SELECT kpe_id FROM kpe_table WHERE kpe_user_id = {} AND kpe_indicators_id = {} AND 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
+                user_id, indicator_id, selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8], selected_row[9], selected_row[10], selected_row[11])
             cursor.execute(sql_select)
             kpe_id = cursor.fetchone()[0]
             print(kpe_id)
@@ -919,13 +924,17 @@ class EditKPE(Container):
     def stay_name_in_table(self, e):
         cursor = connection.cursor()
         for selected_row in self.selected_rows:
-            sql_select = "SELECT kpe_id FROM kpe_table WHERE 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
-                selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8],
-                selected_row[9], selected_row[10], selected_row[11])
+            cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
+            user_id = cursor.fetchone()[0]
+            indicator = f"SELECT indicators_id FROM name_of_indicators WHERE name LIKE '{selected_row[1]}'"
+            # print(indicator)
+            cursor.execute(indicator)
+            indicator_id = cursor.fetchone()[0]
+            # print(indicator_id)
+            sql_select = "SELECT kpe_id FROM kpe_table WHERE kpe_user_id = {} AND kpe_indicators_id = {} AND 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
+                user_id, indicator_id, selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8], selected_row[9], selected_row[10], selected_row[11])
             cursor.execute(sql_select)
             kpe_id = cursor.fetchone()[0]
-
-            date = datetime.datetime.now()
 
             cursor.execute(f"SELECT number_of_version FROM kpe_table WHERE kpe_id = {kpe_id};")
             max_version = cursor.fetchone()[0]
@@ -942,6 +951,8 @@ class EditKPE(Container):
             query_number_of_version = "ALTER TABLE kpe_table UPDATE number_of_version = '{}' WHERE kpe_id = {};".format(str(number_of_verison_plus), kpe_id)
             self.sql_query.append(query_number_of_version)
         print(self.sql_query)
+        for queryes in self.sql_query:
+          print(queryes)
         self.show_block_dialog("Выбранные данные были успешно оставлены", "Успешно")
         self.page.update()
 
@@ -1107,7 +1118,7 @@ class EditKPE(Container):
 
             query_select = f"""
                       SELECT
-                          ROW_NUMBER() OVER () AS "порядковый номер",
+                          ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
                           ni.name AS indicator_name,
                           um.type AS unit_of_measurement,
                           kt.1st_quater_value,
@@ -1122,7 +1133,8 @@ class EditKPE(Container):
                       FROM kpe_table AS kt
                       JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
                       JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
-                      WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно';
+                      WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно'
+                      ORDER BY kpe_id;
                     """
 
             cursor.execute(query_select)
@@ -1180,7 +1192,7 @@ class EditKPE(Container):
 
             query_select = f"""
                               SELECT
-                                  ROW_NUMBER() OVER () AS "порядковый номер",
+                                  ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
                                   ni.name AS indicator_name,
                                   um.type AS unit_of_measurement,
                                   kt.1st_quater_value,
