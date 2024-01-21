@@ -149,7 +149,7 @@ class Report(Container):
             actions_alignment=MainAxisAlignment.END,
             on_dismiss=lambda e: print("Modal dialog dismissed!"),
         )
-        self.alter_dialog_succes = AlertDialog(
+        self.alter_dialog_block = AlertDialog(
             modal=True,
             title=Text("Default Title"),
             content=Text("Default Content"),
@@ -309,16 +309,16 @@ class Report(Container):
         )
 
     # !FUCNTIONS
-    def show_success_dialog(self):
-        self.page.dialog = self.alter_dialog_succes
-        self.alter_dialog_succes.content = Text("Успешно")
-        self.alter_dialog_succes.title = Text("Отчет был выгружен в Excel")
-        self.alter_dialog_succes.open = True
+    def show_block_dialog(self, content_text, title_text):
+        self.page.dialog = self.alter_dialog_block
+        self.alter_dialog_block.content = Text(f"{content_text}")
+        self.alter_dialog_block.title = Text(f"{title_text}")
+        self.alter_dialog_block.open = True
         self.page.update()
 
     def close_dlg_ok(self, e):
-        self.page.dialog = self.alter_dialog_succes
-        self.alter_dialog_succes.open = False
+        self.page.dialog = self.alter_dialog_block
+        self.alter_dialog_block.open = False
         print("Вы закрыли модульное окно успеха")
         self.page.update()
 
@@ -329,6 +329,7 @@ class Report(Container):
         self.page.update()
 
     def alter_dialog_select_columns_data(self, e):
+      try:
         cursor = connection.cursor()
         cursor.execute(
             f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
@@ -360,10 +361,12 @@ class Report(Container):
             quater_column = "`3rd_quater_value`"
             weight_column = "KPE_weight_3"
             actual_quater_value = "3-й квартал"
-        else:
+        elif quater == "4 квартал":
             quater_column = "`4th_quater_value`"
             weight_column = "KPE_weight_4"
             actual_quater_value = "4-й квартал"
+        else:
+          self.show_block_dialog("Вы не выбрали номер квартала", "Ошибка")
 
         query = f"""
           SELECT
@@ -421,6 +424,13 @@ class Report(Container):
         self.page.dialog = self.alter_dialog
         self.alter_dialog.open = False
         self.page.update()
+      except:
+        # if self.report_spec.content.value == "":
+        #   self.show_block_dialog("Вы не выбрали специалиста", "Ошибка")
+        # if self.report_quater.content.value == "":
+        #   self.show_block_dialog("Вы не выбрали номер квартала", "Ошибка")
+        # if self.report_quater.content.value == "" and self.report_spec.content.value == "":
+        self.show_block_dialog("Вы не выбрали специалиста или номер квартала", "Ошибка")
 
     def close_dlg(self, e):
         self.page.dialog = self.alter_dialog
@@ -677,9 +687,10 @@ class Report(Container):
             self.report_depart.content.value = ''
             self.open_dialog_summary()
         else:
-            print("Вы не выбрали шаблон отчета")
+          self.show_block_dialog("Вы не выбрали шаблон отчета", "Ошибка")
 
     def export_report_to_excel(self, e):
+      try:
         global results
         global results_summary
         global results_premi
@@ -799,8 +810,7 @@ class Report(Container):
             if filename:
                 workbook.save(filename)
 
-            self.show_success_dialog()
-        
+            self.show_block_dialog("Отчет карта кпэ был выгружен в Excel", "Успешно")
         
 # * РАСЧЕТ ПРЕМИИ
         elif selected_report_type == "Расчет премии":
@@ -993,7 +1003,7 @@ class Report(Container):
             if filename:
                 workbook.save(filename)
 
-            self.show_success_dialog()
+            self.show_block_dialog("Отчет расчет приемии был выгружен в Excel", "Успешно")
 # *СВОДНЫЕ ДАННЫЕ ПО ИСПОЛНЕНИЮ
         elif selected_report_type == "Сводные данные по исполнению":
             workbook = openpyxl.Workbook()
@@ -1071,6 +1081,13 @@ class Report(Container):
             if filename:
                 workbook.save(filename)
 
-            self.show_success_dialog()
+            self.show_block_dialog("Отчет сводных данных был выгружен в Excel", "Успешно")
         else:
-            print("Вы не выбрали шаблон отчет")
+          self.show_block_dialog("Вы не выбрали шаблон отчета для экспорта", "Ошибка")
+      except TypeError:
+        self.show_block_dialog("Вы не сформировали карту КПЭ", "Ошибка")
+      except NameError:
+        if self.report_template.content.value == "Сводные данные по исполнению":
+          self.show_block_dialog("Вы не сформировали сводные данные по исполнению", "Ошибка")
+        else:
+          self.show_block_dialog("Вы не сформировали расчет премии", "Ошибка")

@@ -54,9 +54,8 @@ class Actual(Container):
                 # max_width=200,
                 width=400,
                 color="black",
-                options=self.dropdown_options_indicators_truncated,  # Set the initial options here
-                # on_change=self.added_new_to_indicators,
-                # on_focus=self.toggle_options
+                options=self.dropdown_options_indicators_truncated,
+                on_change=self.update_plan_values,
             ),
         )
         self.cb_quter_menu = Container(
@@ -69,7 +68,6 @@ class Actual(Container):
                     dropdown.Option('3-й квартал'),
                     dropdown.Option('4-й квартал')
                 ],
-                on_change=self.update_plan_values,
             ),
         )
         self.cb_specialist_menu = Container(
@@ -287,8 +285,8 @@ class Actual(Container):
                                         # specialist
                                         self.cb_specialist_menu,
                                         # Name of indicator
-                                        self.cb_menu_spec,
                                         self.cb_quter_menu,
+                                        self.cb_menu_spec,
                                     ]
                                 )
                             ),
@@ -495,7 +493,7 @@ class Actual(Container):
             self.show_success_dialog()
             print("Запись успешно добавлена в базу данных")
             self.cb_menu_spec.content.value = ''
-            self.cb_quter_menu.content.value = ''
+            # self.cb_quter_menu.content.value = ''
             self.plan_value_box.content.value = ''
             self.plan_weight_value_box.content.value = ''
             self.textfiled_input_actual_value.content.value = ''

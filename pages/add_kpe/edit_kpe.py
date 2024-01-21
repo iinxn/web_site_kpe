@@ -109,7 +109,7 @@ class EditKPE(Container):
         )
         self.units_menu_box = Container(
             content=Dropdown(
-                hint_text='Выберите измерения',
+                hint_text='ед. изм.',
                 color="black",
                 width=300,
                 options=dropdown_options_units,  # Set the options from the fetched data
@@ -726,6 +726,7 @@ class EditKPE(Container):
         self.page.update()
 
     def show_kpe_table(self, e):
+      try:
         global user_id
         cursor = connection.cursor()
         cursor.execute(
@@ -771,6 +772,8 @@ class EditKPE(Container):
             data_rows.append(data_row)
         self.data_table.rows = data_rows
         self.page.update()
+      except:
+        self.show_block_dialog("Вы не выбрали специалиста", "Ошибка")
 
     def show_alter_dialog_add_new_specialists(self, e):
         self.page.dialog = self.alter_dialog_add_new_specialists

@@ -207,7 +207,7 @@ class Scheduled(Container):
             content=Dropdown(
                 label='Выберите наименование показателя',
                 color="black",
-                width=330,
+                width=350,
                 # filled=True,
                 options=self.dropdown_options_indicators_truncated,
                 on_change=self.added_new_to_indicators,
@@ -216,7 +216,7 @@ class Scheduled(Container):
         )
         self.units_menu_box = Container(
             content=Dropdown(
-                hint_text='Выберите измерения',
+                hint_text='ед. изм.',
                 color="black",
                 width=300,
                 options=dropdown_options_units,  # Set the options from the fetched data
@@ -253,20 +253,6 @@ class Scheduled(Container):
             on_dismiss=lambda e: print("Modal dialog dismissed!"),
 
         )
-        self.alter_dialog_succes = AlertDialog(
-            modal=True,
-            title=Text("Default Title"),
-            content=Text("Default Content"),
-            actions=[TextButton("OK", on_click=self.close_dlg_ok)],
-            on_dismiss=lambda e: print("Modal dialog dismissed!")
-        )
-        self.alter_dialog_error = AlertDialog(
-            modal=True,
-            title=Text("Default Title"),
-            content=Text("Default Content"),
-            actions=[TextButton("OK", on_click=self.close_dlg_error)],
-            on_dismiss=lambda e: print("Modal dialog dismissed!")
-        )
         self.alter_dialog_block = AlertDialog(
             modal=True,
             title=Text("Default Title"),
@@ -274,6 +260,7 @@ class Scheduled(Container):
             actions=[TextButton("OK", on_click=self.close_dlg_block)],
             on_dismiss=lambda e: print("Modal dialog dismissed!")
         )
+        
 
         # *ELEVATED BUTTNON
         self.elevated_button_end = Container(
@@ -481,24 +468,8 @@ class Scheduled(Container):
     def end_input_data(self, e):
         self.show_blocked()
 
-    # TODO: These are a functions that i use for spawn alter dialog and insert data to name_of_indicator table in DB
-    # def toggle_options(self, e):
-    #   # Переключайтесь между сокращенными и полными опциями
-    #   if not self.use_truncated_options:
-    #       self.cb_menu_spec.content.options = self.dropdown_options_indicators
-    #       self.use_truncated_options = True
-
-    #   self.page.update()
-
     def added_new_to_indicators(self, e):
         selected_item = self.cb_menu_spec.content.value  # Получите выбранную опцию
-        # max_length = 20
-        # truncated_text = selected_item if len(selected_item) <= max_length else selected_item[:max_length] + "..."
-        # self.cb_menu_spec.content.options = self.dropdown_options_indicators_truncated  # Используйте сокращенные версии опций
-        # self.showing_full_options = True
-        # self.cb_menu_spec.content.value = truncated_text
-        # self.cb_menu_spec.content.disabled = True
-        # self.page.update()
         print(f"Selected item: {selected_item}")  # Отладочный вывод: Выведите выбранную опцию
         if selected_item == "Нет в списке":
             self.page.dialog = self.alter_dialog
@@ -550,44 +521,26 @@ class Scheduled(Container):
         self.page.update()
 
     # TODO: These two functions for succes message
-    def show_success_dialog(self):
-        self.page.dialog = self.alter_dialog_succes
-        self.alter_dialog_succes.content = Text("Успешно")
-        self.alter_dialog_succes.title = Text("Запись успешно добавлена в базу данных")
-        self.alter_dialog_succes.open = True
-        self.page.update()
 
-    def close_dlg_ok(self, e):
-        self.page.dialog = self.alter_dialog_succes
-        self.alter_dialog_succes.open = False
-        print("Вы закрыли модульное окно успеха")
+    def show_block_dialog(self, content_text, title_text):
+        self.page.dialog = self.alter_dialog_block
+        self.alter_dialog_block.content = Text(f"{content_text}")
+        self.alter_dialog_block.title = Text(f"{title_text}")
+        self.alter_dialog_block.open = True
         self.page.update()
-
-    # TODO: These two functions for error message
-    def show_error_dialog(self):
-        self.page.dialog = self.alter_dialog_error
-        self.alter_dialog_error.title = Text("Ошибка")
-        self.alter_dialog_error.content = Text("Ошибка при добавлении записи в базу данных")
-        self.alter_dialog_error.open = True
+    
+    def close_dlg_block(self, e):
+        self.page.dialog = self.alter_dialog_block
+        self.alter_dialog_block.open = False
+        print("Вы закрыли модульное окно блокировки")
         self.page.update()
-
-    def close_dlg_error(self, e):
-        self.page.dialog = self.alter_dialog_error
-        self.alter_dialog_error.open = False
-        print("Вы закрыли модульное окно ошибки")
-        self.page.update()
-
+    
     # TODO: These two functions for blocked message
     def show_blocked(self):
         # try:
 
         date = datetime.datetime.now()
         formatted_date = date.strftime("%d%m%Y")
-        self.page.dialog = self.alter_dialog_block
-        self.alter_dialog_block.title = Text("Карта КПЭ сформирована")
-        self.alter_dialog_block.content = Text("Вы завершили формирование карты КПЭ")
-        self.alter_dialog_block.open = True
-        self.page.update()
 
         # *FOR AUTO ID INCRIPTION
         cursor = connection.cursor()
@@ -698,19 +651,54 @@ class Scheduled(Container):
                     cursor.execute(insert_query_to_kpe_table)
                     print("Success")
                     self.specialist_menu_box.content.value = ""
+                    self.show_block_dialog("Вы завершили формирование карты КПЭ","Карта КПЭ сформирована")
                 else:
+                    self.show_block_dialog("Данные уже есть в карте КПЭ","Информация")
                     print("All data is in kpe_table")
-
-    def close_dlg_block(self, e):
-        self.page.dialog = self.alter_dialog_block
-        self.alter_dialog_block.open = False
-        print("Вы закрыли модульное окно блокировки")
-        self.page.update()
 
     # TODO: This is a insert function for add new data to planned table
     def insert_into_db(self, e):
         if self.end_edit == False:
             try:
+                field_names_mapping = {
+                'first_qr_box': '1 квартал',
+                'second_qr_box': '2 квартал',
+                'third_qr_box': '3 квартал',
+                'fourtht_qr_box': '4 квартал',
+                'year_box': 'год',
+                'weight_first_qr_box': 'Вес 1 квартал',
+                'weight_second_qr_box': 'Вес 2 квартал',
+                'weight_third_qr_box': 'Вес 3 квартал',
+                'weight_fourth_qr_box': 'Вес 4 квартал',
+                'cb_menu_spec': 'Наименование показателя',
+                'specialist_menu_box': 'Специалиста'
+                }
+
+                required_fields = [
+                    self.first_qr_box.content.value,
+                    self.second_qr_box.content.value,
+                    self.third_qr_box.content.value,
+                    self.fourtht_qr_box.content.value,
+                    self.year_box.content.value,
+                    self.weight_first_qr_box.content.value,
+                    self.weight_second_qr_box.content.value,
+                    self.weight_third_qr_box.content.value,
+                    self.weight_fourth_qr_box.content.value,
+                    self.cb_menu_spec.content.value,
+                    self.specialist_menu_box.content.value
+                ]
+
+                empty_fields = [field_names_mapping[field_name] for field_name, field_value in zip(
+                    ['first_qr_box', 'second_qr_box', 'third_qr_box', 'fourtht_qr_box', 'year_box',
+                    'weight_first_qr_box', 'weight_second_qr_box', 'weight_third_qr_box',
+                    'weight_fourth_qr_box', 'cb_menu_spec', 'specialist_menu_box'], required_fields)
+                    if not field_value]
+
+                if empty_fields:
+                    error_message = f"Вы не заполнили следующие поля:\n{', '.join(empty_fields)}"
+                    print(f"Error: {error_message}")
+                    self.show_block_dialog(error_message, "Ошибка")
+                    return
                 date = datetime.datetime.now()
                 formatted_date = date.strftime("%d%m%Y")
                 # print(formatted_date)
@@ -781,7 +769,7 @@ class Scheduled(Container):
 
                 cursor.execute(query)
                 connection.commit()
-                self.show_success_dialog()
+                self.show_block_dialog("Запись успешно добавлена в базу данных","Успешно")
                 self.first_qr_box.content.value = ''
                 self.second_qr_box.content.value = ''
                 self.third_qr_box.content.value = ''
@@ -798,7 +786,7 @@ class Scheduled(Container):
                 print("Запись успешно добавлена в базу данных")
 
             except Exception as e:
-                self.show_error_dialog()
+                self.show_block_dialog("Ошибка при добавлении записи в базу данных","Ошибка")
                 print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
         else:
             print("Blocked")
