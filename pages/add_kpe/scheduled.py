@@ -20,6 +20,10 @@ class Scheduled(Container):
         self.dropdown_options_indicators_truncated = []
         dropdown_options_specialists = []
         dropdown_options_units = []
+        self.kpe_weight_1 = []
+        self.kpe_weight_2 = []
+        self.kpe_weight_3 = []
+        self.kpe_weight_4 = []
         
         # *SELECT QUERY TO DIPLAY NAMES OF INDICATORS FROM DB
         try:
@@ -605,53 +609,78 @@ class Scheduled(Container):
 
                 if data:
                     plan_indicators_id, user_id, units_id, first_qr_value, second_qr_value, third_qr_value, fourth_qr_value, year, status, weight_1, weight_2, weight_3, weight_4 = data
+                    print(sum(self.kpe_weight_1))
+                    print(sum(self.kpe_weight_2))
+                    print(sum(self.kpe_weight_3))
+                    print(sum(self.kpe_weight_4))
+                    weight_1_below_100 = sum(self.kpe_weight_1) != 100
+                    weight_2_below_100 = sum(self.kpe_weight_2) != 100
+                    weight_3_below_100 = sum(self.kpe_weight_3) != 100
+                    weight_4_below_100 = sum(self.kpe_weight_4) != 100
 
-                    # Вставка данных в kpe_table
-                    insert_query_to_kpe_table = """
-                INSERT INTO
-                  kpe_table (
-                    kpe_id, 
-                    kpe_indicators_id, 
-                    kpe_user_id, 
-                    kpe_units_id, 
-                    1st_quater_value, 
-                    2nd_quater_value, 
-                    3rd_quater_value, 
-                    4th_quater_value, 
-                    year,
-                    status,
-                    KPE_weight_1, 
-                    KPE_weight_2, 
-                    KPE_weight_3, 
-                    KPE_weight_4, 
-                    number_of_version, 
-                    plan_number_of_version
-                    )
-                VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, '{}', {}, {}, {}, {}, '{}','{}');
-                """.format(
-                        int(max_kpe_id),
-                        int(plan_indicators_id),
-                        int(user_id),
-                        int(units_id),
-                        int(first_qr_value),
-                        int(second_qr_value),
-                        int(third_qr_value),
-                        int(fourth_qr_value),
-                        int(year),
-                        str(status),
-                        int(weight_1),
-                        int(weight_2),
-                        int(weight_3),
-                        int(weight_4),
-                        str(number_of_verison_plus),
-                        str(latest_version)
-                    )
-                    # print("SQL Query:", insert_query_to_kpe_table)
+                    if weight_1_below_100 or weight_2_below_100 or weight_3_below_100 or weight_4_below_100:
+                        messages = []
+                        if weight_1_below_100:
+                            messages.append("kpe_weight_1")
+                        if weight_2_below_100:
+                            messages.append("kpe_weight_2")
+                        if weight_3_below_100:
+                            messages.append("kpe_weight_3")
+                        if weight_4_below_100:
+                            messages.append("kpe_weight_4")
 
-                    cursor.execute(insert_query_to_kpe_table)
-                    print("Success")
-                    self.specialist_menu_box.content.value = ""
-                    self.show_block_dialog("Вы завершили формирование карты КПЭ","Карта КПЭ сформирована")
+                        print(f"At least one kpe_weight below 100 in: {', '.join(messages)}")
+                    else:
+                      # Вставка данных в kpe_table
+                      insert_query_to_kpe_table = """
+                      INSERT INTO
+                        kpe_table (
+                          kpe_id, 
+                          kpe_indicators_id, 
+                          kpe_user_id, 
+                          kpe_units_id, 
+                          1st_quater_value, 
+                          2nd_quater_value, 
+                          3rd_quater_value, 
+                          4th_quater_value, 
+                          year,
+                          status,
+                          KPE_weight_1, 
+                          KPE_weight_2, 
+                          KPE_weight_3, 
+                          KPE_weight_4, 
+                          number_of_version, 
+                          plan_number_of_version
+                          )
+                      VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, '{}', {}, {}, {}, {}, '{}','{}');
+                      """.format(
+                              int(max_kpe_id),
+                              int(plan_indicators_id),
+                              int(user_id),
+                              int(units_id),
+                              int(first_qr_value),
+                              int(second_qr_value),
+                              int(third_qr_value),
+                              int(fourth_qr_value),
+                              int(year),
+                              str(status),
+                              int(weight_1),
+                              int(weight_2),
+                              int(weight_3),
+                              int(weight_4),
+                              str(number_of_verison_plus),
+                              str(latest_version)
+                          )
+                      # print("SQL Query:", insert_query_to_kpe_table)
+
+                      cursor.execute(insert_query_to_kpe_table)
+                      self.kpe_weight_1.clear()
+                      self.kpe_weight_2.clear()
+                      self.kpe_weight_3.clear()
+                      self.kpe_weight_4.clear()
+                      print("Success")
+                      self.specialist_menu_box.content.value = ""
+                      self.show_block_dialog("Вы завершили формирование карты КПЭ","Карта КПЭ сформирована")
                 else:
                     self.show_block_dialog("Данные уже есть в карте КПЭ","Информация")
                     print("All data is in kpe_table")
@@ -745,6 +774,11 @@ class Scheduled(Container):
                     current_version = 0  # Start with version 1 if the format is unexpected or max_version is None
 
                 number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
+                
+                self.kpe_weight_1.append(int(self.weight_first_qr_box.content.value))
+                self.kpe_weight_2.append(int(self.weight_second_qr_box.content.value))
+                self.kpe_weight_3.append(int(self.weight_third_qr_box.content.value))
+                self.kpe_weight_4.append(int(self.weight_fourth_qr_box.content.value))
 
                 query = """
                   INSERT INTO planned_value (plan_id, plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, status, KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4, number_of_version)
@@ -784,6 +818,11 @@ class Scheduled(Container):
                 self.units_menu_box.content.value = ""
                 # self.specialist_menu_box.content.value = ""
                 print("Запись успешно добавлена в базу данных")
+                print(self.kpe_weight_1)
+                print(self.kpe_weight_2)
+                print(self.kpe_weight_3)
+                print(self.kpe_weight_4)
+                
 
             except Exception as e:
                 self.show_block_dialog("Ошибка при добавлении записи в базу данных","Ошибка")
