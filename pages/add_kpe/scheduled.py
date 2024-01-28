@@ -621,15 +621,15 @@ class Scheduled(Container):
                     if weight_1_below_100 or weight_2_below_100 or weight_3_below_100 or weight_4_below_100:
                         messages = []
                         if weight_1_below_100:
-                            messages.append("kpe_weight_1")
+                            messages.append("1 квартала")
                         if weight_2_below_100:
-                            messages.append("kpe_weight_2")
+                            messages.append("2 квартала")
                         if weight_3_below_100:
-                            messages.append("kpe_weight_3")
+                            messages.append("3 квартала")
                         if weight_4_below_100:
-                            messages.append("kpe_weight_4")
-
-                        print(f"At least one kpe_weight below 100 in: {', '.join(messages)}")
+                            messages.append("4 квартала")
+                        # self.show_block_dialog(f"Сумма Веса КПЭ {', '.join(messages)} меньше 100%","Предупреждение")
+                        self.show_block_dialog(f"Сумма Веса КПЭ\n1 квартала = {sum(self.kpe_weight_1)}%\n2 квартала = {sum(self.kpe_weight_2)}%\n3 квартала = {sum(self.kpe_weight_3)}%\n4 квартала = {sum(self.kpe_weight_4)}%\nСумма каждого квартала должна равняться 100%","Предупреждение")
                     else:
                       # Вставка данных в kpe_table
                       insert_query_to_kpe_table = """
@@ -674,16 +674,20 @@ class Scheduled(Container):
                       # print("SQL Query:", insert_query_to_kpe_table)
 
                       cursor.execute(insert_query_to_kpe_table)
-                      self.kpe_weight_1.clear()
-                      self.kpe_weight_2.clear()
-                      self.kpe_weight_3.clear()
-                      self.kpe_weight_4.clear()
                       print("Success")
                       self.specialist_menu_box.content.value = ""
                       self.show_block_dialog("Вы завершили формирование карты КПЭ","Карта КПЭ сформирована")
                 else:
                     self.show_block_dialog("Данные уже есть в карте КПЭ","Информация")
                     print("All data is in kpe_table")
+        if sum(self.kpe_weight_1) != 100 or sum(self.kpe_weight_2) != 100 or sum(self.kpe_weight_3) != 100 or sum(self.kpe_weight_4) != 100:
+            print("Sum of kpe_weight arrays is not equal to 100")
+        else:
+            # Clear the arrays if all records are successfully inserted
+            self.kpe_weight_1.clear()
+            self.kpe_weight_2.clear()
+            self.kpe_weight_3.clear()
+            self.kpe_weight_4.clear()
 
     # TODO: This is a insert function for add new data to planned table
     def insert_into_db(self, e):
