@@ -62,25 +62,6 @@ class Scheduled(Container):
             data_row_max_height=80,
             width=2000
         )
-        
-        
-        
-        # *SELECT QUERY TO DIPLAY NAMES OF INDICATORS FROM DB
-        try:
-            cursor = connection.cursor()
-            cursor.execute('SELECT name FROM name_of_indicators ORDER BY indicators_id')
-            results = cursor.fetchall()
-            max_length = 40
-            for row in results:
-                truncated_text = row[0] if len(row[0]) <= max_length else row[0][:max_length] + "..."
-                self.dropdown_options_indicators.append(dropdown.Option(row[0]))
-                self.dropdown_options_indicators_truncated.append(dropdown.Option(truncated_text))
-
-            # Add "Нет в списке" option at the end
-            self.dropdown_options_indicators.append(dropdown.Option('Нет в списке'))
-            self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
-        except Exception as e:
-            print(f"Error fetching data from the database: {str(e)}")
         # *SELECT QUERY TO DISPLAY UNITS FROM DB
         try:
             cursor = connection.cursor()
@@ -271,6 +252,7 @@ class Scheduled(Container):
                 color="black",
                 width=330,
                 options=dropdown_options_specialists,
+                on_change=self.show_indicators
             )
         )
         # *MODULE FORM
@@ -776,6 +758,32 @@ class Scheduled(Container):
             ]
         )
 
+    def show_indicators(self, e):
+      # *SELECT QUERY TO DIPLAY NAMES OF INDICATORS FROM DB
+      try:
+          self.dropdown_options_indicators.clear()
+          self.dropdown_options_indicators_truncated.clear()
+          cursor = connection.cursor()
+          sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.specialist_menu_box.content.value)
+          cursor.execute(sql_select_specialist_id)
+          specialist_id = cursor.fetchone()[0]
+          
+          cursor.execute('SELECT name FROM name_of_indicators WHERE specialist_id = {} ORDER BY indicators_id'.format(specialist_id))
+          results = cursor.fetchall()
+          max_length = 40
+          for row in results:
+              truncated_text = row[0] if len(row[0]) <= max_length else row[0][:max_length] + "..."
+              self.dropdown_options_indicators.append(dropdown.Option(row[0]))
+              self.dropdown_options_indicators_truncated.append(dropdown.Option(truncated_text))
+
+          # Add "Нет в списке" option at the end
+          self.dropdown_options_indicators.append(dropdown.Option('Нет в списке'))
+          self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
+          self.page.update()
+      except Exception as e:
+          print(f"Error fetching data from the database: {str(e)}")
+    
+    
     def end_input_data(self, e):
         self.show_blocked()
 
@@ -791,35 +799,23 @@ class Scheduled(Container):
     def alter_dialoge_input_data(self, e):
         try:
             cursor = connection.cursor()
+            sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.specialist_menu_box.content.value)
+            cursor.execute(sql_select_specialist_id)
+            specialist_id = cursor.fetchone()[0]
             cursor.execute(f"SELECT measurement_id FROM units_of_measurement WHERE type = '{self.units_menu_box.content.value}'")
             units_id = cursor.fetchone()[0]
             cursor.execute(f"SELECT max(indicators_id) FROM name_of_indicators;")
             max_id = cursor.fetchone()[0]
-            query = "INSERT INTO TABLE name_of_indicators (indicators_id, measurement_id, name) VALUES ({}+1,{},'{}')".format(
-                int(max_id), units_id, self.textfiled_input_new_indicator.content.value)
+            query = "INSERT INTO TABLE name_of_indicators (indicators_id, measurement_id, name, specialist_id) VALUES ({}+1,{},'{}',{})".format(
+                int(max_id), units_id, self.textfiled_input_new_indicator.content.value, specialist_id)
             cursor.execute(query)
             print("Запись успешно добавлена в базу данных")
+            self.cb_menu_spec.content.value = self.textfiled_input_new_indicator.content.value
             self.textfiled_input_new_indicator.content.value = ''
             self.units_menu_box.content.value = ''
-            self.cb_menu_spec.content.value = ''
             #clear indicators cb and add new data
             self.dropdown_options_indicators_truncated.clear()
-            try:
-                cursor = connection.cursor()
-                cursor.execute('SELECT name FROM name_of_indicators ORDER BY indicators_id')
-                results = cursor.fetchall()
-                max_length = 40
-                for row in results:
-                    truncated_text = row[0] if len(row[0]) <= max_length else row[0][:max_length] + "..."
-                    self.dropdown_options_indicators.append(dropdown.Option(row[0]))
-                    self.dropdown_options_indicators_truncated.append(dropdown.Option(truncated_text))
-
-                # Add "Нет в списке" option at the end
-                self.dropdown_options_indicators.append(dropdown.Option('Нет в списке'))
-                self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
-            except Exception as e:
-                print(f"Error fetching data from the database: {str(e)}")
-
+            self.show_indicators("")
             self.page.dialog = self.alter_dialog
             self.alter_dialog.open = False
             self.page.update()
@@ -1144,6 +1140,7 @@ class Scheduled(Container):
 
     def preview(self, e):
       try:
+        self.selected_rows.clear()
         cursor = connection.cursor()
         cursor.execute(
             f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.specialist_menu_box.content.value)}';")
@@ -1223,6 +1220,7 @@ class Scheduled(Container):
     def edit_preview_data(self, e):
       # try:
           selected_row = next(iter(self.selected_rows))
+          
           cursor = connection.cursor()
           sql_select = "SELECT plan_id FROM planned_value WHERE 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
               selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8],
@@ -1232,6 +1230,7 @@ class Scheduled(Container):
           if self.first_qr_box.content.value != selected_row[3]:
               query_1st_qr = "ALTER TABLE planned_value UPDATE 1st_quater_value = {} WHERE plan_id = {};".format(self.first_qr_box_2.content.value, plan_id)
               cursor.execute(query_1st_qr)
+              self.kpe_weight_1[int(plan_id)-1] = int(self.first_qr_box_2.content.value)
               self.page.dialog = self.alter_dialog_edit
               self.alter_dialog_edit.open = False
 
@@ -1262,24 +1261,28 @@ class Scheduled(Container):
           if self.weight_first_qr_box.content.value != selected_row[8]:
               query_weight_firts_qr = "ALTER TABLE planned_value UPDATE KPE_weight_1 = {} WHERE plan_id = {};".format(self.weight_first_qr_box_2.content.value, plan_id)
               cursor.execute(query_weight_firts_qr)
+              self.kpe_weight_1[int(selected_row[0])-1] = int(self.weight_first_qr_box_2.content.value)
               self.page.dialog = self.alter_dialog_edit
               self.alter_dialog_edit.open = False
 
           if self.weight_second_qr_box.content.value != selected_row[9]:
               query_weight_second_qr = "ALTER TABLE planned_value UPDATE KPE_weight_2 = {} WHERE plan_id = {};".format(self.weight_second_qr_box_2.content.value, plan_id)
               cursor.execute(query_weight_second_qr)
+              self.kpe_weight_2[int(selected_row[0])-1] = int(self.weight_second_qr_box_2.content.value)
               self.page.dialog = self.alter_dialog_edit
               self.alter_dialog_edit.open = False
 
           if self.weight_third_qr_box.content.value != selected_row[10]:
               query_weight_third_qr = "ALTER TABLE planned_value UPDATE KPE_weight_3 = {} WHERE plan_id = {};".format(self.weight_third_qr_box_2.content.value, plan_id)
               cursor.execute(query_weight_third_qr)
+              self.kpe_weight_3[int(selected_row[0])-1] = int(self.weight_third_qr_box_2.content.value)
               self.page.dialog = self.alter_dialog_edit
               self.alter_dialog_edit.open = False
 
           if self.weight_fourth_qr_box.content.value != selected_row[11]:
               query_weight_fourth_qr = "ALTER TABLE planned_value UPDATE KPE_weight_4 = {} WHERE plan_id = {};".format(self.weight_fourth_qr_box_2.content.value, plan_id)
               cursor.execute(query_weight_fourth_qr)
+              self.kpe_weight_4[int(selected_row[0])-1] = int(self.weight_fourth_qr_box_2.content.value)
               self.page.dialog = self.alter_dialog_edit
               self.alter_dialog_edit.open = False
           else:

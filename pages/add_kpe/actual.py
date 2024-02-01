@@ -19,22 +19,6 @@ class Actual(Container):
         self.dropdown_options_indicators_truncated = []
         dropdown_options_specialists = []
 
-        # *SELECT QUERY TO DIPLAY NAMES OF INDICATORS FROM DB
-        try:
-            cursor = connection.cursor()
-            cursor.execute('SELECT name FROM name_of_indicators ORDER BY indicators_id')
-            results = cursor.fetchall()
-            max_length = 40
-            for row in results:
-                truncated_text = row[0] if len(row[0]) <= max_length else row[0][:max_length] + "..."
-                self.dropdown_options_indicators.append(dropdown.Option(row[0]))
-                self.dropdown_options_indicators_truncated.append(dropdown.Option(truncated_text))
-
-            # Add "Нет в списке" option at the end
-            self.dropdown_options_indicators.append(dropdown.Option('Нет в списке'))
-        except Exception as e:
-            print(f"Error fetching data from the database: {str(e)}")
-
         # *SELECT QUERY TO DISPLAY SPECIALISTS FROM DB
         try:
             cursor = connection.cursor()
@@ -76,6 +60,7 @@ class Actual(Container):
                 color="black",
                 width=330,
                 options=dropdown_options_specialists,
+                on_change=self.show_indicators
             )
         )
 
@@ -373,6 +358,27 @@ class Actual(Container):
                 ),
             ]
         )
+    def show_indicators(self, e):
+      # *SELECT QUERY TO DIPLAY NAMES OF INDICATORS FROM DB
+      try:
+          self.dropdown_options_indicators.clear()
+          self.dropdown_options_indicators_truncated.clear()
+          cursor = connection.cursor()
+          sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.cb_specialist_menu.content.value)
+          cursor.execute(sql_select_specialist_id)
+          specialist_id = cursor.fetchone()[0]
+          
+          cursor.execute('SELECT name FROM name_of_indicators WHERE specialist_id = {} ORDER BY indicators_id'.format(specialist_id))
+          results = cursor.fetchall()
+          max_length = 40
+          for row in results:
+              truncated_text = row[0] if len(row[0]) <= max_length else row[0][:max_length] + "..."
+              self.dropdown_options_indicators.append(dropdown.Option(row[0]))
+              self.dropdown_options_indicators_truncated.append(dropdown.Option(truncated_text))
+          self.page.update()
+      except Exception as e:
+          print(f"Error fetching data from the database: {str(e)}")
+    
     def added_new_to_indicators(self, e):
         selected_item = self.cb_menu_spec.content.value
         print(f"Selected item: {selected_item}")  # Отладочный вывод: Выведите выбранную опцию

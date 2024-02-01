@@ -68,20 +68,6 @@ class EditKPE(Container):
         except Exception as e:
             print(f"Error fetching data from the database: {str(e)}")
 
-        # * NAME OF INDICATORA ARRAY
-        try:
-            cursor = connection.cursor()
-            cursor.execute('SELECT name FROM name_of_indicators ORDER BY indicators_id')
-            results = cursor.fetchall()
-            max_length = 40
-            for row in results:
-                truncated_text = row[0] if len(row[0]) <= max_length else row[0][:max_length] + "..."
-                self.dropdown_options_indicators_truncated.append(dropdown.Option(truncated_text))
-
-            self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
-        except Exception as e:
-            print(f"Error fetching data from the database: {str(e)}")
-
         # * SELECT UNITS NAME FROM MEASUREMNT TABLE
         try:
             cursor = connection.cursor()
@@ -98,7 +84,8 @@ class EditKPE(Container):
             content=Dropdown(
                 hint_text='Выберите специалиста',
                 color='black',
-                options=dropdown_options_specialists_1
+                options=dropdown_options_specialists_1,
+                on_change=self.show_indicators
             )
         )
         self.specialist_menu_box = Container(
@@ -712,6 +699,27 @@ class EditKPE(Container):
                 ),
             ]
         )
+    def show_indicators(self, e):
+      # *SELECT QUERY TO DIPLAY NAMES OF INDICATORS FROM DB
+      try:
+          self.dropdown_options_indicators_truncated.clear()
+          cursor = connection.cursor()
+          sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.report_spec.content.value)
+          cursor.execute(sql_select_specialist_id)
+          specialist_id = cursor.fetchone()[0]
+          
+          cursor.execute('SELECT name FROM name_of_indicators WHERE specialist_id = {} ORDER BY indicators_id'.format(specialist_id))
+          results = cursor.fetchall()
+          max_length = 40
+          for row in results:
+              truncated_text = row[0] if len(row[0]) <= max_length else row[0][:max_length] + "..."
+              self.dropdown_options_indicators_truncated.append(dropdown.Option(truncated_text))
+
+          # Add "Нет в списке" option at the end
+          self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
+          self.page.update()
+      except Exception as e:
+          print(f"Error fetching data from the database: {str(e)}")
 
     def show_block_dialog(self, content_text, title_text):
         self.page.dialog = self.alter_dialog_block
@@ -977,34 +985,23 @@ class EditKPE(Container):
     def alter_dialoge_input_data(self, e):
         try:
             cursor = connection.cursor()
-            cursor.execute(
-                f"SELECT measurement_id FROM units_of_measurement WHERE type = '{self.units_menu_box.content.value}'")
+            sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.report_spec.content.value)
+            cursor.execute(sql_select_specialist_id)
+            specialist_id = cursor.fetchone()[0]
+            cursor.execute(f"SELECT measurement_id FROM units_of_measurement WHERE type = '{self.units_menu_box.content.value}'")
             units_id = cursor.fetchone()[0]
             cursor.execute(f"SELECT max(indicators_id) FROM name_of_indicators;")
             max_id = cursor.fetchone()[0]
-            query = "INSERT INTO TABLE name_of_indicators (indicators_id, measurement_id, name) VALUES ({}+1,{},'{}')".format(
-                int(max_id), units_id, self.textfiled_input_new_indicator.content.value)
+            query = "INSERT INTO TABLE name_of_indicators (indicators_id, measurement_id, name, specialist_id) VALUES ({}+1,{},'{}',{})".format(
+                int(max_id), units_id, self.textfiled_input_new_indicator.content.value, specialist_id)
             cursor.execute(query)
             print("Запись успешно добавлена в базу данных")
+            self.cb_menu_spec.content.value = self.textfiled_input_new_indicator.content.value
             self.textfiled_input_new_indicator.content.value = ''
             self.units_menu_box.content.value = ''
-            self.cb_menu_spec.content.value = ''
-
-            # clear indicators cb and add new data
+            #clear indicators cb and add new data
             self.dropdown_options_indicators_truncated.clear()
-            try:
-                cursor = connection.cursor()
-                cursor.execute('SELECT name FROM name_of_indicators ORDER BY indicators_id')
-                results = cursor.fetchall()
-                max_length = 40
-                for row in results:
-                    truncated_text = row[0] if len(row[0]) <= max_length else row[0][:max_length] + "..."
-                    self.dropdown_options_indicators_truncated.append(dropdown.Option(truncated_text))
-
-                # Add "Нет в списке" option at the end
-                self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
-            except Exception as e:
-                print(f"Error fetching data from the database: {str(e)}")
+            self.show_indicators("")
 
             self.page.dialog = self.alter_dialog_no_in_list
             self.alter_dialog_no_in_list.open = False
