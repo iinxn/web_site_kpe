@@ -286,6 +286,7 @@ class Report(Container):
                                     sort_ascending=True,
                                     heading_row_color=colors.BLACK12,
                                     heading_row_height=100,
+                                    data_row_max_height=80,
                                     divider_thickness=0,
 
                                 ),

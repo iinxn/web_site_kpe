@@ -24,6 +24,46 @@ class Scheduled(Container):
         self.kpe_weight_2 = []
         self.kpe_weight_3 = []
         self.kpe_weight_4 = []
+        self.selected_rows = set()
+        
+        # * TABLE FOR PREVIEW THE DATA
+        self.data_table = DataTable(
+            columns=[
+                DataColumn(Text("п/п"), numeric=True),
+                DataColumn(Text("Наименование показателя")),
+                DataColumn(Text("Ед.изм.")),
+                DataColumn(Text("""1
+кв."""), numeric=True),
+                DataColumn(Text("""2
+кв."""), numeric=True),
+                DataColumn(Text("""3
+кв."""), numeric=True),
+                DataColumn(Text("""4
+кв."""), numeric=True),
+                DataColumn(Text("год")),
+                DataColumn(Text("""   Вес КПЭ 
+1 кв."""), numeric=True),
+                DataColumn(Text("""   Вес КПЭ 
+2 кв."""), numeric=True),
+                DataColumn(Text("""   Вес КПЭ 
+3 кв."""), numeric=True),
+                DataColumn(Text("""   Вес КПЭ 
+4 кв."""), numeric=True),
+                DataColumn(Text("Выбор")),
+            ],
+            rows=[],
+            border=border.all(1, "black"),
+            vertical_lines=border.BorderSide(1, "black"),
+            horizontal_lines=border.BorderSide(1, "black"),
+            sort_column_index=0,
+            sort_ascending=True,
+            heading_row_color=colors.BLACK12,
+            heading_row_height=100,
+            data_row_max_height=80,
+            width=2000
+        )
+        
+        
         
         # *SELECT QUERY TO DIPLAY NAMES OF INDICATORS FROM DB
         try:
@@ -211,11 +251,10 @@ class Scheduled(Container):
             content=Dropdown(
                 label='Выберите наименование показателя',
                 color="black",
-                width=350,
+                width=360,
                 # filled=True,
                 options=self.dropdown_options_indicators_truncated,
                 on_change=self.added_new_to_indicators,
-                # on_focus=self.toggle_options# Set the event handler
             ),
         )
         self.units_menu_box = Container(
@@ -264,7 +303,250 @@ class Scheduled(Container):
             actions=[TextButton("OK", on_click=self.close_dlg_block)],
             on_dismiss=lambda e: print("Modal dialog dismissed!")
         )
-        
+#!
+        self.alter_dialog_preview = AlertDialog(
+            modal=True,
+            title=Text(
+                value="Предпросмотр",
+                size=16,
+                color='#5B7553',
+                text_align='center',
+                weight='bold',
+                width=60,
+            ),
+            content=Column(
+                height=500,
+                width=2000,
+                controls=[
+                    # *3RD ROW
+                    Container(
+                      content=self.data_table,
+                      alignment=alignment.center,
+                      padding=padding.all(20),
+                    )
+                ]
+            ),
+
+            actions=[
+                TextButton("Редактировать", on_click=self.show_edit_preview_dialog),
+                TextButton("Удалить", on_click=self.delete_preview_data),
+                TextButton("Закрыть", on_click=self.close_preview_dialog),
+            ],
+            actions_alignment=MainAxisAlignment.END,
+            on_dismiss=lambda e: print("Modal dialog dismissed!"),
+        )
+#!
+        self.first_qr_box_2 = Container(
+          content=TextField(
+              hint_style=TextStyle(
+                  size=12, color='#858796'
+              ),
+              label='1 квартал',
+              cursor_color='#858796',
+              text_style=TextStyle(
+                  size=14,
+                  color='#5B7553',
+              ),
+              width=100
+          ),
+        )
+        self.second_qr_box_2 = Container(
+          content=TextField(
+              hint_style=TextStyle(
+                  size=12, color='#858796'
+              ),
+              label='2 квартал',
+              cursor_color='#858796',
+              text_style=TextStyle(
+                  size=14,
+                  color='#5B7553',
+              ),
+              width=100
+          ),
+        )
+        self.third_qr_box_2 = Container(
+          content=TextField(
+              hint_style=TextStyle(
+                  size=12, color='#858796'
+              ),
+              label='3 квартал',
+              cursor_color='#858796',
+              text_style=TextStyle(
+                  size=14,
+                  color='#5B7553',
+              ),
+              width=100
+          ),
+        )
+        self.fourtht_qr_box_2 = Container(
+          content=TextField(
+              hint_style=TextStyle(
+                  size=12, color='#858796'
+              ),
+              label='4 квартал',
+              cursor_color='#858796',
+              text_style=TextStyle(
+                  size=14,
+                  color='#5B7553',
+              ),
+              width=100
+          ),
+        )
+        self.year_box_2 = Container(
+          content=TextField(
+              hint_style=TextStyle(
+                  size=12, color='#858796'
+              ),
+              label='год',
+              cursor_color='#858796',
+              text_style=TextStyle(
+                  size=14,
+                  color='#5B7553',
+              ),
+              width=100
+          ),
+        )
+
+
+        self.weight_first_qr_box_2 = Container(
+            content=TextField(
+                hint_style=TextStyle(
+                    size=12, color='#858796'
+                ),
+                label='1 квартал',
+                cursor_color='#858796',
+                text_style=TextStyle(
+                    size=14,
+                    color='#5B7553',
+                ),
+                width=100
+            ),
+        )
+        self.weight_second_qr_box_2 = Container(
+            content=TextField(
+                hint_style=TextStyle(
+                    size=12, color='#858796'
+                ),
+                label='2 квартал',
+                cursor_color='#858796',
+                text_style=TextStyle(
+                    size=14,
+                    color='#5B7553',
+                ),
+                width=100
+            ),
+        )
+        self.weight_third_qr_box_2 = Container(
+            content=TextField(
+                hint_style=TextStyle(
+                    size=12, color='#858796'
+                ),
+                label='3 квартал',
+                cursor_color='#858796',
+                text_style=TextStyle(
+                    size=14,
+                    color='#5B7553',
+                ),
+                width=100
+            ),
+        )
+        self.weight_fourth_qr_box_2 = Container(
+            content=TextField(
+                hint_style=TextStyle(
+                    size=12, color='#858796'
+                ),
+                label='4 квартал',
+                cursor_color='#858796',
+                text_style=TextStyle(
+                    size=14,
+                    color='#5B7553',
+                ),
+                width=100
+            ),
+        )
+
+        self.alter_dialog_edit = AlertDialog(
+            modal=True,
+            title=Text(
+                value="Изменить строку",
+                size=16,
+                color='#5B7553',
+                text_align='center',
+                weight='bold',
+                width=60
+            ),
+            content=Column(
+                height=300,
+                width=800,
+                controls=[
+                    Container(
+                        Row(
+                            spacing='50',
+                            alignment='center',
+                            controls=[
+
+                            ]
+                        )
+                    ),
+                    Container(height=50),
+                    # *2ND ROW
+                    Container(
+                        Row(
+                            spacing='50',
+                            alignment='center',
+                            controls=[
+                                Text(
+                                    value='План',
+                                    size=16,
+                                    color='#5B7553',
+                                    text_align='center',
+                                    weight='bold',
+                                    width=60
+                                ),
+                                # *Name of indicator
+                                self.first_qr_box_2,
+                                self.second_qr_box_2,
+                                self.third_qr_box_2,
+                                self.fourtht_qr_box_2,
+                                self.year_box_2,
+                            ]
+                        )
+                    ),
+                    Container(height=50),
+                    # *3RD ROW
+                    Container(
+                        Row(
+                            spacing='50',
+                            alignment='center',
+                            controls=[
+                                Text(
+                                    value='Вес КПЭ',
+                                    size=16,
+                                    color='#5B7553',
+                                    text_align='center',
+                                    weight='bold',
+                                ),
+                                # * THERE ARE MY NEXT BOXES FOR MY 3RD ROW
+                                self.weight_first_qr_box_2,
+                                self.weight_second_qr_box_2,
+                                self.weight_third_qr_box_2,
+                                self.weight_fourth_qr_box_2,
+                            ]
+                        )
+                    ),
+                ]
+            ),
+
+            actions=[
+                TextButton("Изменить", on_click=self.edit_preview_data),
+                TextButton("Закрыть", on_click=self.close_edit_dialog),
+            ],
+            actions_alignment=MainAxisAlignment.END,
+            on_dismiss=lambda e: print("Modal dialog dismissed!"),
+        )
+
+
+
 
         # *ELEVATED BUTTNON
         self.elevated_button_end = Container(
@@ -347,7 +629,36 @@ class Scheduled(Container):
                                             ),
                                         ),
                                         Container(
-                                            self.elevated_button_end,
+                                            # width=200,
+                                            content=Row(
+                                                spacing=10,
+                                                controls=[
+                                                    Container(
+                                                      content=ElevatedButton(
+                                                          bgcolor=white,
+                                                          width=170,
+                                                          height=70,
+                                                          content=Column(
+                                                              horizontal_alignment='center',
+                                                              alignment='center',
+                                                              controls=[
+                                                                  Container(
+                                                                      Text(
+                                                                          value='Предпросмотр КПЭ',
+                                                                          size=16,
+                                                                          color='#5B7553',
+                                                                          text_align='center',
+                                                                          weight='bold',
+                                                                      )
+                                                                  )
+                                                              ]
+                                                          ),
+                                                          on_click=self.preview,
+                                                      ),
+                                                    ),
+                                                    self.elevated_button_end,
+                                                ]
+                                            )
                                         ),
                                     ]
                                 )
@@ -374,12 +685,8 @@ class Scheduled(Container):
                                     # horizontal_alignment='center',
                                     controls=[
                                         # Container(width=90)
-                                        self.cb_menu_spec,
-                                        # *dropdown 1st row
-                                        # specialist
                                         self.specialist_menu_box,
-                                        # *NAME OF INDICATOR
-                                        # self.units_menu_box,
+                                        self.cb_menu_spec,
                                     ]
                                 )
                             ),
@@ -603,6 +910,7 @@ class Scheduled(Container):
                 number_of_version = '{}'
                 AND plan_indicators_id = {}
                 AND plan_user_id = {}
+                AND status = 'Активно'
             """.format(latest_version, indicator_id, specialist_id)
                 cursor.execute(query_select)
                 data = cursor.fetchone()
@@ -833,3 +1141,187 @@ class Scheduled(Container):
                 print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
         else:
             print("Blocked")
+
+    def preview(self, e):
+      try:
+        cursor = connection.cursor()
+        cursor.execute(
+            f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.specialist_menu_box.content.value)}';")
+        user_id = cursor.fetchone()[0]
+
+        query_select = "SELECT MAX(number_of_version) FROM planned_value WHERE plan_user_id = '{}';".format(user_id)
+        cursor.execute(query_select)
+        latest_version = cursor.fetchone()[0]
+
+        query_select = f"""
+        SELECT
+            ROW_NUMBER() OVER (ORDER BY plan_id) AS "порядковый номер",
+            ni.name AS indicator_name,
+            um.type AS unit_of_measurement,
+            pn.1st_quater_value,
+            pn.2nd_quater_value,
+            pn.3rd_quater_value,
+            pn.4th_quater_value,
+            pn.year,
+            pn.KPE_weight_1,
+            pn.KPE_weight_2,
+            pn.KPE_weight_3,
+            pn.KPE_weight_4
+        FROM planned_value AS pn
+        JOIN name_of_indicators AS ni ON pn.plan_indicators_id = ni.indicators_id
+        JOIN units_of_measurement AS um ON pn.plan_units_id = um.measurement_id
+        WHERE pn.plan_user_id = {user_id} AND pn.number_of_version = '{latest_version}' AND pn.status = 'Активно'
+        ORDER BY plan_id;
+      """
+        cursor.execute(query_select)
+        results = cursor.fetchall()
+        query_result = results
+        data_rows = []
+        for row in query_result:
+            cells = [DataCell(Text(str(value))) for value in row]
+            data_row = DataRow(cells=cells)
+            checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
+            cells.append(DataCell(checkbox))
+            data_rows.append(data_row)
+        self.data_table.rows = data_rows
+        self.page.dialog = self.alter_dialog_preview
+        self.alter_dialog_preview.open = True
+        self.page.update()
+      except:
+        self.show_block_dialog("Вы не выбрали специалиста","Ошибка")
+
+    def close_preview_dialog(self, e):
+      self.page.dialog = self.alter_dialog_preview
+      self.alter_dialog_preview.open = False
+      print("Вы закрыли модульное окно блокировки")
+      self.page.update()
+
+    def toggle_row_selection(self, e, row):
+        # Toggle the row's selection when the Checkbox value changes
+        if row not in self.selected_rows:
+            self.selected_rows.add(row)
+            print("yes")
+        else:
+            self.selected_rows.remove(row)
+            print("no")
+
+    def show_edit_preview_dialog(self, e):
+        selected_row = next(iter(self.selected_rows))
+        self.first_qr_box_2.content.value = selected_row[3]
+        self.second_qr_box_2.content.value = selected_row[4]
+        self.third_qr_box_2.content.value = selected_row[5]
+        self.fourtht_qr_box_2.content.value = selected_row[6]
+        self.year_box_2.content.value = selected_row[7]
+        self.weight_first_qr_box_2.content.value = selected_row[8]
+        self.weight_second_qr_box_2.content.value = selected_row[9]
+        self.weight_third_qr_box_2.content.value = selected_row[10]
+        self.weight_fourth_qr_box_2.content.value = selected_row[11]
+        self.page.dialog = self.alter_dialog_edit
+        self.alter_dialog_edit.open = True
+        self.page.update()
+
+    def edit_preview_data(self, e):
+      # try:
+          selected_row = next(iter(self.selected_rows))
+          cursor = connection.cursor()
+          sql_select = "SELECT plan_id FROM planned_value WHERE 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
+              selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8],
+              selected_row[9], selected_row[10], selected_row[11])
+          cursor.execute(sql_select)
+          plan_id = cursor.fetchone()[0]
+          if self.first_qr_box.content.value != selected_row[3]:
+              query_1st_qr = "ALTER TABLE planned_value UPDATE 1st_quater_value = {} WHERE plan_id = {};".format(self.first_qr_box_2.content.value, plan_id)
+              cursor.execute(query_1st_qr)
+              self.page.dialog = self.alter_dialog_edit
+              self.alter_dialog_edit.open = False
+
+          if self.second_qr_box.content.value != selected_row[4]:
+              query_2nd_qr = "ALTER TABLE planned_value UPDATE 2nd_quater_value = {} WHERE plan_id = {};".format(self.second_qr_box_2.content.value, plan_id)
+              cursor.execute(query_2nd_qr)
+              self.page.dialog = self.alter_dialog_edit
+              self.alter_dialog_edit.open = False
+
+          if self.third_qr_box.content.value != selected_row[5]:
+              query_3rd_qr = "ALTER TABLE planned_value UPDATE 3rd_quater_value = {} WHERE plan_id = {};".format(self.third_qr_box_2.content.value, plan_id)
+              cursor.execute(query_3rd_qr)
+              self.page.dialog = self.alter_dialog_edit
+              self.alter_dialog_edit.open = False
+
+          if self.fourtht_qr_box.content.value != selected_row[6]:
+              query_4th_qr = "ALTER TABLE planned_value UPDATE 4th_quater_value = {} WHERE plan_id = {};".format(self.fourtht_qr_box_2.content.value, plan_id)
+              cursor.execute(query_4th_qr)
+              self.page.dialog = self.alter_dialog_edit
+              self.alter_dialog_edit.open = False
+
+          if self.year_box.content.value != selected_row[7]:
+              query_year = "ALTER TABLE planned_value UPDATE year = {} WHERE plan_id = {};".format(self.year_box_2.content.value, plan_id)
+              cursor.execute(query_year)
+              self.page.dialog = self.alter_dialog_edit
+              self.alter_dialog_edit.open = False
+
+          if self.weight_first_qr_box.content.value != selected_row[8]:
+              query_weight_firts_qr = "ALTER TABLE planned_value UPDATE KPE_weight_1 = {} WHERE plan_id = {};".format(self.weight_first_qr_box_2.content.value, plan_id)
+              cursor.execute(query_weight_firts_qr)
+              self.page.dialog = self.alter_dialog_edit
+              self.alter_dialog_edit.open = False
+
+          if self.weight_second_qr_box.content.value != selected_row[9]:
+              query_weight_second_qr = "ALTER TABLE planned_value UPDATE KPE_weight_2 = {} WHERE plan_id = {};".format(self.weight_second_qr_box_2.content.value, plan_id)
+              cursor.execute(query_weight_second_qr)
+              self.page.dialog = self.alter_dialog_edit
+              self.alter_dialog_edit.open = False
+
+          if self.weight_third_qr_box.content.value != selected_row[10]:
+              query_weight_third_qr = "ALTER TABLE planned_value UPDATE KPE_weight_3 = {} WHERE plan_id = {};".format(self.weight_third_qr_box_2.content.value, plan_id)
+              cursor.execute(query_weight_third_qr)
+              self.page.dialog = self.alter_dialog_edit
+              self.alter_dialog_edit.open = False
+
+          if self.weight_fourth_qr_box.content.value != selected_row[11]:
+              query_weight_fourth_qr = "ALTER TABLE planned_value UPDATE KPE_weight_4 = {} WHERE plan_id = {};".format(self.weight_fourth_qr_box_2.content.value, plan_id)
+              cursor.execute(query_weight_fourth_qr)
+              self.page.dialog = self.alter_dialog_edit
+              self.alter_dialog_edit.open = False
+          else:
+              print("Поля никак не изменились")
+          self.first_qr_box.content.value = ""
+          self.second_qr_box.content.value = ""
+          self.third_qr_box.content.value = ""
+          self.fourtht_qr_box.content.value = ""
+          self.year_box.content.value = ""
+          self.weight_first_qr_box.content.value = ""
+          self.weight_second_qr_box.content.value = ""
+          self.weight_third_qr_box.content.value = ""
+          self.weight_fourth_qr_box.content.value = ""
+          self.cb_menu_spec.content.value = ""
+          self.show_block_dialog("Данные были успешно занесены в список изменений", "Успешно")
+          self.page.update()
+      # except:
+      #     self.show_block_dialog("При измение данных произошла ошибка", "Ошибка")
+
+    def close_edit_dialog(self, e):
+      self.page.dialog = self.alter_dialog_edit
+      self.alter_dialog_edit.open = False
+      self.page.update()
+
+    def delete_preview_data(self, e):
+      cursor = connection.cursor()
+      for selected_row in self.selected_rows:
+          cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.specialist_menu_box.content.value)}';")
+          user_id = cursor.fetchone()[0]
+          indicator = f"SELECT indicators_id FROM name_of_indicators WHERE name LIKE '{selected_row[1]}'"
+          # print(indicator)
+          cursor.execute(indicator)
+          indicator_id = cursor.fetchone()[0]
+          # print(indicator_id)
+          sql_select = "SELECT plan_id FROM planned_value WHERE plan_user_id = {} AND plan_indicators_id = {} AND 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
+              user_id, indicator_id, selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8], selected_row[9], selected_row[10], selected_row[11])
+          cursor.execute(sql_select)
+          kpe_id = cursor.fetchone()[0]
+          print(kpe_id)
+          query_status = "ALTER TABLE planned_value UPDATE status = 'Неактивно' WHERE plan_id = {};".format(kpe_id)
+          cursor.execute(query_status)
+      self.page.dialog = self.alter_dialog_preview
+      self.alter_dialog_preview.open = False
+      self.show_block_dialog("Запись была успешно удалена", "Успешно")
+      self.page.update()
