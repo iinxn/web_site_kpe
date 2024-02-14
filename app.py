@@ -55,4 +55,4 @@ class Main(UserControl):
 
 
 # app(target=Main, assets_dir='assets')
-app(target=Main, assets_dir='assets', view=WEB_BROWSER)
+app(target=Main, assets_dir='assets', view=WEB_BROWSER, port=8550)
