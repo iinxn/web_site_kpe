@@ -9,7 +9,7 @@ class MeasurementHandbook(Container):
         self.page.theme_mode = ThemeMode.LIGHT
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = tea_green
+        self.bgcolor = '#FFFFFF'
         
         
         self.selected_rows = set()
@@ -83,7 +83,7 @@ class MeasurementHandbook(Container):
         )
 
 # *HEADER
-        self.content = Column(
+        self.content = ListView(
             spacing=0,
             controls=[
                 Container(

@@ -9,7 +9,7 @@ class Add(Container):
         self.page.theme_mode = ThemeMode.LIGHT  # Set the theme mode
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = tea_green
+        self.bgcolor = '#FFFFFF'
         
         dropdown_options_specialists = []
         self.selected_rows = set()
@@ -34,7 +34,8 @@ class Add(Container):
             sort_ascending=True,
             heading_row_color=colors.BLACK12,
             heading_row_height=100,
-            width=2000
+            width=2000,
+            data_row_max_height=100
         )
         
         dropdown_options_units_1 = []
@@ -141,8 +142,9 @@ class Add(Container):
         )
 
 #*HEADER
-        self.content = Column(
+        self.content = ListView(
             spacing=0,
+            # scroll=ScrollMode.ADAPTIVE,
             controls=[
                 Container(
                     width=8000,

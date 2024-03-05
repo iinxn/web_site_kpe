@@ -12,7 +12,7 @@ class Report(Container):
         self.page.theme_mode = ThemeMode.LIGHT
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = tea_green
+        self.bgcolor = '#FFFFFF'
 
         dropdown_options_specialists = []
         dropdown_options_departments = []
@@ -158,7 +158,7 @@ class Report(Container):
         )
 
         # !UI
-        self.content = Column(
+        self.content = ListView(
             spacing=0,
             controls=[
                 Container(

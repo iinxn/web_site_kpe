@@ -9,7 +9,7 @@ class Users(Container):
         self.page.theme_mode = ThemeMode.LIGHT
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = tea_green
+        self.bgcolor = '#FFFFFF'
 
 #*BOX FOR TEXTFIELD
         self.user_login = Container(
@@ -93,7 +93,7 @@ class Users(Container):
 
 
 # *HEADER
-        self.content = Column(
+        self.content = ListView(
             spacing=0,
             controls=[
                 Container(

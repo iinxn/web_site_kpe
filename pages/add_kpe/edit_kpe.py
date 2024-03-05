@@ -11,7 +11,7 @@ class EditKPE(Container):
         self.page.theme_mode = ThemeMode.LIGHT
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = tea_green
+        self.bgcolor = '#FFFFFF'
 
         self.selected_rows = set()
         self.sql_query = []
@@ -47,7 +47,7 @@ class EditKPE(Container):
             sort_ascending=True,
             heading_row_color=colors.BLACK12,
             heading_row_height=100,
-            data_row_max_height=80,
+            data_row_max_height=100,
             width=2000
         )
 
@@ -451,7 +451,7 @@ class EditKPE(Container):
         )
 
         # *HEADER
-        self.content = Column(
+        self.content = ListView(
             spacing=0,
             controls=[
                 Container(

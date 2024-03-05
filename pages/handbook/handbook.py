@@ -6,7 +6,7 @@ class Handbook(Container):
         super().__init__()
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = tea_green
+        self.bgcolor = '#FFFFFF'
         
         #header
         self.content = Column(

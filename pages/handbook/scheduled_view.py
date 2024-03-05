@@ -9,7 +9,7 @@ class ScheduledView(Container):
         self.page.theme_mode = ThemeMode.LIGHT
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = tea_green
+        self.bgcolor = '#FFFFFF'
 #*BOX FOR TEXTFIELD
         self.textfield_box = Container(
           content=TextField(
@@ -26,9 +26,8 @@ class ScheduledView(Container):
         )
 
 # *HEADER
-        self.content = Column(
+        self.content = ListView(
             spacing=0,
-            scroll=True,
             controls=[
                 Container(
                     width=8000,
@@ -160,7 +159,8 @@ class ScheduledView(Container):
                                     sort_ascending=True,
                                     heading_row_color=colors.BLACK12,
                                     heading_row_height=100,
-                                    # width=1000
+                                    data_row_max_height=100,
+                                    width=2000
                                 ),
                                 alignment=alignment.center,
                                 padding=padding.all(20),
