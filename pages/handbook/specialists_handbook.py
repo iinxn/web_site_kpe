@@ -149,6 +149,13 @@ class SpecialistsHandbook(Container):
             actions_alignment=MainAxisAlignment.END,
             on_dismiss=lambda e: print("Modal dialog dismissed!"),
         )
+        self.alter_dialog_error = AlertDialog(
+            modal=True,
+            title=Text("Default Title"),
+            content=Text("Default Content"),
+            actions=[TextButton("OK", on_click=self.close_dlg_error)],
+            on_dismiss=lambda e: print("Modal dialog dismissed!")
+        )
 
 
 
@@ -326,6 +333,18 @@ class SpecialistsHandbook(Container):
         # After you fetch new data from the database and create data_rows, update the DataTable like this:
         self.data_table.rows = data_rows
 
+    def show_error_dialog(self,text):
+        self.page.dialog = self.alter_dialog_error
+        self.alter_dialog_error.title = Text(value="Ошибка", color="black")
+        self.alter_dialog_error.content = Text(value=text, color="black")
+        self.alter_dialog_error.open = True
+        self.page.update() 
+    def close_dlg_error(self, e):
+      self.page.dialog = self.alter_dialog_error
+      self.alter_dialog_error.open = False
+      print("It's closed successfully")
+      self.page.update()
+    
     def show_alter_dialog(self, e):
       self.page.dialog = self.alter_dialog_add_new_specialists
       self.page.dialog.open = True
@@ -344,19 +363,19 @@ class SpecialistsHandbook(Container):
     
     
     def show_edit_dialog(self):
-        if not self.selected_rows:
-            self.show_error_dialog("Вы не выбрали строку в таблице")
-        else:
-            selected_row = next(iter(self.selected_rows))
-            self.cb_menu_department.content.value = selected_row[1]
-            self.specialist_new_full_name.content.value = selected_row[2]
-            self.specialist_new_position.content.value = selected_row[3]
-            self.cb_menu_status.content.value = selected_row[4]
-            self.edit_name.content.value = selected_row[5]
-            # self.dp_units.content.value = selected_row[1]
-            self.page.dialog = self.alter_dialog_edit
-            self.alter_dialog_edit.open = True
-            self.page.update()
+      if not self.selected_rows:
+          self.show_error_dialog("Вы не выбрали строку в таблице")
+      else:
+          selected_row = next(iter(self.selected_rows))
+          self.cb_menu_department.content.value = selected_row[1]
+          self.specialist_new_full_name.content.value = selected_row[2]
+          self.specialist_new_position.content.value = selected_row[3]
+          self.cb_menu_status.content.value = selected_row[4]
+          self.edit_name.content.value = selected_row[5]
+          # self.dp_units.content.value = selected_row[1]
+          self.page.dialog = self.alter_dialog_edit
+          self.alter_dialog_edit.open = True
+          self.page.update()
 
 
     def edit_name_in_table(self, e):

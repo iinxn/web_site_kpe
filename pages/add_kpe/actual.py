@@ -144,25 +144,11 @@ class Actual(Container):
             actions_alignment=MainAxisAlignment.END,
             on_dismiss=lambda e: print("Modal dialog dismissed!"),
         )
-        self.alter_dialog_succes = AlertDialog(
+        self.alter_dialog_block = AlertDialog(
             modal=True,
             title=Text("Default Title"),
             content=Text("Default Content"),
-            actions=[TextButton("OK", on_click=self.close_dlg_ok)],
-            on_dismiss=lambda e: print("Modal dialog dismissed!")
-        )
-        self.alter_dialog_error = AlertDialog(
-            modal=True,
-            title=Text("Default Title"),
-            content=Text("Default Content"),
-            actions=[TextButton("OK", on_click=self.close_dlg_error)],
-            on_dismiss=lambda e: print("Modal dialog dismissed!")
-        )
-        self.alter_dialog_not_find = AlertDialog(
-            modal=True,
-            title=Text("Default Title"),
-            content=Text("Default Content"),
-            actions=[TextButton("OK", on_click=self.close_dlg_not_find)],
+            actions=[TextButton("OK", on_click=self.close_dlg_block)],
             on_dismiss=lambda e: print("Modal dialog dismissed!")
         )
 
@@ -359,25 +345,41 @@ class Actual(Container):
             ]
         )
     def show_indicators(self, e):
-      # *SELECT QUERY TO DIPLAY NAMES OF INDICATORS FROM DB
-      try:
-          self.dropdown_options_indicators.clear()
-          self.dropdown_options_indicators_truncated.clear()
-          cursor = connection.cursor()
-          sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.cb_specialist_menu.content.value)
-          cursor.execute(sql_select_specialist_id)
-          specialist_id = cursor.fetchone()[0]
-          
-          cursor.execute('SELECT name FROM name_of_indicators WHERE specialist_id = {} ORDER BY indicators_id'.format(specialist_id))
-          results = cursor.fetchall()
-          max_length = 40
-          for row in results:
-              truncated_text = row[0] if len(row[0]) <= max_length else row[0][:max_length] + "..."
-              self.dropdown_options_indicators.append(dropdown.Option(row[0]))
-              self.dropdown_options_indicators_truncated.append(dropdown.Option(truncated_text))
-          self.page.update()
-      except Exception as e:
-          print(f"Error fetching data from the database: {str(e)}")
+        try:
+            self.dropdown_options_indicators.clear()
+            self.dropdown_options_indicators_truncated.clear()
+            cursor = connection.cursor()
+            sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.cb_specialist_menu.content.value)
+            cursor.execute(sql_select_specialist_id)
+            specialist_id = cursor.fetchone()[0]
+
+            cursor.execute('SELECT indicators_id, name FROM name_of_indicators WHERE specialist_id = {} ORDER BY indicators_id'.format(specialist_id))
+            results = cursor.fetchall()
+
+            max_length = 50
+            for row in results:
+                indicator_id = row[0]
+                name = row[1]
+
+                # Truncate the name if it exceeds the maximum length
+                if len(name) > max_length:
+                    first_part = name[:max_length // 2].rstrip()
+                    second_part = name[-max_length // 2:].lstrip()
+                    truncated_text = f"{first_part}...{second_part}"
+                else:
+                    truncated_text = name
+
+                # Add both the indicator_id and the truncated name to the dropdown options
+                self.dropdown_options_indicators.append(dropdown.Option(indicator_id, name))
+                self.dropdown_options_indicators_truncated.append(dropdown.Option(indicator_id, truncated_text))
+
+            # Add "Нет в списке" option at the end
+            self.dropdown_options_indicators.append(dropdown.Option('Нет в списке'))
+            self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
+
+            self.page.update()
+        except Exception as e:
+            print(f"Error fetching data from the database: {str(e)}")
     
     def added_new_to_indicators(self, e):
         selected_item = self.cb_menu_spec.content.value
@@ -410,44 +412,16 @@ class Actual(Container):
         self.page.update()
 
     # TODO: These two functions for success message
-    def show_success_dialog(self):
-        self.page.dialog = self.alter_dialog_succes
-        self.alter_dialog_succes.content = Text("Успешно")
-        self.alter_dialog_succes.title = Text("Запись успешно добавлена в базу данных")
-        self.alter_dialog_succes.open = True
+    def show_block_dialog(self, content_text, title_text):
+        self.page.dialog = self.alter_dialog_block
+        self.alter_dialog_block.content = Text(f"{content_text}")
+        self.alter_dialog_block.title = Text(f"{title_text}")
+        self.alter_dialog_block.open = True
         self.page.update()
 
-    def close_dlg_ok(self, e):
-        self.page.dialog = self.alter_dialog_succes
-        self.alter_dialog_succes.open = False
-        print("It's closed successfully")
-        self.page.update()
-
-    # TODO: These two functions for error message
-    def show_error_dialog(self):
-        self.page.dialog = self.alter_dialog_error
-        self.alter_dialog_error.title = Text("Ошибка")
-        self.alter_dialog_error.content = Text("Ошибка при добавлении записи в базу данных")
-        self.alter_dialog_error.open = True
-        self.page.update()
-
-    def close_dlg_error(self, e):
-        self.page.dialog = self.alter_dialog_error
-        self.alter_dialog_error.open = False
-        print("It's closed successfully")
-        self.page.update()
-
-    # TODO: These two functions for can't find message
-    def show_not_find_dialog(self):
-        self.page.dialog = self.alter_dialog_not_find
-        self.alter_dialog_not_find.title = Text("Не найдено")
-        self.alter_dialog_not_find.content = Text("Запись не найдена в базе данных")
-        self.alter_dialog_not_find.open = True
-        self.page.update()
-
-    def close_dlg_not_find(self, e):
-        self.page.dialog = self.alter_dialog_not_find
-        self.alter_dialog_not_find.open = False
+    def close_dlg_block(self, e):
+        self.page.dialog = self.alter_dialog_block
+        self.alter_dialog_block.open = False
         print("It's closed successfully")
         self.page.update()
 
@@ -464,12 +438,7 @@ class Actual(Container):
             # *FOR AUTO ID INCRIPTION
             cursor.execute(f"SELECT max(actual_id) FROM actual_value;")
             max_id = cursor.fetchone()[0]
-
-            selected_indicator = self.cb_menu_spec.content.value
-            selected_indicator_without_dots = selected_indicator.replace(".", "")
-            cursor.execute(
-                f"SELECT indicators_id FROM name_of_indicators WHERE name LIKE '{selected_indicator_without_dots}%'")
-            indicator_id = cursor.fetchone()[0]
+            indicator_id = self.cb_menu_spec.content.value
 
             cursor.execute(
                 f"SELECT MAX(number_of_version) FROM actual_value WHERE actual_indicators_id = {int(indicator_id)} AND actual_users_id = {int(user_id)}")
@@ -496,7 +465,7 @@ class Actual(Container):
             )
             cursor.execute(query)
             connection.commit()
-            self.show_success_dialog()
+            self.show_block_dialog("Запись успешно добавлена в базу данных", "Успешно")
             print("Запись успешно добавлена в базу данных")
             self.cb_menu_spec.content.value = ''
             # self.cb_quter_menu.content.value = ''
@@ -506,7 +475,7 @@ class Actual(Container):
             self.page.update()
 
         except Exception as e:
-            self.show_error_dialog()
+            self.show_block_dialog("Ошибка при добавлении записи в базу данных","Ошибка")
             print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
 
     def update_plan_values(self, e):
@@ -517,13 +486,7 @@ class Actual(Container):
             cursor.execute(
                 f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.cb_specialist_menu.content.value)}';")
             user_id = cursor.fetchone()[0]
-            # * Get the plan_indicators_id based on the selected indicator name
-            selected_indicator = self.cb_menu_spec.content.value
-            selected_indicator_without_dots = selected_indicator.replace(".", "")
-            cursor.execute(
-                f"SELECT indicators_id FROM name_of_indicators WHERE name LIKE '{selected_indicator_without_dots}%'")
-
-            indicator_id = cursor.fetchone()[0]
+            indicator_id = self.cb_menu_spec.content.value
 
             cursor.execute(
                 f"SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_indicators_id = {int(indicator_id)} AND kpe_user_id = {int(user_id)}")
@@ -555,21 +518,15 @@ class Actual(Container):
                 # Update the plan value and weight value boxes
                 self.plan_value_box.content.value = str(plan_value)
                 self.plan_weight_value_box.content.value = str(weight_value)
-                # print(query)
-                # print(result)
-                # print(plan_value, weight_value)
-                # self.cb_menu_spec.content.disabled = False
                 self.page.update()
 
             else:
-                # self.use_truncated_options = False
-                # self.cb_menu_spec.content.option = self.dropdown_options_indicators
-                self.show_not_find_dialog()
+                self.show_block_dialog("Запись не найдена в базе данных","Не найдено")
                 print("Запись не найдена в базе данных")
                 self.page.update()
 
         except Exception as e:
-            self.show_error_dialog()
+            self.show_block_dialog("Ошибка при добавлении записи в базу данных","Ошибка")
             print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
 
     def filter_dropdown_options(self, e):
@@ -592,5 +549,3 @@ class Actual(Container):
 
         self.cb_menu_spec.content.options = filtered_options
         self.page.update()
-
-

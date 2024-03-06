@@ -700,26 +700,41 @@ class EditKPE(Container):
             ]
         )
     def show_indicators(self, e):
-      # *SELECT QUERY TO DIPLAY NAMES OF INDICATORS FROM DB
-      try:
-          self.dropdown_options_indicators_truncated.clear()
-          cursor = connection.cursor()
-          sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.report_spec.content.value)
-          cursor.execute(sql_select_specialist_id)
-          specialist_id = cursor.fetchone()[0]
-          
-          cursor.execute('SELECT name FROM name_of_indicators WHERE specialist_id = {} ORDER BY indicators_id'.format(specialist_id))
-          results = cursor.fetchall()
-          max_length = 40
-          for row in results:
-              truncated_text = row[0] if len(row[0]) <= max_length else row[0][:max_length] + "..."
-              self.dropdown_options_indicators_truncated.append(dropdown.Option(truncated_text))
+        try:
+            self.dropdown_options_indicators.clear()
+            self.dropdown_options_indicators_truncated.clear()
+            cursor = connection.cursor()
+            sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.specialist_menu_box.content.value)
+            cursor.execute(sql_select_specialist_id)
+            specialist_id = cursor.fetchone()[0]
 
-          # Add "Нет в списке" option at the end
-          self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
-          self.page.update()
-      except Exception as e:
-          print(f"Error fetching data from the database: {str(e)}")
+            cursor.execute('SELECT indicators_id, name FROM name_of_indicators WHERE specialist_id = {} ORDER BY indicators_id'.format(specialist_id))
+            results = cursor.fetchall()
+
+            max_length = 50
+            for row in results:
+                indicator_id = row[0]
+                name = row[1]
+
+                # Truncate the name if it exceeds the maximum length
+                if len(name) > max_length:
+                    first_part = name[:max_length // 2].rstrip()
+                    second_part = name[-max_length // 2:].lstrip()
+                    truncated_text = f"{first_part}...{second_part}"
+                else:
+                    truncated_text = name
+
+                # Add both the indicator_id and the truncated name to the dropdown options
+                self.dropdown_options_indicators.append(dropdown.Option(indicator_id, name))
+                self.dropdown_options_indicators_truncated.append(dropdown.Option(indicator_id, truncated_text))
+
+            # Add "Нет в списке" option at the end
+            self.dropdown_options_indicators.append(dropdown.Option('Нет в списке'))
+            self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
+
+            self.page.update()
+        except Exception as e:
+            print(f"Error fetching data from the database: {str(e)}")
 
     def show_block_dialog(self, content_text, title_text):
         self.page.dialog = self.alter_dialog_block
@@ -735,54 +750,54 @@ class EditKPE(Container):
         self.page.update()
 
     def show_kpe_table(self, e):
-      try:
-        global user_id
-        cursor = connection.cursor()
-        cursor.execute(
-            f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
-        user_id = cursor.fetchone()[0]
+        try:
+            global user_id
+            cursor = connection.cursor()
+            cursor.execute(
+                f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
+            user_id = cursor.fetchone()[0]
 
-        query_select = "SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = '{}';".format(user_id)
-        cursor.execute(query_select)
-        latest_version = cursor.fetchone()[0]
+            query_select = "SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = '{}';".format(user_id)
+            cursor.execute(query_select)
+            latest_version = cursor.fetchone()[0]
 
-        query_select = f"""
-        SELECT
-            ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
-            ni.name AS indicator_name,
-            um.type AS unit_of_measurement,
-            kt.1st_quater_value,
-            kt.2nd_quater_value,
-            kt.3rd_quater_value,
-            kt.4th_quater_value,
-            kt.year,
-            kt.KPE_weight_1,
-            kt.KPE_weight_2,
-            kt.KPE_weight_3,
-            kt.KPE_weight_4
-        FROM kpe_table AS kt
-        JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
-        JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
-        WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно'
-        ORDER BY kpe_id;
-      """
+            query_select = f"""
+                SELECT
+                    ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
+                    ni.name AS indicator_name,
+                    um.type AS unit_of_measurement,
+                    kt.1st_quater_value,
+                    kt.2nd_quater_value,
+                    kt.3rd_quater_value,
+                    kt.4th_quater_value,
+                    kt.year,
+                    kt.KPE_weight_1,
+                    kt.KPE_weight_2,
+                    kt.KPE_weight_3,
+                    kt.KPE_weight_4
+                FROM kpe_table AS kt
+                JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
+                JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
+                WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно'
+                ORDER BY kpe_id;
+            """
 
-        cursor.execute(query_select)
-        results = cursor.fetchall()
-        query_result = results
-        data_rows = []
+            cursor.execute(query_select)
+            results = cursor.fetchall()
+            query_result = results
+            data_rows = []
 
-        for row in query_result:
-            cells = [DataCell(Text(str(value))) for value in row]
-            data_row = DataRow(cells=cells)
+            for row in query_result:
+                cells = [DataCell(Text(str(value))) for value in row]
+                data_row = DataRow(cells=cells)
 
-            checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-            cells.append(DataCell(checkbox))
-            data_rows.append(data_row)
-        self.data_table.rows = data_rows
-        self.page.update()
-      except:
-        self.show_block_dialog("Вы не выбрали специалиста", "Ошибка")
+                checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
+                cells.append(DataCell(checkbox))
+                data_rows.append(data_row)
+            self.data_table.rows = data_rows
+            self.page.update()
+        except:
+            self.show_block_dialog("Вы не выбрали специалиста", "Ошибка")
 
     def show_alter_dialog_add_new_specialists(self, e):
         self.page.dialog = self.alter_dialog_add_new_specialists
@@ -916,7 +931,7 @@ class EditKPE(Container):
         for selected_row in self.selected_rows:
             cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
             user_id = cursor.fetchone()[0]
-            indicator = f"SELECT indicators_id FROM name_of_indicators WHERE name LIKE '{selected_row[1]}'"
+            indicator = f"SELECT indicators_id FROM name_of_indicators WHERE name = '{selected_row[1]}' AND specialist_id = '{user_id}'"
             # print(indicator)
             cursor.execute(indicator)
             indicator_id = cursor.fetchone()[0]
@@ -938,7 +953,7 @@ class EditKPE(Container):
         for selected_row in self.selected_rows:
             cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
             user_id = cursor.fetchone()[0]
-            indicator = f"SELECT indicators_id FROM name_of_indicators WHERE name LIKE '{selected_row[1]}'"
+            indicator = f"SELECT indicators_id FROM name_of_indicators WHERE name = '{selected_row[1]}' AND specialist_id = '{user_id}'"
             # print(indicator)
             cursor.execute(indicator)
             indicator_id = cursor.fetchone()[0]
@@ -964,7 +979,7 @@ class EditKPE(Container):
             self.sql_query.append(query_number_of_version)
         print(self.sql_query)
         for queryes in self.sql_query:
-          print(queryes)
+            print(queryes)
         self.show_block_dialog("Выбранные данные были успешно оставлены", "Успешно")
         self.page.update()
 
@@ -1036,10 +1051,7 @@ class EditKPE(Container):
             # *FOR INDICATORS
             selected_indicator = self.cb_menu_spec.content.value
             cursor = connection.cursor()
-            selected_indicator_without_dots = selected_indicator.replace(".", "")
-            cursor.execute(
-                f"SELECT indicators_id FROM name_of_indicators WHERE name LIKE '{selected_indicator_without_dots}%';")
-            indicator_id = cursor.fetchone()[0]
+            indicator_id = int(self.cb_menu_spec.content.value)
             # *FRO PLAN_INDICATOR
             cursor = connection.cursor()
             cursor.execute(f"SELECT kpe_indicators_id FROM kpe_table;")
@@ -1049,7 +1061,7 @@ class EditKPE(Container):
             cursor = connection.cursor()
             # cursor.execute(f"SELECT measurement_id FROM name_of_indicators WHERE name LIKE '{selected_indicator}%'")
             cursor.execute(
-                f"SELECT measurement_id FROM name_of_indicators WHERE name LIKE '{selected_indicator_without_dots}%';")
+                f"SELECT measurement_id FROM name_of_indicators WHERE indicators_id = {indicator_id};")
             units_id = cursor.fetchone()[0]
 
             # Определите максимальное значение номера версии для данного показателя
@@ -1058,25 +1070,25 @@ class EditKPE(Container):
             max_version = cursor.fetchone()[0]
             print(max_version)
             insert_query_to_kpe_table = """
-          INSERT INTO kpe_table (
-              kpe_id, 
-              kpe_indicators_id, 
-              kpe_user_id, 
-              kpe_units_id, 
-              1st_quater_value, 
-              2nd_quater_value, 
-              3rd_quater_value, 
-              4th_quater_value, 
-              year,
-              status,
-              KPE_weight_1, 
-              KPE_weight_2, 
-              KPE_weight_3, 
-              KPE_weight_4, 
-              number_of_version
-              )
-          VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, '{}', {}, {}, {}, {}, '{}');
-          """.format(
+            INSERT INTO kpe_table (
+                kpe_id, 
+                kpe_indicators_id, 
+                kpe_user_id, 
+                kpe_units_id, 
+                1st_quater_value, 
+                2nd_quater_value, 
+                3rd_quater_value, 
+                4th_quater_value, 
+                year,
+                status,
+                KPE_weight_1, 
+                KPE_weight_2, 
+                KPE_weight_3, 
+                KPE_weight_4, 
+                number_of_version
+                )
+            VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, '{}', {}, {}, {}, {}, '{}');
+            """.format(
                 int(max_kpe_id + 1),
                 int(indicator_id),
                 int(user_id),
@@ -1118,25 +1130,25 @@ class EditKPE(Container):
             latest_version = cursor.fetchone()[0]
 
             query_select = f"""
-                      SELECT
-                          ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
-                          ni.name AS indicator_name,
-                          um.type AS unit_of_measurement,
-                          kt.1st_quater_value,
-                          kt.2nd_quater_value,
-                          kt.3rd_quater_value,
-                          kt.4th_quater_value,
-                          kt.year,
-                          kt.KPE_weight_1,
-                          kt.KPE_weight_2,
-                          kt.KPE_weight_3,
-                          kt.KPE_weight_4
-                      FROM kpe_table AS kt
-                      JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
-                      JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
-                      WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно'
-                      ORDER BY kpe_id;
-                    """
+                SELECT
+                    ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
+                    ni.name AS indicator_name,
+                    um.type AS unit_of_measurement,
+                    kt.1st_quater_value,
+                    kt.2nd_quater_value,
+                    kt.3rd_quater_value,
+                    kt.4th_quater_value,
+                    kt.year,
+                    kt.KPE_weight_1,
+                    kt.KPE_weight_2,
+                    kt.KPE_weight_3,
+                    kt.KPE_weight_4
+                FROM kpe_table AS kt
+                JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
+                JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
+                WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно'
+                ORDER BY kpe_id;
+            """
 
             cursor.execute(query_select)
             results = cursor.fetchall()
@@ -1192,25 +1204,25 @@ class EditKPE(Container):
             latest_version = cursor.fetchone()[0]
 
             query_select = f"""
-                              SELECT
-                                  ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
-                                  ni.name AS indicator_name,
-                                  um.type AS unit_of_measurement,
-                                  kt.1st_quater_value,
-                                  kt.2nd_quater_value,
-                                  kt.3rd_quater_value,
-                                  kt.4th_quater_value,
-                                  kt.year,
-                                  kt.KPE_weight_1,
-                                  kt.KPE_weight_2,
-                                  kt.KPE_weight_3,
-                                  kt.KPE_weight_4
-                              FROM kpe_table AS kt
-                              JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
-                              JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
-                              WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно'
-                              ORDER BY kpe_id;
-                            """
+                SELECT
+                    ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
+                    ni.name AS indicator_name,
+                    um.type AS unit_of_measurement,
+                    kt.1st_quater_value,
+                    kt.2nd_quater_value,
+                    kt.3rd_quater_value,
+                    kt.4th_quater_value,
+                    kt.year,
+                    kt.KPE_weight_1,
+                    kt.KPE_weight_2,
+                    kt.KPE_weight_3,
+                    kt.KPE_weight_4
+                FROM kpe_table AS kt
+                JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
+                JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
+                WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно'
+                ORDER BY kpe_id;
+            """
 
             cursor.execute(query_select)
             results = cursor.fetchall()

@@ -232,7 +232,7 @@ class Scheduled(Container):
             content=Dropdown(
                 label='Выберите наименование показателя',
                 color="black",
-                width=360,
+                width=450,
                 # filled=True,
                 options=self.dropdown_options_indicators_truncated,
                 on_change=self.added_new_to_indicators,
@@ -296,7 +296,7 @@ class Scheduled(Container):
                 weight='bold',
                 width=60,
             ),
-            content=Column(
+            content=ListView(
                 height=500,
                 width=2000,
                 controls=[
@@ -759,7 +759,6 @@ class Scheduled(Container):
         )
 
     def show_indicators(self, e):
-      # *SELECT QUERY TO DIPLAY NAMES OF INDICATORS FROM DB
         try:
             self.dropdown_options_indicators.clear()
             self.dropdown_options_indicators_truncated.clear()
@@ -767,22 +766,35 @@ class Scheduled(Container):
             sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.specialist_menu_box.content.value)
             cursor.execute(sql_select_specialist_id)
             specialist_id = cursor.fetchone()[0]
-            
-            cursor.execute('SELECT name FROM name_of_indicators WHERE specialist_id = {} ORDER BY indicators_id'.format(specialist_id))
+
+            cursor.execute('SELECT indicators_id, name FROM name_of_indicators WHERE specialist_id = {} ORDER BY indicators_id'.format(specialist_id))
             results = cursor.fetchall()
-            max_length = 40
+
+            max_length = 50
             for row in results:
-                truncated_text = row[0] if len(row[0]) <= max_length else row[0][:max_length] + "..."
-                self.dropdown_options_indicators.append(dropdown.Option(row[0]))
-                self.z.append(dropdown.Option(truncated_text))
+                indicator_id = row[0]
+                name = row[1]
+
+                # Truncate the name if it exceeds the maximum length
+                if len(name) > max_length:
+                    first_part = name[:max_length // 2].rstrip()
+                    second_part = name[-max_length // 2:].lstrip()
+                    truncated_text = f"{first_part}...{second_part}"
+                else:
+                    truncated_text = name
+
+                # Add both the indicator_id and the truncated name to the dropdown options
+                self.dropdown_options_indicators.append(dropdown.Option(indicator_id, name))
+                self.dropdown_options_indicators_truncated.append(dropdown.Option(indicator_id, truncated_text))
 
             # Add "Нет в списке" option at the end
             self.dropdown_options_indicators.append(dropdown.Option('Нет в списке'))
             self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
+
             self.page.update()
         except Exception as e:
             print(f"Error fetching data from the database: {str(e)}")
-    
+
     
     def end_input_data(self, e):
         self.show_blocked()
@@ -851,8 +863,8 @@ class Scheduled(Container):
 
         # *FOR AUTO ID INCRIPTION
         cursor = connection.cursor()
-        cursor.execute(f"SELECT max(kpe_id) FROM kpe_table;")
-        max_kpe_id = cursor.fetchone()[0]
+        cursor.execute(f"SELECT max(plan_id) FROM kpe_table;")
+        max_plan_id = cursor.fetchone()[0]
 
         query_select = 'SELECT plan_indicators_id FROM planned_value'
         cursor.execute(query_select)
@@ -886,7 +898,7 @@ class Scheduled(Container):
 
             number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
 
-            max_kpe_id += 1
+            max_plan_id += 1
             query_exists = """
                 SELECT 1
                 FROM kpe_table
@@ -939,7 +951,7 @@ class Scheduled(Container):
                         insert_query_to_kpe_table = """
                         INSERT INTO
                             kpe_table (
-                            kpe_id, 
+                            plan_id, 
                             kpe_indicators_id, 
                             kpe_user_id, 
                             kpe_units_id, 
@@ -958,7 +970,7 @@ class Scheduled(Container):
                             )
                         VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, '{}', {}, {}, {}, {}, '{}','{}');
                         """.format(
-                                int(max_kpe_id),
+                                int(max_plan_id),
                                 int(plan_indicators_id),
                                 int(user_id),
                                 int(units_id),
@@ -1054,9 +1066,9 @@ class Scheduled(Container):
                 selected_indicator = self.cb_menu_spec.content.value
                 cursor = connection.cursor()
                 selected_indicator_without_dots = selected_indicator.replace(".", "")
-                cursor.execute(
-                    f"SELECT indicators_id FROM name_of_indicators WHERE name LIKE '{selected_indicator_without_dots}%'")
-                indicator_id = cursor.fetchone()[0]
+                # cursor.execute(
+                #     f"SELECT indicators_id FROM name_of_indicators WHERE name LIKE '{selected_indicator_without_dots}%'")
+                # indicator_id = cursor.fetchone()[0]
                 # *FRO PLAN_INDICATOR
                 cursor = connection.cursor()
                 cursor.execute(f"SELECT plan_indicators_id FROM planned_value")
@@ -1066,13 +1078,13 @@ class Scheduled(Container):
                 cursor = connection.cursor()
                 # cursor.execute(f"SELECT measurement_id FROM name_of_indicators WHERE name LIKE '{selected_indicator}%'")
                 cursor.execute(
-                    f"SELECT measurement_id FROM name_of_indicators WHERE name LIKE '{selected_indicator_without_dots}%'")
+                    f"SELECT measurement_id FROM name_of_indicators WHERE indicators_id = '{int(self.cb_menu_spec.content.value)}'")
                 units_id = cursor.fetchone()[0]
 
                 # Определите максимальное значение номера версии для данного показателя
                 # Determine the maximum version for the current indicator and user combination
                 cursor.execute(
-                    f"SELECT MAX(number_of_version) FROM planned_value WHERE plan_indicators_id = {int(indicator_id)} AND plan_user_id = {int(user_id)}")
+                    f"SELECT MAX(number_of_version) FROM planned_value WHERE plan_indicators_id = {int(self.cb_menu_spec.content.value)} AND plan_user_id = {int(user_id)}")
                 max_version = cursor.fetchone()[0]
 
                 # Check if max_version has the expected format (3 hyphen-separated parts)
@@ -1093,7 +1105,7 @@ class Scheduled(Container):
                     VALUES ({}+1, {}, {}, {}, {}, {}, {}, {}, {},'{}', {}, {}, {}, {},'{}');
                 """.format(
                         int(max_id),
-                        int(indicator_id),
+                        int(self.cb_menu_spec.content.value),
                         int(user_id),
                         int(units_id),
                         int(self.first_qr_box.content.value),
@@ -1312,7 +1324,7 @@ class Scheduled(Container):
         for selected_row in self.selected_rows:
             cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.specialist_menu_box.content.value)}';")
             user_id = cursor.fetchone()[0]
-            indicator = f"SELECT indicators_id FROM name_of_indicators WHERE name LIKE '{selected_row[1]}'"
+            indicator = f"SELECT indicators_id FROM name_of_indicators WHERE name = '{selected_row[1]}' AND specialist_id = '{user_id}'"
             # print(indicator)
             cursor.execute(indicator)
             indicator_id = cursor.fetchone()[0]
@@ -1320,9 +1332,10 @@ class Scheduled(Container):
             sql_select = "SELECT plan_id FROM planned_value WHERE plan_user_id = {} AND plan_indicators_id = {} AND 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
                 user_id, indicator_id, selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8], selected_row[9], selected_row[10], selected_row[11])
             cursor.execute(sql_select)
-            kpe_id = cursor.fetchone()[0]
-            print(kpe_id)
-            query_status = "ALTER TABLE planned_value UPDATE status = 'Неактивно' WHERE plan_id = {};".format(kpe_id)
+            print(sql_select)
+            plan_id = cursor.fetchone()[0]
+            print(plan_id)
+            query_status = "ALTER TABLE planned_value UPDATE status = 'Неактивно' WHERE plan_id = {};".format(plan_id)
             cursor.execute(query_status)
         self.page.dialog = self.alter_dialog_preview
         self.alter_dialog_preview.open = False
