@@ -12,6 +12,7 @@ class Add(Container):
         self.bgcolor = '#FFFFFF'
         
         dropdown_options_specialists = []
+        dropdown_options_specialists_alter_dialoge = []
         self.selected_rows = set()
 
         # Creating the DataTable
@@ -59,6 +60,7 @@ class Add(Container):
 
             for row in results:
                 dropdown_options_specialists.append(dropdown.Option(row[0]))
+                dropdown_options_specialists_alter_dialoge.append(dropdown.Option(row[0]))
         except Exception as e:
             print(f"Error fetching data from the database: {str(e)}")
 #*TEXTFIELD
@@ -121,6 +123,14 @@ class Add(Container):
                 options=dropdown_options_specialists,
             )
         )
+        self.specialist_menu_box_alter_dialoge = Container(
+            content=Dropdown(
+                hint_text='Выберите специалиста',
+                color="black",
+                width=330,
+                options=dropdown_options_specialists_alter_dialoge,
+            )
+        )
         
         self.alter_dialog_add_new_specialists = AlertDialog(
             modal=True,
@@ -131,6 +141,7 @@ class Add(Container):
               controls=[
                 self.dp_units,
                 self.edit_name,
+                self.specialist_menu_box_alter_dialoge
               ]
             ),
             actions=[
@@ -358,6 +369,9 @@ class Add(Container):
           cells.append(DataCell(checkbox))
           data_rows.append(data_row)
       self.data_table.rows = data_rows
+      self.selected_rows.clear()
+      self.page.dialog = self.alter_dialog_add_new_specialists
+      self.alter_dialog_add_new_specialists.open = False
       self.page.update()
       # self.page.update()
 
@@ -377,6 +391,7 @@ class Add(Container):
             selected_data = selected_row[2]
             self.edit_name.content.value = selected_data
             self.dp_units.content.value = selected_row[1]
+            self.specialist_menu_box_alter_dialoge.content.value = self.specialist_menu_box.content.value
             self.page.dialog = self.alter_dialog_add_new_specialists
             self.alter_dialog_add_new_specialists.open = True
             self.page.update()
@@ -397,53 +412,29 @@ class Add(Container):
         
         cursor.execute(f"SELECT measurement_id FROM units_of_measurement WHERE type = '{self.dp_units.content.value}'")
         units_id = cursor.fetchone()[0]
-        print(units_id)
+        
+        sql_select_specialist_id_alter_dialoge = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.specialist_menu_box_alter_dialoge.content.value)
+        cursor.execute(sql_select_specialist_id_alter_dialoge)
+        specialist_id_alter_dialoge = cursor.fetchone()[0]
+        print(specialist_id_alter_dialoge)
         # Use the UPDATE statement to modify the record
         if self.edit_name.content.value != selected_row[2]:
             query_name = "ALTER TABLE name_of_indicators UPDATE name = '{}' WHERE indicators_id = {}".format(self.edit_name.content.value, selected_row[0])
             print(query_name)
             cursor.execute(query_name)
-
+            self.show_indicators(e)
         elif self.dp_units.content.value != selected_row[1]:
             query_units = "ALTER TABLE name_of_indicators UPDATE measurement_id = {} WHERE indicators_id = {}".format(int(units_id), selected_row[0])
             print(query_units)
             cursor.execute(query_units)
+            self.show_indicators(e)
+        elif self.specialist_menu_box_alter_dialoge.content.value != self.specialist_menu_box.content.value:
+            query_specialist = "ALTER TABLE name_of_indicators UPDATE specialist_id = {} WHERE indicators_id = {}".format(int(specialist_id_alter_dialoge), selected_row[0])
+            print(query_specialist)
+            cursor.execute(query_specialist)
+            self.show_indicators(e)
         else:
             self.show_error_dialog("Изменений не было обнаружено")
-
-        
-        
-
-        # Fetch the updated data from the database
-        query_select = '''
-        SELECT
-            ni.indicators_id,
-            um.type,
-            ni.name,
-        FROM name_of_indicators AS ni
-        JOIN units_of_measurement AS um ON ni.measurement_id = um.measurement_id
-        WHERE specialist_id = {}
-        ORDER BY ni.indicators_id;
-        '''.format(specialist_id)
-        cursor.execute(query_select)
-        results = cursor.fetchall()
-        query_result = results
-        data_rows = []
-
-        for row in query_result:
-            cells = [DataCell(Text(str(value))) for value in row]
-            data_row = DataRow(cells=cells)
-            checkbox_1 = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-            cells.append(DataCell(checkbox_1))
-
-            data_rows.append(data_row)
-
-        # After you fetch new data from the database and create data_rows, update the DataTable like this:
-        self.data_table.rows = data_rows
-        self.selected_rows.clear()
-        self.page.dialog = self.alter_dialog_add_new_specialists
-        self.alter_dialog_add_new_specialists.open = False
-        self.page.update()
 
     
     def close_edit_dialog(self, e):
