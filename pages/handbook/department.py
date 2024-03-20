@@ -99,36 +99,36 @@ class Department(Container):
                                     alignment='spaceBetween',
                                     controls=[
                                         Container(
-                                          width=200,
-                                          content=Row(
+                                            width=200,
+                                            content=Row(
                                             spacing=10,
                                             controls=[
-                                              Container(
-                                                  bgcolor='white',
-                                                  width=70,
-                                                  height=70,
-                                                  border_radius=50,
-                                                  content=IconButton(
-                                                      icons.ARROW_BACK_OUTLINED,
-                                                      icon_color='#5B7553',
-                                                      icon_size=30,
-                                                      on_click=lambda x: x == self.page.go('/handbook')
-                                                  )
-                                              ),
-                                              Container(
-                                                  bgcolor='white',
-                                                  width=70,
-                                                  height=70,
-                                                  border_radius=50,
-                                                  content=IconButton(
-                                                      icons.HOME,
-                                                      icon_color='#5B7553',
-                                                      icon_size=30,
-                                                      on_click=lambda x: x == self.page.go('/home')
-                                                  )
-                                              ),
+                                                Container(
+                                                    bgcolor='white',
+                                                    width=70,
+                                                    height=70,
+                                                    border_radius=50,
+                                                    content=IconButton(
+                                                        icons.ARROW_BACK_OUTLINED,
+                                                        icon_color='#5B7553',
+                                                        icon_size=30,
+                                                        on_click=lambda x: x == self.page.go('/handbook')
+                                                    )
+                                                ),
+                                                Container(
+                                                    bgcolor='white',
+                                                    width=70,
+                                                    height=70,
+                                                    border_radius=50,
+                                                    content=IconButton(
+                                                        icons.HOME,
+                                                        icon_color='#5B7553',
+                                                        icon_size=30,
+                                                        on_click=lambda x: x == self.page.go('/home')
+                                                    )
+                                                ),
                                             ]
-                                          )
+                                            )
                                         ),
                                         Container(
                                             content=Text(
@@ -233,6 +233,7 @@ class Department(Container):
             data_row = DataRow(cells=cells)
             self.data_table.rows.append(data_row)
         self.content.controls[1].content.controls[2] = self.data_table
+        self.page.update()
 
     def toggle_row_selection(self, e, row):
         # Toggle the row's selection when the Checkbox value changes
@@ -293,45 +294,45 @@ class Department(Container):
         self.page.update()
 
     def show_error_dialog(self, text):
-      self.page.dialog = self.alter_dialog_error
-      self.alter_dialog_error.title = Text(value="Ошибка", color="black")
-      self.alter_dialog_error.content = Text(value=text, color="black")
-      self.alter_dialog_error.open = True
-      self.page.update() 
+        self.page.dialog = self.alter_dialog_error
+        self.alter_dialog_error.title = Text(value="Ошибка", color="black")
+        self.alter_dialog_error.content = Text(value=text, color="black")
+        self.alter_dialog_error.open = True
+        self.page.update() 
     def close_dlg_error(self, e):
-      self.page.dialog = self.alter_dialog_error
-      self.alter_dialog_error.open = False
-      print("It's closed successfully")
-      self.page.update()
+        self.page.dialog = self.alter_dialog_error
+        self.alter_dialog_error.open = False
+        print("It's closed successfully")
+        self.page.update()
     def insert_into_db(self, e):
-      if self.textfield_box.content.value == "":
-        self.show_error_dialog("Заполните поле перед внесением")
-      else:
-        try:
-          cursor = connection.cursor()
-          cursor.execute(f"SELECT max(department_id) FROM name_of_department;")
-          max_id = cursor.fetchone()[0]
-          query = "INSERT INTO TABLE name_of_department (department_id, name) VALUES ({}+1,'{}')".format(int(max_id), self.textfield_box.content.value)
-          cursor.execute(query)
-          print("Запись успешно добавлена в базу данных")
+        if self.textfield_box.content.value == "":
+            self.show_error_dialog("Заполните поле перед внесением")
+        else:
+            try:
+                cursor = connection.cursor()
+                cursor.execute(f"SELECT max(department_id) FROM name_of_department;")
+                max_id = cursor.fetchone()[0]
+                query = "INSERT INTO TABLE name_of_department (department_id, name) VALUES ({}+1,'{}')".format(int(max_id), self.textfield_box.content.value)
+                cursor.execute(query)
+                print("Запись успешно добавлена в базу данных")
 
-          cursor.execute('SELECT * FROM name_of_department ORDER BY department_id')
-          results = cursor.fetchall()
-          query_result = results
-          data_rows = []
+                cursor.execute('SELECT * FROM name_of_department ORDER BY department_id')
+                results = cursor.fetchall()
+                query_result = results
+                data_rows = []
 
-          for row in query_result:
-            cells = [DataCell(Text(str(value))) for value in row]
-            data_row = DataRow(cells=cells)
+                for row in query_result:
+                    cells = [DataCell(Text(str(value))) for value in row]
+                    data_row = DataRow(cells=cells)
 
-            # Create a Checkbox for the third column
-            checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-            cells.append(DataCell(checkbox))
+                    # Create a Checkbox for the third column
+                    checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
+                    cells.append(DataCell(checkbox))
 
-            data_rows.append(data_row)
-          # After you fetch new data from the database and create data_rows, update the DataTable like this:
-          self.data_table.rows = data_rows
-          self.textfield_box.content.value = ""
-          self.page.update()
-        except Exception as e:
-            print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
+                    data_rows.append(data_row)
+                # After you fetch new data from the database and create data_rows, update the DataTable like this:
+                self.data_table.rows = data_rows
+                self.textfield_box.content.value = ""
+                self.page.update()
+            except Exception as e:
+                print(f"Ошибка при добавлении записи в базу данных: {str(e)}")

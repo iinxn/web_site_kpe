@@ -10,8 +10,6 @@ class MeasurementHandbook(Container):
         self.alignment = alignment.center
         self.expand = True
         self.bgcolor = '#FFFFFF'
-        
-        
         self.selected_rows = set()
 
         # Creating the DataTable
@@ -33,7 +31,7 @@ class MeasurementHandbook(Container):
         )
 #*BOX FOR TEXTFIELD
         self.textfield_box = Container(
-          content=TextField(
+            content=TextField(
                     hint_style=TextStyle(
                         size=12, color='#858796'
                     ),
@@ -46,7 +44,7 @@ class MeasurementHandbook(Container):
                         ),
         )
         self.edit_name = Container(
-          content=TextField(
+            content=TextField(
                     hint_style=TextStyle(
                         size=12, color='#858796'
                     ),
@@ -69,10 +67,10 @@ class MeasurementHandbook(Container):
             modal=True,
             title=Text("Изменить строку"),
             content=Column(
-              height=250,
-              controls=[
+                height=250,
+                controls=[
                 self.edit_name
-              ]
+                ]
             ),
             actions=[
                 TextButton("Изменить", on_click=self.edit_name_in_table),
@@ -98,36 +96,36 @@ class MeasurementHandbook(Container):
                                     alignment='spaceBetween',
                                     controls=[
                                         Container(
-                                          width=200,
-                                          content=Row(
+                                            width=200,
+                                            content=Row(
                                             spacing=10,
                                             controls=[
-                                              Container(
-                                                  bgcolor='white',
-                                                  width=70,
-                                                  height=70,
-                                                  border_radius=50,
-                                                  content=IconButton(
-                                                      icons.ARROW_BACK_OUTLINED,
-                                                      icon_color='#5B7553',
-                                                      icon_size=30,
-                                                      on_click=lambda x: x == self.page.go('/handbook')
-                                                  )
-                                              ),
-                                              Container(
-                                                  bgcolor='white',
-                                                  width=70,
-                                                  height=70,
-                                                  border_radius=50,
-                                                  content=IconButton(
-                                                      icons.HOME,
-                                                      icon_color='#5B7553',
-                                                      icon_size=30,
-                                                      on_click=lambda x: x == self.page.go('/home')
-                                                  )
-                                              ),
+                                                Container(
+                                                    bgcolor='white',
+                                                    width=70,
+                                                    height=70,
+                                                    border_radius=50,
+                                                    content=IconButton(
+                                                        icons.ARROW_BACK_OUTLINED,
+                                                        icon_color='#5B7553',
+                                                        icon_size=30,
+                                                        on_click=lambda x: x == self.page.go('/handbook')
+                                                    )
+                                                ),
+                                                Container(
+                                                    bgcolor='white',
+                                                    width=70,
+                                                    height=70,
+                                                    border_radius=50,
+                                                    content=IconButton(
+                                                        icons.HOME,
+                                                        icon_color='#5B7553',
+                                                        icon_size=30,
+                                                        on_click=lambda x: x == self.page.go('/home')
+                                                    )
+                                                ),
                                             ]
-                                          )
+                                        )
                                         ),
                                         Container(
                                             content=Text(
@@ -207,8 +205,6 @@ class MeasurementHandbook(Container):
                                             # on_click=lambda e: self.output_selected_rows(),
                                             on_click=lambda e: self.show_edit_dialog(),
                                         )
-
-
                                     ]
                                 )
                             ),

@@ -863,7 +863,7 @@ class Scheduled(Container):
 
         # *FOR AUTO ID INCRIPTION
         cursor = connection.cursor()
-        cursor.execute(f"SELECT max(plan_id) FROM kpe_table;")
+        cursor.execute(f"SELECT max(plan_id) FROM planned_value;")
         max_plan_id = cursor.fetchone()[0]
 
         query_select = 'SELECT plan_indicators_id FROM planned_value'
@@ -951,7 +951,7 @@ class Scheduled(Container):
                         insert_query_to_kpe_table = """
                         INSERT INTO
                             kpe_table (
-                            plan_id, 
+                            kpe_id, 
                             kpe_indicators_id, 
                             kpe_user_id, 
                             kpe_units_id, 
@@ -1339,5 +1339,9 @@ class Scheduled(Container):
             cursor.execute(query_status)
         self.page.dialog = self.alter_dialog_preview
         self.alter_dialog_preview.open = False
+        self.kpe_weight_1.clear()
+        self.kpe_weight_2.clear()
+        self.kpe_weight_3.clear()
+        self.kpe_weight_4.clear()
         self.show_block_dialog("Запись была успешно удалена", "Успешно")
         self.page.update()
