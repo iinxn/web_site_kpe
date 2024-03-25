@@ -12,7 +12,6 @@ class EditKPE(Container):
         self.alignment = alignment.center
         self.expand = True
         self.bgcolor = '#FFFFFF'
-
         self.selected_rows = set()
         self.sql_query = []
         self.data_table = DataTable(
@@ -286,9 +285,7 @@ class EditKPE(Container):
                         Row(
                             spacing='50',
                             alignment='center',
-                            controls=[
-
-                            ]
+                            controls=[]
                         )
                     ),
                     Container(height=50),
@@ -338,7 +335,6 @@ class EditKPE(Container):
                     ),
                 ]
             ),
-
             actions=[
                 TextButton("Изменить", on_click=self.edit_name_in_table),
                 TextButton("Закрыть", on_click=self.close_edit_dialog),
@@ -367,7 +363,6 @@ class EditKPE(Container):
                             alignment='center',
                             controls=[
                                 self.cb_menu_spec,
-                                # self.specialist_menu_box
                             ]
                         )
                     ),
@@ -447,7 +442,6 @@ class EditKPE(Container):
             ],
             actions_alignment=MainAxisAlignment.END,
             on_dismiss=lambda e: print("Modal dialog dismissed!"),
-
         )
 
         # *HEADER
@@ -510,7 +504,6 @@ class EditKPE(Container):
                                             content=Row(
                                                 controls=[
                                                     Container(),
-
                                                 ]
                                             )
                                         ),
@@ -520,7 +513,6 @@ class EditKPE(Container):
                         ],
                     )
                 ),
-
                 # *MANUAL BUTTONS
                 Container(
                     expand=True,
@@ -561,7 +553,6 @@ class EditKPE(Container):
                                                 on_click=self.show_kpe_table
                                             ),
                                         ),
-
                                         Container(width=300),
                                         Container(
                                             content=ElevatedButton(
@@ -662,7 +653,6 @@ class EditKPE(Container):
                                     ]
                                 )
                             ),
-
                             # *2ND ROW (DATATABLE)
                             Container(
                                 content=self.data_table,
@@ -701,10 +691,9 @@ class EditKPE(Container):
         )
     def show_indicators(self, e):
         try:
-            self.dropdown_options_indicators.clear()
             self.dropdown_options_indicators_truncated.clear()
             cursor = connection.cursor()
-            sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.specialist_menu_box.content.value)
+            sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.report_spec.content.value)
             cursor.execute(sql_select_specialist_id)
             specialist_id = cursor.fetchone()[0]
 
@@ -725,11 +714,9 @@ class EditKPE(Container):
                     truncated_text = name
 
                 # Add both the indicator_id and the truncated name to the dropdown options
-                self.dropdown_options_indicators.append(dropdown.Option(indicator_id, name))
                 self.dropdown_options_indicators_truncated.append(dropdown.Option(indicator_id, truncated_text))
 
             # Add "Нет в списке" option at the end
-            self.dropdown_options_indicators.append(dropdown.Option('Нет в списке'))
             self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
 
             self.page.update()
@@ -1040,10 +1027,8 @@ class EditKPE(Container):
         # *FOR USER DATA INFORMATION
         try:
             cursor = connection.cursor()
-            cursor.execute(
-                f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
+            cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
             user_id = cursor.fetchone()[0]
-
             # *FOR AUTO ID INCRIPTION
             cursor = connection.cursor()
             cursor.execute(f"SELECT MAX(kpe_id) FROM kpe_table")
@@ -1063,9 +1048,6 @@ class EditKPE(Container):
             cursor.execute(
                 f"SELECT measurement_id FROM name_of_indicators WHERE indicators_id = {indicator_id};")
             units_id = cursor.fetchone()[0]
-
-            # Определите максимальное значение номера версии для данного показателя
-            # Determine the maximum version for the current indicator and user combination
             cursor.execute(f"SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = {int(user_id)};")
             max_version = cursor.fetchone()[0]
             print(max_version)
@@ -1119,16 +1101,14 @@ class EditKPE(Container):
             self.cb_menu_spec.content.value = ""
             self.page.dialog = self.alter_dialog_add_new
             self.alter_dialog_add_new.open = False
-
+            
             cursor = connection.cursor()
             cursor.execute(
                 f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
             user_id = cursor.fetchone()[0]
-
             query_select = "SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = '{}'".format(user_id)
             cursor.execute(query_select)
             latest_version = cursor.fetchone()[0]
-
             query_select = f"""
                 SELECT
                     ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
@@ -1149,22 +1129,17 @@ class EditKPE(Container):
                 WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно'
                 ORDER BY kpe_id;
             """
-
             cursor.execute(query_select)
             results = cursor.fetchall()
             query_result = results
             data_rows = []
-
             for row in query_result:
                 cells = [DataCell(Text(str(value))) for value in row]
                 data_row = DataRow(cells=cells)
-
                 # Create a Checkbox for the third column
                 checkbox_1 = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
                 cells.append(DataCell(checkbox_1))
-
                 data_rows.append(data_row)
-
             # After you fetch new data from the database and create data_rows, update the DataTable like this:
             self.data_table.rows = data_rows
             self.page.update()
@@ -1181,12 +1156,10 @@ class EditKPE(Container):
         self.alter_dialog_are_you_sure.open = True
         self.page.update()
 
-
     def close_are_you_sure_dialoge(self,e):
         self.page.dialog = self.alter_dialog_are_you_sure
         self.alter_dialog_are_you_sure.open = False
         self.page.update()
-
 
     def insert_all_data_from_array(self, e):
         try:
@@ -1198,11 +1171,9 @@ class EditKPE(Container):
             cursor.execute(
                 f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
             user_id = cursor.fetchone()[0]
-
             query_select = "SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = '{}'".format(user_id)
             cursor.execute(query_select)
             latest_version = cursor.fetchone()[0]
-
             query_select = f"""
                 SELECT
                     ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
@@ -1223,22 +1194,17 @@ class EditKPE(Container):
                 WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно'
                 ORDER BY kpe_id;
             """
-
             cursor.execute(query_select)
             results = cursor.fetchall()
             query_result = results
             data_rows = []
-
             for row in query_result:
                 cells = [DataCell(Text(str(value))) for value in row]
                 data_row = DataRow(cells=cells)
-
                 # Create a Checkbox for the third column
                 checkbox_1 = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
                 cells.append(DataCell(checkbox_1))
-
                 data_rows.append(data_row)
-
             # After you fetch new data from the database and create data_rows, update the DataTable like this:
             self.data_table.rows = data_rows
             self.page.dialog = self.alter_dialog_are_you_sure
