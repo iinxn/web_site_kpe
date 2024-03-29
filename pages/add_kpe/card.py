@@ -1,12 +1,12 @@
 from flet import *
-from utils.colors import * 
+from utils.consts import primary_colors 
 
 class Card(Container):
     def __init__(self, page: Page):
         super().__init__()
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = tea_green
+        self.bgcolor = primary_colors['GREEN']
         
         #header
         self.content = Column(
@@ -15,7 +15,7 @@ class Card(Container):
                 Container(
                     width=8000,
                     padding=40,
-                    bgcolor='#5B7553',
+                    bgcolor=primary_colors['GREEN'],
                     # border_radius=15,
                     content=Column(
                         horizontal_alignment='center',  # Align the text to the right
@@ -27,13 +27,13 @@ class Card(Container):
                               controls=[
                                 Container(
                                   # width=200,   
-                                  bgcolor='white',
+                                  bgcolor=primary_colors['WHITE'],
                                   width=70,
                                   height=70,
                                   border_radius=50,
                                   content=IconButton(
                                       icons.ARROW_BACK_OUTLINED,
-                                      icon_color='#5B7553',
+                                      icon_color=primary_colors['GREEN'],
                                       icon_size=30,
                                       on_click=lambda x: x == self.page.go('/home')
                                   )
@@ -42,7 +42,7 @@ class Card(Container):
                                     content=Text(
                                     value='Заполнить карту КПЭ',
                                     size=18,
-                                    color='white',
+                                    color=primary_colors['WHITE'],
                                     text_align='center',
                                   ),
                                 ),
@@ -60,7 +60,7 @@ class Card(Container):
                 #manual buttons
                 Container(
                     expand=True,
-                    bgcolor='white',
+                    bgcolor=primary_colors['WHITE'],
                     content=Column(
                       expand=True,
                       # alignment='center',
@@ -76,8 +76,8 @@ class Card(Container):
                                 #buttons
                                 ElevatedButton(
                                   # text='Заполнить карту КПЭ',
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=400,
                                   height=200,
                                   content=Column(
@@ -88,7 +88,7 @@ class Card(Container):
                                           Text(
                                             value='Ввести карту КПЭ',
                                             size=16,
-                                            color=white,
+                                            color=primary_colors['WHITE'],
                                             text_align='center',
                                             weight='bold',
                                           )
@@ -100,8 +100,8 @@ class Card(Container):
                                 
                                 ElevatedButton(
                                   # text='Заполнить карту КПЭ',
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=400,
                                   height=200,
                                   content=Column(
@@ -112,7 +112,7 @@ class Card(Container):
                                           Text(
                                             value='Ввести изменение в карту КПЭ',
                                             size=16,
-                                            color=white,
+                                            color=primary_colors['WHITE'],
                                             text_align='center',
                                             weight='bold',
                                           )
@@ -124,8 +124,8 @@ class Card(Container):
                                 
                                 # Container(height=0),
                                 ElevatedButton(
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=400,
                                   height=200,
                                   content=Column(
@@ -136,7 +136,7 @@ class Card(Container):
                                           Text(
                                             value='Ввести результат исполнения мероприятий КПЭ',
                                             size=16,
-                                            color=white,
+                                            color=primary_colors['WHITE'],
                                             text_align='center',
                                             weight='bold',
                                           )
@@ -152,7 +152,7 @@ class Card(Container):
                             content=Row(
                               controls=[
                                 Container(
-                                  bgcolor='black'
+                                  bgcolor=primary_colors['WHITE']
                                 )
                               ]
                             )

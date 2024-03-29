@@ -1,12 +1,12 @@
 from flet import *
-from utils.colors import * 
+from utils.consts import primary_colors
 
 class Handbook(Container):
     def __init__(self, page: Page):
         super().__init__()
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = '#FFFFFF'
+        self.bgcolor = primary_colors['WHITE']
         
         #header
         self.content = Column(
@@ -15,7 +15,7 @@ class Handbook(Container):
                 Container(
                     width=8000,
                     padding=40,
-                    bgcolor='#5B7553',
+                    bgcolor=primary_colors['GREEN'],
                     # border_radius=15,
                     content=Column(
                         horizontal_alignment='center',  # Align the text to the right
@@ -26,13 +26,13 @@ class Handbook(Container):
                               alignment='spaceBetween',
                               controls=[
                                 Container(  
-                                  bgcolor='white',
+                                  bgcolor=primary_colors['WHITE'],
                                   width=70,
                                   height=70,
                                   border_radius=50,
                                   content=IconButton(
                                       icons.ARROW_BACK_OUTLINED,
-                                      icon_color='#5B7553',
+                                      icon_color=primary_colors['GREEN'],
                                       icon_size=30,
                                       on_click=lambda x: x == self.page.go('/home')
                                   )
@@ -41,7 +41,7 @@ class Handbook(Container):
                                     content=Text(
                                     value='Справочник',
                                     size=18,
-                                    color='white',
+                                    color=primary_colors['WHITE'],
                                     text_align='center',
                                   ),
                                 ),
@@ -56,7 +56,7 @@ class Handbook(Container):
                 #manual buttons
                 Container(
                     expand=True,
-                    bgcolor='white',
+                    bgcolor=primary_colors['WHITE'],
                     content=Column(
                       expand=True,
                       # alignment='center',
@@ -73,8 +73,8 @@ class Handbook(Container):
                                 #buttons
                                 ElevatedButton(
                                   # text='Заполнить карту КПЭ',
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=500,
                                   height=70,
                                   content=Column(
@@ -86,7 +86,7 @@ class Handbook(Container):
                                           Text(
                                             value='Единицы измерения',
                                             size=16,
-                                            color=white,
+                                            color=primary_colors['WHITE'],
                                             text_align='center',
                                             weight='bold',
                                           )
@@ -98,8 +98,8 @@ class Handbook(Container):
 #*NAME OF DEPARTMENT BUTTON
                                 Container(height=0),
                                 ElevatedButton(
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=500,
                                   height=70,
                                   content=Column(
@@ -110,7 +110,7 @@ class Handbook(Container):
                                           Text(
                                             value='Наименование управления',
                                             size=16,
-                                            color=white,
+                                            color=primary_colors['WHITE'],
                                             text_align='center',
                                             weight='bold',
                                           )
@@ -122,8 +122,8 @@ class Handbook(Container):
 #*NAME OF INDICATORS
                                 Container(height=0),
                                 ElevatedButton(
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=500,
                                   height=70,
                                   content=Column(
@@ -134,7 +134,7 @@ class Handbook(Container):
                                           Text(
                                             value='Наименование показателей',
                                             size=16,
-                                            color=white,
+                                            color=primary_colors['WHITE'],
                                             text_align='center',
                                             weight='bold',
                                           )
@@ -146,8 +146,8 @@ class Handbook(Container):
 #*RIGHTS BUTTON
                                 Container(height=0),
                                 ElevatedButton(
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=500,
                                   height=70,
                                   content=Column(
@@ -158,7 +158,7 @@ class Handbook(Container):
                                           Text(
                                             value='Права доступа',
                                             size=16,
-                                            color=white,
+                                            color=primary_colors['WHITE'],
                                             text_align='center',
                                             weight='bold',
                                           )
@@ -170,8 +170,8 @@ class Handbook(Container):
 #*SPECIALISTS BUTTON
                                 Container(height=0),
                                 ElevatedButton(
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=500,
                                   height=70,
                                   content=Column(
@@ -182,7 +182,7 @@ class Handbook(Container):
                                           Text(
                                             value='Специалисты',
                                             size=16,
-                                            color=white,
+                                            color=primary_colors['WHITE'],
                                             text_align='center',
                                             weight='bold',
                                           )
@@ -194,8 +194,8 @@ class Handbook(Container):
 #*USERS
                                 Container(height=0),
                                 ElevatedButton(
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=500,
                                   height=70,
                                   content=Column(
@@ -206,7 +206,7 @@ class Handbook(Container):
                                           Text(
                                             value='Пользователи',
                                             size=16,
-                                            color=white,
+                                            color=primary_colors['WHITE'],
                                             text_align='center',
                                             weight='bold',
                                           )
@@ -218,8 +218,8 @@ class Handbook(Container):
                                 
                                 Container(height=0),
                                 ElevatedButton(
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=500,
                                   height=70,
                                   content=Column(
@@ -230,7 +230,7 @@ class Handbook(Container):
                                           Text(
                                             value='Плановые показатели',
                                             size=16,
-                                            color=white,
+                                            color=primary_colors['WHITE'],
                                             text_align='center',
                                             weight='bold',
                                           )

@@ -2,7 +2,7 @@ import datetime
 import re
 from flet import *
 from service.connection import *
-from utils.colors import *
+from utils.consts import primary_colors
 
 
 class Actual(Container):
@@ -12,7 +12,7 @@ class Actual(Container):
         self.page.theme_mode = ThemeMode.LIGHT
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = tea_green
+        self.bgcolor = primary_colors['GREEN']
 
         self.use_truncated_options = True
         self.dropdown_options_indicators = []
@@ -68,13 +68,13 @@ class Actual(Container):
         self.plan_value_box = Container(
             content=TextField(
                 hint_style=TextStyle(
-                    size=12, color='#858796'
+                    size=12, color=primary_colors['MANATEE']
                 ),
                 label='Значение показателя',
-                cursor_color='#858796',
+                cursor_color=primary_colors['MANATEE'],
                 text_style=TextStyle(
                     size=14,
-                    color='#5B7553',
+                    color=primary_colors['GREEN'],
                 ),
                 # content_padding=30,
             ),
@@ -82,13 +82,13 @@ class Actual(Container):
         self.plan_weight_value_box = Container(
             content=TextField(
                 hint_style=TextStyle(
-                    size=12, color='#858796'
+                    size=12, color=primary_colors['MANATEE']
                 ),
                 label='Вес КПЭ',
-                cursor_color='#858796',
+                cursor_color=primary_colors['MANATEE'],
                 text_style=TextStyle(
                     size=14,
-                    color='#5B7553',
+                    color=primary_colors['GREEN'],
                 ),
                 # content_padding=30,
             ),
@@ -96,13 +96,13 @@ class Actual(Container):
         self.textfiled_input_actual_value = Container(
             content=TextField(
                 hint_style=TextStyle(
-                    size=12, color='#858796'
+                    size=12, color=primary_colors['MANATEE']
                 ),
                 label='Поле ввода',
-                cursor_color='#858796',
+                cursor_color=primary_colors['MANATEE'],
                 text_style=TextStyle(
                     size=14,
-                    color='#5B7553',
+                    color=primary_colors['GREEN'],
                 ),
                 # content_padding=30,
             ),
@@ -111,12 +111,12 @@ class Actual(Container):
             content=TextField(
                 label="Введите наименование показателя",
                 hint_style=TextStyle(
-                    size=12, color='#858796'
+                    size=12, color=primary_colors['MANATEE']
                 ),
-                cursor_color='#858796',
+                cursor_color=primary_colors['MANATEE'],
                 text_style=TextStyle(
                     size=14,
-                    color='black',
+                    color=primary_colors['BLACK'],
                 ),
                 width=100
             ),
@@ -124,9 +124,9 @@ class Actual(Container):
         self.search_input = Container(
             content=TextField(
                 label='Поиск по наименованию',
-                hint_style=TextStyle(size=12, color='#858796'),
-                cursor_color='#858796',
-                text_style=TextStyle(size=14, color='#5B7553'),
+                hint_style=TextStyle(size=12, color=primary_colors['MANATEE']),
+                cursor_color=primary_colors['MANATEE'],
+                text_style=TextStyle(size=14, color=primary_colors['GREEN']),
                 on_change=self.filter_dropdown_options,
                 width=400,
             ),
@@ -159,7 +159,7 @@ class Actual(Container):
                 Container(
                     width=8000,
                     padding=40,
-                    bgcolor='#5B7553',
+                    bgcolor=primary_colors['GREEN'],
                     # border_radius=15,
                     content=Column(
                         horizontal_alignment='center',  # Align the text to the right
@@ -175,25 +175,25 @@ class Actual(Container):
                                                 spacing=10,
                                                 controls=[
                                                     Container(
-                                                        bgcolor='white',
+                                                        bgcolor=primary_colors['WHITE'],
                                                         width=70,
                                                         height=70,
                                                         border_radius=50,
                                                         content=IconButton(
                                                             icons.ARROW_BACK_OUTLINED,
-                                                            icon_color='#5B7553',
+                                                            icon_color=primary_colors['GREEN'],
                                                             icon_size=30,
                                                             on_click=lambda x: x == self.page.go('/card')
                                                         )
                                                     ),
                                                     Container(
-                                                        bgcolor='white',
+                                                        bgcolor=primary_colors['WHITE'],
                                                         width=70,
                                                         height=70,
                                                         border_radius=50,
                                                         content=IconButton(
                                                             icons.HOME,
-                                                            icon_color='#5B7553',
+                                                            icon_color=primary_colors['GREEN'],
                                                             icon_size=30,
                                                             on_click=lambda x: x == self.page.go('/home')
                                                         )
@@ -216,7 +216,6 @@ class Actual(Container):
                                     ]
                                 )
                             )
-
                         ],
                     )
                 ),
@@ -224,7 +223,7 @@ class Actual(Container):
                 # *MANUAL BUTTONS
                 Container(
                     expand=True,
-                    bgcolor='white',
+                    bgcolor=primary_colors['WHITE'],
                     content=Column(
                         expand=True,
                         # alignment='center',
@@ -272,7 +271,7 @@ class Actual(Container):
                                         Text(
                                             value='Плановые значения',
                                             size=16,
-                                            color='#5B7553',
+                                            color=primary_colors['GREEN'],
                                             text_align='center',
                                             weight='bold',
                                             width=120
@@ -297,7 +296,7 @@ class Actual(Container):
                                         Text(
                                             value='Введите факт',
                                             size=16,
-                                            color='#5B7553',
+                                            color=primary_colors['GREEN'],
                                             text_align='center',
                                             weight='bold',
                                         ),
@@ -314,8 +313,8 @@ class Actual(Container):
                                     # horizontal_alignment='center',
                                     controls=[
                                         ElevatedButton(
-                                            color=white,
-                                            bgcolor='#5B7553',
+                                            color=primary_colors['WHITE'],
+                                            bgcolor=primary_colors['GREEN'],
                                             width=400,
                                             height=100,
                                             content=Column(
@@ -326,7 +325,7 @@ class Actual(Container):
                                                         Text(
                                                             value='Добавить',
                                                             size=16,
-                                                            color=white,
+                                                            color=primary_colors['WHITE'],
                                                             text_align='center',
                                                             weight='bold',
                                                         )

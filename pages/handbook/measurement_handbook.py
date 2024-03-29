@@ -1,5 +1,5 @@
 from flet import *
-from utils.colors import * 
+from utils.consts import primary_colors
 from service.connection import *
 
 class MeasurementHandbook(Container):
@@ -9,7 +9,7 @@ class MeasurementHandbook(Container):
         self.page.theme_mode = ThemeMode.LIGHT
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = '#FFFFFF'
+        self.bgcolor = primary_colors['WHITE']
         self.selected_rows = set()
 
         # Creating the DataTable
@@ -20,9 +20,9 @@ class MeasurementHandbook(Container):
                 DataColumn(Text("Редактировать")),
             ],
             rows=[],
-            border=border.all(1, "black"),
-            vertical_lines=border.BorderSide(1, "black"),
-            horizontal_lines=border.BorderSide(1, "black"),
+            border=border.all(1, primary_colors['BLACK']),
+            vertical_lines=border.BorderSide(1, primary_colors['BLACK']),
+            horizontal_lines=border.BorderSide(1, primary_colors['BLACK']),
             sort_column_index=0,
             sort_ascending=True,
             heading_row_color=colors.BLACK12,
@@ -33,26 +33,26 @@ class MeasurementHandbook(Container):
         self.textfield_box = Container(
             content=TextField(
                     hint_style=TextStyle(
-                        size=12, color='#858796'
+                        size=12, color=primary_colors['MANATEE']
                     ),
                     label='Поле ввода',
-                    cursor_color='#858796',
+                    cursor_color=primary_colors['MANATEE'],
                     text_style=TextStyle(
                         size=14,
-                        color='#5B7553',
+                        color=primary_colors['GREEN'],
                     ),
                         ),
         )
         self.edit_name = Container(
             content=TextField(
                     hint_style=TextStyle(
-                        size=12, color='#858796'
+                        size=12, color=primary_colors['MANATEE']
                     ),
                     label='Введите другое название',
-                    cursor_color='#858796',
+                    cursor_color=primary_colors['MANATEE'],
                     text_style=TextStyle(
                         size=14,
-                        color='#5B7553',
+                        color=primary_colors['GREEN'],
                     ),
                         ),
         )
@@ -87,7 +87,7 @@ class MeasurementHandbook(Container):
                 Container(
                     width=8000,
                     padding=40,
-                    bgcolor='#5B7553',
+                    bgcolor=primary_colors['GREEN'],
                     content=Column(
                         horizontal_alignment='center',
                         controls=[
@@ -101,25 +101,25 @@ class MeasurementHandbook(Container):
                                             spacing=10,
                                             controls=[
                                                 Container(
-                                                    bgcolor='white',
+                                                    bgcolor=primary_colors['WHITE'],
                                                     width=70,
                                                     height=70,
                                                     border_radius=50,
                                                     content=IconButton(
                                                         icons.ARROW_BACK_OUTLINED,
-                                                        icon_color='#5B7553',
+                                                        icon_color=primary_colors['GREEN'],
                                                         icon_size=30,
                                                         on_click=lambda x: x == self.page.go('/handbook')
                                                     )
                                                 ),
                                                 Container(
-                                                    bgcolor='white',
+                                                    bgcolor=primary_colors['WHITE'],
                                                     width=70,
                                                     height=70,
                                                     border_radius=50,
                                                     content=IconButton(
                                                         icons.HOME,
-                                                        icon_color='#5B7553',
+                                                        icon_color=primary_colors['GREEN'],
                                                         icon_size=30,
                                                         on_click=lambda x: x == self.page.go('/home')
                                                     )
@@ -131,7 +131,7 @@ class MeasurementHandbook(Container):
                                             content=Text(
                                                 value='Добавить единицы измерения в справочник',
                                                 size=18,
-                                                color='white',
+                                                color=primary_colors['WHITE'],
                                                 text_align='center',
                                             ),
                                         ),
@@ -146,7 +146,7 @@ class MeasurementHandbook(Container):
 # *MANUAL BUTTONS
                 Container(
                     expand=True,
-                    bgcolor='white',
+                    bgcolor=primary_colors['WHITE'],
                     content=Column(
                         expand=True,
                         horizontal_alignment='center',
@@ -161,8 +161,8 @@ class MeasurementHandbook(Container):
                                         Container(width=90),
                                         self.textfield_box,
                                         ElevatedButton(
-                                            color=white,
-                                            bgcolor='#5B7553',
+                                            color=primary_colors['WHITE'],
+                                            bgcolor=primary_colors['GREEN'],
                                             width=200,
                                             height=70,
                                             content=Column(
@@ -173,7 +173,7 @@ class MeasurementHandbook(Container):
                                                         Text(
                                                             value='Добавить',
                                                             size=16,
-                                                            color=white,
+                                                            color=primary_colors['WHITE'],
                                                             text_align='center',
                                                             weight='bold',
                                                         )
@@ -183,8 +183,8 @@ class MeasurementHandbook(Container):
                                             on_click=self.insert_into_db,
                                         ),
                                         ElevatedButton(
-                                            color=white,
-                                            bgcolor='#5B7553',
+                                            color=primary_colors['WHITE'],
+                                            bgcolor=primary_colors['GREEN'],
                                             width=200,
                                             height=70,
                                             content=Column(
@@ -195,7 +195,7 @@ class MeasurementHandbook(Container):
                                                         Text(
                                                             value='Редактировать',
                                                             size=16,
-                                                            color=white,
+                                                            color=primary_colors['WHITE'],
                                                             text_align='center',
                                                             weight='bold',
                                                         )
@@ -309,8 +309,8 @@ class MeasurementHandbook(Container):
     
     def show_error_dialog(self, text):
         self.page.dialog = self.alter_dialog_error
-        self.alter_dialog_error.title = Text(value="Ошибка", color="black")
-        self.alter_dialog_error.content = Text(value=text, color="black")
+        self.alter_dialog_error.title = Text(value="Ошибка", color=primary_colors['BLACK'])
+        self.alter_dialog_error.content = Text(value=text, color=primary_colors['BLACK'])
         self.alter_dialog_error.open = True
         self.page.update() 
     

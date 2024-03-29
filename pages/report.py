@@ -3,7 +3,6 @@ from datetime import datetime
 from flet import *
 from openpyxl.styles import Font, Alignment, DEFAULT_FONT, Border, Side
 from service.connection import *
-from utils.colors import *
 from utils.consts import *
 
 class Report(Container):
@@ -13,7 +12,7 @@ class Report(Container):
         self.page.theme_mode = ThemeMode.LIGHT
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = '#FFFFFF'
+        self.bgcolor = primary_colors['WHITE']
 
         dropdown_options_specialists = []
         dropdown_options_departments = []
@@ -165,7 +164,7 @@ class Report(Container):
                 Container(
                     width=8000,
                     padding=40,
-                    bgcolor='#5B7553',
+                    bgcolor=primary_colors['GREEN'],
                     # border_radius=15,
                     content=Column(
                         horizontal_alignment='center',  # Align the text to the right
@@ -177,13 +176,13 @@ class Report(Container):
                                     controls=[
                                         Container(
                                             # width=200,
-                                            bgcolor='white',
+                                            bgcolor=primary_colors['WHITE'],
                                             width=70,
                                             height=70,
                                             border_radius=50,
                                             content=IconButton(
                                                 icons.ARROW_BACK_OUTLINED,
-                                                icon_color='#5B7553',
+                                                icon_color=primary_colors['GREEN'],
                                                 icon_size=30,
                                                 on_click=lambda x: x == self.page.go('/home')
                                             )
@@ -192,7 +191,7 @@ class Report(Container):
                                             content=Text(
                                                 value='Отчеты',
                                                 size=18,
-                                                color='white',
+                                                color=primary_colors['WHITE'],
                                                 text_align='center',
                                             ),
                                         ),
@@ -207,7 +206,7 @@ class Report(Container):
                 # manual buttons
                 Container(
                     expand=True,
-                    bgcolor='white',
+                    bgcolor=primary_colors['WHITE'],
                     content=Column(
                         expand=True,
                         # alignment='center',
@@ -225,8 +224,8 @@ class Report(Container):
                                         # self.report_spec,
                                         # self.report_quater,
                                         ElevatedButton(
-                                            color=white,
-                                            bgcolor='#5B7553',
+                                            color=primary_colors['WHITE'],
+                                            bgcolor=primary_colors['GREEN'],
                                             width=250,
                                             height=70,
                                             content=Column(
@@ -237,7 +236,7 @@ class Report(Container):
                                                         Text(
                                                             value='Сформировать',
                                                             size=16,
-                                                            color=white,
+                                                            color=primary_colors['WHITE'],
                                                             text_align='center',
                                                             weight='bold',
                                                         )
@@ -248,8 +247,8 @@ class Report(Container):
                                             # on_click=lambda x: x == self.page.go('/home')
                                         ),
                                         ElevatedButton(
-                                            color=white,
-                                            bgcolor='#5B7553',
+                                            color=primary_colors['WHITE'],
+                                            bgcolor=primary_colors['GREEN'],
                                             width=250,
                                             height=70,
                                             content=Column(
@@ -260,7 +259,7 @@ class Report(Container):
                                                         Text(
                                                             value='Экспорт',
                                                             size=16,
-                                                            color=white,
+                                                            color=primary_colors['WHITE'],
                                                             text_align='center',
                                                             weight='bold',
                                                         )
@@ -280,9 +279,9 @@ class Report(Container):
                                 content=DataTable(
                                     columns=[],
                                     rows=[],  # Leave this empty for now
-                                    border=border.all(1, "black"),
-                                    vertical_lines=border.BorderSide(1, "black"),
-                                    horizontal_lines=border.BorderSide(1, "black"),
+                                    border=border.all(1, primary_colors['BLACK']),
+                                    vertical_lines=border.BorderSide(1, primary_colors['BLACK']),
+                                    horizontal_lines=border.BorderSide(1, primary_colors['BLACK']),
                                     sort_column_index=0,
                                     sort_ascending=True,
                                     heading_row_color=colors.BLACK12,

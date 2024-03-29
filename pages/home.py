@@ -1,12 +1,12 @@
 from flet import *
-from utils.colors import * 
+from utils.consts import primary_colors
 
 class Home(Container):
     def __init__(self, page: Page):
         super().__init__()
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = tea_green
+        self.bgcolor = primary_colors['GREEN']
         
         #header
         self.content = Column(
@@ -15,7 +15,7 @@ class Home(Container):
                 Container(
                     width=8000,
                     padding=40,
-                    bgcolor='#5B7553',
+                    bgcolor=primary_colors['GREEN'],
                     # border_radius=15,
                     content=Column(
                         horizontal_alignment='center',
@@ -25,14 +25,14 @@ class Home(Container):
                               alignment='spaceBetween',
                               controls=[
                                 Container(
-                                  bgcolor='white',
+                                  bgcolor=primary_colors['WHITE'],
                                   
                                   border_radius=30,
                                   padding=20,
                                   content=Text(
                                     value='Добро пожаловать user',
                                     size=16,
-                                    color='#5B7553',
+                                    color=primary_colors['GREEN'],
                                     text_align='center',
                                     weight='bold',
                                   ),
@@ -47,8 +47,8 @@ class Home(Container):
                                 ),
                                 Container(
                                     ElevatedButton(
-                                    color=white,
-                                    bgcolor='white',
+                                    color=primary_colors['WHITE'],
+                                    bgcolor=primary_colors['WHITE'],
                                     width=200,
                                     height=70,
                                     content=Column(
@@ -60,7 +60,7 @@ class Home(Container):
                                             Text(
                                               value='Настройки',
                                               size=16,
-                                              color='#5B7553',
+                                              color=primary_colors['GREEN'],
                                               text_align='center',
                                               weight='bold',
                                             )
@@ -83,7 +83,7 @@ class Home(Container):
                 #manual buttons
                 Container(
                     expand=True,
-                    bgcolor='white',
+                    bgcolor=primary_colors['WHITE'],
                     content=Column(
                       expand=True,
                       # alignment='center',
@@ -99,8 +99,8 @@ class Home(Container):
                                 #buttons
                                 ElevatedButton(
                                   # text='Заполнить карту КПЭ',
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=700,
                                   height=70,
                                   content=Column(
@@ -112,7 +112,7 @@ class Home(Container):
                                           Text(
                                             value='Заполнить карту КПЭ',
                                             size=16,
-                                            color=white,
+                                            color=primary_colors['WHITE'],
                                             text_align='center',
                                             weight='bold',
                                           )
@@ -124,8 +124,8 @@ class Home(Container):
                                 
                                 Container(height=0),
                                 ElevatedButton(
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=700,
                                   height=70,
                                   content=Column(
@@ -136,7 +136,7 @@ class Home(Container):
                                           Text(
                                             value='Отчеты',
                                             size=16,
-                                            color=white,
+                                            color=primary_colors['WHITE'],
                                             text_align='center',
                                             weight='bold',
                                           )
@@ -148,8 +148,8 @@ class Home(Container):
                                 
                                 Container(height=0),
                                 ElevatedButton(
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=700,
                                   height=70,
                                   content=Column(
@@ -160,7 +160,7 @@ class Home(Container):
                                           Text(
                                             value='Справочник',
                                             size=16,
-                                            color=white,
+                                            color=primary_colors['WHITE'],
                                             text_align='center',
                                             weight='bold',
                                           )
@@ -184,20 +184,5 @@ class Home(Container):
                       ],
                   )
                 ),
-                
-                # Container(
-                #     expand=True,
-                #     bgcolor='black',
-                #     content=Row(
-                #       controls=[
-                #         Container(
-                #           bgcolor='white'
-                #         )
-                #       ]
-                #     )
-                # )
-                
-                
-                
             ]
         )

@@ -1,7 +1,7 @@
 import datetime
 from flet import *
 from service.connection import *
-from utils.colors import *
+from utils.consts import primary_colors
 
 
 class EditKPE(Container):
@@ -11,7 +11,7 @@ class EditKPE(Container):
         self.page.theme_mode = ThemeMode.LIGHT
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = '#FFFFFF'
+        self.bgcolor = primary_colors['WHITE']
         self.selected_rows = set()
         self.sql_query = []
         self.data_table = DataTable(
@@ -39,9 +39,9 @@ class EditKPE(Container):
                 DataColumn(Text("Выбор")),
             ],
             rows=[],
-            border=border.all(1, "black"),
-            vertical_lines=border.BorderSide(1, "black"),
-            horizontal_lines=border.BorderSide(1, "black"),
+            border=border.all(1, primary_colors['BLACK']),
+            vertical_lines=border.BorderSide(1, primary_colors['BLACK']),
+            horizontal_lines=border.BorderSide(1, primary_colors['BLACK']),
             sort_column_index=0,
             sort_ascending=True,
             heading_row_color=colors.BLACK12,
@@ -82,7 +82,7 @@ class EditKPE(Container):
         self.report_spec = Container(
             content=Dropdown(
                 hint_text='Выберите специалиста',
-                color='black',
+                color=primary_colors['BLACK'],
                 options=dropdown_options_specialists_1,
                 on_change=self.show_indicators
             )
@@ -90,14 +90,14 @@ class EditKPE(Container):
         self.specialist_menu_box = Container(
             content=Dropdown(
                 hint_text='Выберите специалиста',
-                color='black',
+                color=primary_colors['BLACK'],
                 options=dropdown_options_specialists_2
             )
         )
         self.units_menu_box = Container(
             content=Dropdown(
                 hint_text='ед. изм.',
-                color="black",
+                color=primary_colors['BLACK'],
                 width=300,
                 options=dropdown_options_units,  # Set the options from the fetched data
             ),
@@ -105,13 +105,13 @@ class EditKPE(Container):
         self.first_qr_box = Container(
             content=TextField(
                 hint_style=TextStyle(
-                    size=12, color='#858796'
+                    size=12, color=primary_colors['MANATEE']
                 ),
                 label='1 квартал',
-                cursor_color='#858796',
+                cursor_color=primary_colors['MANATEE'],
                 text_style=TextStyle(
                     size=14,
-                    color='#5B7553',
+                    color=primary_colors['GREEN'],
                 ),
                 width=100
             ),
@@ -119,13 +119,13 @@ class EditKPE(Container):
         self.second_qr_box = Container(
             content=TextField(
                 hint_style=TextStyle(
-                    size=12, color='#858796'
+                    size=12, color=primary_colors['MANATEE']
                 ),
                 label='2 квартал',
-                cursor_color='#858796',
+                cursor_color=primary_colors['MANATEE'],
                 text_style=TextStyle(
                     size=14,
-                    color='#5B7553',
+                    color=primary_colors['GREEN'],
                 ),
                 width=100
             ),
@@ -133,13 +133,13 @@ class EditKPE(Container):
         self.third_qr_box = Container(
             content=TextField(
                 hint_style=TextStyle(
-                    size=12, color='#858796'
+                    size=12, color=primary_colors['MANATEE']
                 ),
                 label='3 квартал',
-                cursor_color='#858796',
+                cursor_color=primary_colors['MANATEE'],
                 text_style=TextStyle(
                     size=14,
-                    color='#5B7553',
+                    color=primary_colors['GREEN'],
                 ),
                 width=100
             ),
@@ -147,13 +147,13 @@ class EditKPE(Container):
         self.fourtht_qr_box = Container(
             content=TextField(
                 hint_style=TextStyle(
-                    size=12, color='#858796'
+                    size=12, color=primary_colors['MANATEE']
                 ),
                 label='4 квартал',
-                cursor_color='#858796',
+                cursor_color=primary_colors['MANATEE'],
                 text_style=TextStyle(
                     size=14,
-                    color='#5B7553',
+                    color=primary_colors['GREEN'],
                 ),
                 width=100
             ),
@@ -161,13 +161,13 @@ class EditKPE(Container):
         self.year_box = Container(
             content=TextField(
                 hint_style=TextStyle(
-                    size=12, color='#858796'
+                    size=12, color=primary_colors['MANATEE']
                 ),
                 label='Год',
-                cursor_color='#858796',
+                cursor_color=primary_colors['MANATEE'],
                 text_style=TextStyle(
                     size=14,
-                    color='#5B7553',
+                    color=primary_colors['GREEN'],
                 ),
                 width=100
             ),
@@ -175,13 +175,13 @@ class EditKPE(Container):
         self.weight_first_qr_box = Container(
             content=TextField(
                 hint_style=TextStyle(
-                    size=12, color='#858796'
+                    size=12, color=primary_colors['MANATEE']
                 ),
                 label='Вес 1 кв.',
-                cursor_color='#858796',
+                cursor_color=primary_colors['MANATEE'],
                 text_style=TextStyle(
                     size=14,
-                    color='#5B7553',
+                    color=primary_colors['GREEN'],
                 ),
                 width=100
             ),
@@ -189,13 +189,13 @@ class EditKPE(Container):
         self.weight_second_qr_box = Container(
             content=TextField(
                 hint_style=TextStyle(
-                    size=12, color='#858796'
+                    size=12, color=primary_colors['MANATEE']
                 ),
                 label='Вес 2 кв.',
-                cursor_color='#858796',
+                cursor_color=primary_colors['MANATEE'],
                 text_style=TextStyle(
                     size=14,
-                    color='#5B7553',
+                    color=primary_colors['GREEN'],
                 ),
                 width=100
             ),
@@ -203,13 +203,13 @@ class EditKPE(Container):
         self.weight_third_qr_box = Container(
             content=TextField(
                 hint_style=TextStyle(
-                    size=12, color='#858796'
+                    size=12, color=primary_colors['MANATEE']
                 ),
                 label='Вес 3 кв.',
-                cursor_color='#858796',
+                cursor_color=primary_colors['MANATEE'],
                 text_style=TextStyle(
                     size=14,
-                    color='#5B7553',
+                    color=primary_colors['GREEN'],
                 ),
                 width=100
             ),
@@ -217,13 +217,13 @@ class EditKPE(Container):
         self.weight_fourth_qr_box = Container(
             content=TextField(
                 hint_style=TextStyle(
-                    size=12, color='#858796'
+                    size=12, color=primary_colors['MANATEE']
                 ),
                 label='Вес 4 кв.',
-                cursor_color='#858796',
+                cursor_color=primary_colors['MANATEE'],
                 text_style=TextStyle(
                     size=14,
-                    color='#5B7553',
+                    color=primary_colors['GREEN'],
                 ),
                 width=100
             ),
@@ -231,7 +231,7 @@ class EditKPE(Container):
         self.cb_menu_spec = Container(
             content=Dropdown(
                 label='Выберите наименование показателя',
-                color="black",
+                color=primary_colors['BLACK'],
                 width=350,
                 options=self.dropdown_options_indicators_truncated,
                 on_change=self.added_new_to_indicators
@@ -241,12 +241,12 @@ class EditKPE(Container):
             content=TextField(
                 label="Введите наименование показателя",
                 hint_style=TextStyle(
-                    size=12, color='#858796'
+                    size=12, color=primary_colors['MANATEE']
                 ),
-                cursor_color='#858796',
+                cursor_color=primary_colors['MANATEE'],
                 text_style=TextStyle(
                     size=14,
-                    color='black',
+                    color=primary_colors['BLACK'],
                 ),
                 width=400
             ),
@@ -272,7 +272,7 @@ class EditKPE(Container):
             title=Text(
                 value="Изменить строку",
                 size=16,
-                color='#5B7553',
+                color=primary_colors['GREEN'],
                 text_align='center',
                 weight='bold',
                 width=60
@@ -298,7 +298,7 @@ class EditKPE(Container):
                                 Text(
                                     value='План',
                                     size=16,
-                                    color='#5B7553',
+                                    color=primary_colors['GREEN'],
                                     text_align='center',
                                     weight='bold',
                                     width=60
@@ -322,7 +322,7 @@ class EditKPE(Container):
                                 Text(
                                     value='Вес КПЭ',
                                     size=16,
-                                    color='#5B7553',
+                                    color=primary_colors['GREEN'],
                                     text_align='center',
                                     weight='bold',
                                 ),
@@ -351,7 +351,7 @@ class EditKPE(Container):
                 text_align='center',
                 weight='bold',
                 width=60,
-                color='#5B7553'
+                color=primary_colors['GREEN']
             ),
             content=Column(
                 height=300,
@@ -376,7 +376,7 @@ class EditKPE(Container):
                                 Text(
                                     value='План',
                                     size=16,
-                                    color='#5B7553',
+                                    color=primary_colors['GREEN'],
                                     text_align='center',
                                     weight='bold',
                                     width=60
@@ -401,7 +401,7 @@ class EditKPE(Container):
                                 Text(
                                     value='Вес КПЭ',
                                     size=16,
-                                    color='#5B7553',
+                                    color=primary_colors['GREEN'],
                                     text_align='center',
                                     weight='bold',
                                 ),
@@ -451,7 +451,7 @@ class EditKPE(Container):
                 Container(
                     width=8000,
                     padding=40,
-                    bgcolor='#5B7553',
+                    bgcolor=primary_colors['GREEN'],
                     content=Column(
                         horizontal_alignment='center',
                         controls=[
@@ -465,25 +465,25 @@ class EditKPE(Container):
                                                 spacing=10,
                                                 controls=[
                                                     Container(
-                                                        bgcolor='white',
+                                                        bgcolor=primary_colors['WHITE'],
                                                         width=70,
                                                         height=70,
                                                         border_radius=50,
                                                         content=IconButton(
                                                             icons.ARROW_BACK_OUTLINED,
-                                                            icon_color='#5B7553',
+                                                            icon_color=primary_colors['GREEN'],
                                                             icon_size=30,
                                                             on_click=lambda x: x == self.page.go('/card')
                                                         )
                                                     ),
                                                     Container(
-                                                        bgcolor='white',
+                                                        bgcolor=primary_colors['WHITE'],
                                                         width=70,
                                                         height=70,
                                                         border_radius=50,
                                                         content=IconButton(
                                                             icons.HOME,
-                                                            icon_color='#5B7553',
+                                                            icon_color=primary_colors['GREEN'],
                                                             icon_size=30,
                                                             on_click=lambda x: x == self.page.go('/home')
                                                         )
@@ -495,7 +495,7 @@ class EditKPE(Container):
                                             content=Text(
                                                 value='Ввести изменение в карту КПЭ',
                                                 size=18,
-                                                color='white',
+                                                color=primary_colors['WHITE'],
                                                 text_align='center',
                                             ),
                                         ),
@@ -516,7 +516,7 @@ class EditKPE(Container):
                 # *MANUAL BUTTONS
                 Container(
                     expand=True,
-                    bgcolor='white',
+                    bgcolor=primary_colors['WHITE'],
                     content=Column(
                         expand=True,
                         horizontal_alignment='center',
@@ -531,8 +531,8 @@ class EditKPE(Container):
                                         self.report_spec,
                                         Container(
                                             content=ElevatedButton(
-                                                color=white,
-                                                bgcolor='#5B7553',
+                                                color=primary_colors['WHITE'],
+                                                bgcolor=primary_colors['GREEN'],
                                                 width=170,
                                                 height=70,
                                                 content=Column(
@@ -543,7 +543,7 @@ class EditKPE(Container):
                                                             Text(
                                                                 value='Сформировать',
                                                                 size=16,
-                                                                color=white,
+                                                                color=primary_colors['WHITE'],
                                                                 text_align='center',
                                                                 weight='bold',
                                                             )
@@ -556,8 +556,8 @@ class EditKPE(Container):
                                         Container(width=300),
                                         Container(
                                             content=ElevatedButton(
-                                                color=white,
-                                                bgcolor='#5B7553',
+                                                color=primary_colors['WHITE'],
+                                                bgcolor=primary_colors['GREEN'],
                                                 width=170,
                                                 height=70,
                                                 content=Column(
@@ -568,7 +568,7 @@ class EditKPE(Container):
                                                             Text(
                                                                 value='Редактировать',
                                                                 size=16,
-                                                                color=white,
+                                                                color=primary_colors['WHITE'],
                                                                 text_align='center',
                                                                 weight='bold',
                                                             )
@@ -580,8 +580,8 @@ class EditKPE(Container):
                                         ),
                                         Container(
                                             content=ElevatedButton(
-                                                color=white,
-                                                bgcolor='#5B7553',
+                                                color=primary_colors['WHITE'],
+                                                bgcolor=primary_colors['GREEN'],
                                                 width=170,
                                                 height=70,
                                                 content=Column(
@@ -592,7 +592,7 @@ class EditKPE(Container):
                                                             Text(
                                                                 value='Удалить',
                                                                 size=16,
-                                                                color=white,
+                                                                color=primary_colors['WHITE'],
                                                                 text_align='center',
                                                                 weight='bold',
                                                             )
@@ -604,8 +604,8 @@ class EditKPE(Container):
                                         ),
                                         Container(
                                             content=ElevatedButton(
-                                                color=white,
-                                                bgcolor='#5B7553',
+                                                color=primary_colors['WHITE'],
+                                                bgcolor=primary_colors['GREEN'],
                                                 width=170,
                                                 height=70,
                                                 content=Column(
@@ -616,7 +616,7 @@ class EditKPE(Container):
                                                             Text(
                                                                 value='Оставить без изменения',
                                                                 size=16,
-                                                                color=white,
+                                                                color=primary_colors['WHITE'],
                                                                 text_align='center',
                                                                 weight='bold',
                                                             )
@@ -628,8 +628,8 @@ class EditKPE(Container):
                                         ),
                                         Container(
                                             content=ElevatedButton(
-                                                color=white,
-                                                bgcolor='#5B7553',
+                                                color=primary_colors['WHITE'],
+                                                bgcolor=primary_colors['GREEN'],
                                                 width=170,
                                                 height=70,
                                                 content=Column(
@@ -640,7 +640,7 @@ class EditKPE(Container):
                                                             Text(
                                                                 value='Добавить',
                                                                 size=16,
-                                                                color=white,
+                                                                color=primary_colors['WHITE'],
                                                                 text_align='center',
                                                                 weight='bold',
                                                             )
@@ -662,8 +662,8 @@ class EditKPE(Container):
                             Container(height=50),
                             Container(
                                 content=ElevatedButton(
-                                    color=white,
-                                    bgcolor='#5B7553',
+                                    color=primary_colors['WHITE'],
+                                    bgcolor=primary_colors['GREEN'],
                                     width=250,
                                     height=70,
                                     content=Column(
@@ -674,7 +674,7 @@ class EditKPE(Container):
                                                 Text(
                                                     value='Подтвердить изменения',
                                                     size=16,
-                                                    color=white,
+                                                    color=primary_colors['WHITE'],
                                                     text_align='center',
                                                     weight='bold',
                                                 )

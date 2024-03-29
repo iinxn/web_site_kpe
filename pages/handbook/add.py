@@ -1,5 +1,5 @@
 from flet import *
-from utils.colors import * 
+from utils.consts import primary_colors 
 from service.connection import *
 
 class Add(Container):
@@ -9,7 +9,7 @@ class Add(Container):
         self.page.theme_mode = ThemeMode.LIGHT  # Set the theme mode
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = '#FFFFFF'
+        self.bgcolor = primary_colors['WHITE']
         
         dropdown_options_specialists = []
         dropdown_options_specialists_alter_dialoge = []
@@ -28,9 +28,9 @@ class Add(Container):
                 DataColumn(Text("Редактирование")),
             ],
             rows=[],  # Leave this empty for now
-            border=border.all(1, "black"),
-            vertical_lines=border.BorderSide(1, "black"),
-            horizontal_lines=border.BorderSide(1, "black"),
+            border=border.all(1, primary_colors['BLACK']),
+            vertical_lines=border.BorderSide(1, primary_colors['BLACK']),
+            horizontal_lines=border.BorderSide(1, primary_colors['BLACK']),
             sort_column_index=0,
             sort_ascending=True,
             heading_row_color=colors.BLACK12,
@@ -67,13 +67,13 @@ class Add(Container):
         self.add_textfield_box = Container(
           content=TextField(
                         hint_style=TextStyle(
-                          size=12, color='#858796'
+                          size=12, color=primary_colors['MANATEE']
                         ),
                         label='Поле ввода',
-                        cursor_color='#858796',
+                        cursor_color=primary_colors['MANATEE'],
                         text_style=TextStyle(
                           size=14,
-                          color='#5B7553',
+                          color=primary_colors['GREEN'],
                         ),
           )
         )
@@ -87,7 +87,7 @@ class Add(Container):
         self.cb_units = Container(
           content=Dropdown(
                 hint_text='Выберите измерения',
-                color="black",
+                color=primary_colors['BLACK'],
                 width=230,
                 options=dropdown_options_units_1,  # Set the options from the fetched data
             ),
@@ -95,7 +95,7 @@ class Add(Container):
         self.dp_units = Container(
           content=Dropdown(
                 hint_text='Выберите измерения',
-                color="black",
+                color=primary_colors['BLACK'],
                 width=300,
                 options=dropdown_options_units_2,  # Set the options from the fetched data
             ),
@@ -104,13 +104,13 @@ class Add(Container):
         self.edit_name = Container(
           content=TextField(
                     hint_style=TextStyle(
-                        size=12, color='#858796'
+                        size=12, color=primary_colors['MANATEE']
                     ),
                     label='Введите другое название',
-                    cursor_color='#858796',
+                    cursor_color=primary_colors['MANATEE'],
                     text_style=TextStyle(
                         size=14,
-                        color='#5B7553',
+                        color=primary_colors['GREEN'],
                     ),
                         ),
         )
@@ -118,7 +118,7 @@ class Add(Container):
         self.specialist_menu_box = Container(
             content=Dropdown(
                 hint_text='Выберите специалиста',
-                color="black",
+                color=primary_colors['BLACK'],
                 width=330,
                 options=dropdown_options_specialists,
             )
@@ -126,7 +126,7 @@ class Add(Container):
         self.specialist_menu_box_alter_dialoge = Container(
             content=Dropdown(
                 hint_text='Выберите специалиста',
-                color="black",
+                color=primary_colors['BLACK'],
                 width=330,
                 options=dropdown_options_specialists_alter_dialoge,
             )
@@ -160,7 +160,7 @@ class Add(Container):
                 Container(
                     width=8000,
                     padding=40,
-                    bgcolor='#5B7553',
+                    bgcolor=primary_colors['GREEN'],
                     # border_radius=15,
                     content=Column(
                         horizontal_alignment='center',  # Align the text to the right
@@ -176,25 +176,25 @@ class Add(Container):
                                     spacing=10,
                                     controls=[
                                       Container(
-                                          bgcolor='white',
+                                          bgcolor=primary_colors['WHITE'],
                                           width=70,
                                           height=70,
                                           border_radius=50,
                                           content=IconButton(
                                               icons.ARROW_BACK_OUTLINED,
-                                              icon_color='#5B7553',
+                                              icon_color=primary_colors['GREEN'],
                                               icon_size=30,
                                               on_click=lambda x: x == self.page.go('/handbook')
                                           )
                                       ),
                                       Container(
-                                          bgcolor='white',
+                                          bgcolor=primary_colors['WHITE'],
                                           width=70,
                                           height=70,
                                           border_radius=50,
                                           content=IconButton(
                                               icons.HOME,
-                                              icon_color='#5B7553',
+                                              icon_color=primary_colors['GREEN'],
                                               icon_size=30,
                                               on_click=lambda x: x == self.page.go('/home')
                                           )
@@ -206,7 +206,7 @@ class Add(Container):
                                     content=Text(
                                     value='Добавление показателя в справочник',
                                     size=18,
-                                    color='white',
+                                    color=primary_colors['WHITE'],
                                     text_align='center',
                                   ),
                                 ),
@@ -224,7 +224,7 @@ class Add(Container):
 #*MANUAL BUTTONS
                 Container(
                     expand=True,
-                    bgcolor='white',
+                    bgcolor=primary_colors['WHITE'],
                     content=Column(
                       expand=True,
                       # alignment='center',
@@ -239,8 +239,8 @@ class Add(Container):
                               controls=[
                                 self.specialist_menu_box,
                                 ElevatedButton(
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=200,
                                   height=70,
                                   content=Column(
@@ -251,7 +251,7 @@ class Add(Container):
                                               Text(
                                                   value='Сформировать',
                                                   size=16,
-                                                  color=white,
+                                                  color=primary_colors['WHITE'],
                                                   text_align='center',
                                                   weight='bold',
                                               )
@@ -273,8 +273,8 @@ class Add(Container):
                                   self.add_textfield_box,
                                   self.cb_units,
                                   ElevatedButton(
-                                    color=white,
-                                    bgcolor='#5B7553',
+                                    color=primary_colors['WHITE'],
+                                    bgcolor=primary_colors['GREEN'],
                                     width=200,
                                     height=70,
                                     content=Column(
@@ -285,7 +285,7 @@ class Add(Container):
                                                 Text(
                                                     value='Добавить',
                                                     size=16,
-                                                    color=white,
+                                                    color=primary_colors['WHITE'],
                                                     text_align='center',
                                                     weight='bold',
                                                 )
@@ -295,8 +295,8 @@ class Add(Container):
                                     on_click=self.insert_into_db,
                                   ),
                                   ElevatedButton(
-                                      color=white,
-                                      bgcolor='#5B7553',
+                                      color=primary_colors['WHITE'],
+                                      bgcolor=primary_colors['GREEN'],
                                       width=200,
                                       height=70,
                                       content=Column(
@@ -307,7 +307,7 @@ class Add(Container):
                                                   Text(
                                                       value='Редактировать',
                                                       size=16,
-                                                      color=white,
+                                                      color=primary_colors['WHITE'],
                                                       text_align='center',
                                                       weight='bold',
                                                   )
@@ -444,8 +444,8 @@ class Add(Container):
 
     def show_error_dialog(self,text):
         self.page.dialog = self.alter_dialog_error
-        self.alter_dialog_error.title = Text(value="Ошибка", color="black")
-        self.alter_dialog_error.content = Text(value=text, color="black")
+        self.alter_dialog_error.title = Text(value="Ошибка", color=primary_colors['BLACK'])
+        self.alter_dialog_error.content = Text(value=text, color=primary_colors['BLACK'])
         self.alter_dialog_error.open = True
         self.page.update() 
     def close_dlg_error(self, e):

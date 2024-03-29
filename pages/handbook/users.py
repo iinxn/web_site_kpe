@@ -1,5 +1,5 @@
 from flet import *
-from utils.colors import * 
+from utils.consts import primary_colors 
 from service.connection import *
 
 class Users(Container):
@@ -9,19 +9,19 @@ class Users(Container):
         self.page.theme_mode = ThemeMode.LIGHT
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = '#FFFFFF'
+        self.bgcolor = primary_colors['WHITE']
 
 #*BOX FOR TEXTFIELD
         self.user_login = Container(
           content=TextField(
                   label="Введите логин пользователя",
                   hint_style=TextStyle(
-                      size=12, color='#858796'
+                      size=12, color=primary_colors['MANATEE']
                   ),
-                  cursor_color='#858796',
+                  cursor_color=primary_colors['MANATEE'],
                   text_style=TextStyle(
                     size=14,
-                    color='black',
+                    color=primary_colors['BLACK'],
                   ),
                   width=330
               ),
@@ -30,12 +30,12 @@ class Users(Container):
           content=TextField(
                   label="Введите пароль пользователя",
                   hint_style=TextStyle(
-                      size=12, color='#858796'
+                      size=12, color=primary_colors['MANATEE']
                   ),
-                  cursor_color='#858796',
+                  cursor_color=primary_colors['MANATEE'],
                   text_style=TextStyle(
                     size=14,
-                    color='black',
+                    color=primary_colors['BLACK'],
                   ),
                   width=330
               ),
@@ -44,12 +44,12 @@ class Users(Container):
           content=TextField(
                   label="Введите ФИО пользователя",
                   hint_style=TextStyle(
-                      size=12, color='#858796'
+                      size=12, color=primary_colors['MANATEE']
                   ),
-                  cursor_color='#858796',
+                  cursor_color=primary_colors['MANATEE'],
                   text_style=TextStyle(
                     size=14,
-                    color='black',
+                    color=primary_colors['BLACK'],
                   ),
                   width=330
               ),
@@ -58,7 +58,7 @@ class Users(Container):
         self.cb_menu_status = Container(
           content=Dropdown(
                 hint_text='Выберите статус',
-                color="black",
+                color=primary_colors['BLACK'],
                 width=330,
                 options=[
                   dropdown.Option("Активный"),
@@ -99,7 +99,7 @@ class Users(Container):
                 Container(
                     width=8000,
                     padding=40,
-                    bgcolor='#5B7553',
+                    bgcolor=primary_colors['GREEN'],
                     content=Column(
                         horizontal_alignment='center',
                         controls=[
@@ -113,25 +113,25 @@ class Users(Container):
                                             spacing=10,
                                             controls=[
                                               Container(
-                                                  bgcolor='white',
+                                                  bgcolor=primary_colors['WHITE'],
                                                   width=70,
                                                   height=70,
                                                   border_radius=50,
                                                   content=IconButton(
                                                       icons.ARROW_BACK_OUTLINED,
-                                                      icon_color='#5B7553',
+                                                      icon_color=primary_colors['GREEN'],
                                                       icon_size=30,
                                                       on_click=lambda x: x == self.page.go('/handbook')
                                                   )
                                               ),
                                               Container(
-                                                  bgcolor='white',
+                                                  bgcolor=primary_colors['WHITE'],
                                                   width=70,
                                                   height=70,
                                                   border_radius=50,
                                                   content=IconButton(
                                                       icons.HOME,
-                                                      icon_color='#5B7553',
+                                                      icon_color=primary_colors['GREEN'],
                                                       icon_size=30,
                                                       on_click=lambda x: x == self.page.go('/home')
                                                   )
@@ -143,14 +143,14 @@ class Users(Container):
                                             content=Text(
                                                 value='Добавить специалиста в справочник',
                                                 size=18,
-                                                color='white',
+                                                color=primary_colors['WHITE'],
                                                 text_align='center',
                                             ),
                                         ),
                                         Container(
                                           ElevatedButton(
-                                            color=white,
-                                            bgcolor='white',
+                                            color=primary_colors['WHITE'],
+                                            bgcolor=primary_colors['WHITE'],
                                             width=200,
                                             height=70,
                                             content=Column(
@@ -162,7 +162,7 @@ class Users(Container):
                                                     Text(
                                                       value='Добавить специалиста',
                                                       size=16,
-                                                      color='#5B7553',
+                                                      color=primary_colors['GREEN'],
                                                       text_align='center',
                                                       weight='bold',
                                                     )
@@ -182,7 +182,7 @@ class Users(Container):
 # *MANUAL BUTTONS
                 Container(
                     expand=True,
-                    bgcolor='white',
+                    bgcolor=primary_colors['WHITE'],
                     content=Column(
                         expand=True,
                         horizontal_alignment='center',
@@ -202,9 +202,9 @@ class Users(Container):
                                         DataColumn(Text("Статус")),
                                     ],
                                     rows=[],  # Leave this empty for now
-                                    border=border.all(1, "black"),
-                                    vertical_lines=border.BorderSide(1, "black"),
-                                    horizontal_lines=border.BorderSide(1, "black"),
+                                    border=border.all(1, primary_colors['BLACK']),
+                                    vertical_lines=border.BorderSide(1, primary_colors['BLACK']),
+                                    horizontal_lines=border.BorderSide(1, primary_colors['BLACK']),
                                     sort_column_index=0,
                                     sort_ascending=True,
                                     heading_row_color=colors.BLACK12,
@@ -260,11 +260,13 @@ class Users(Container):
           
           cursor.execute(f"SELECT max(specialist_id) FROM specialists;")
           max_id = cursor.fetchone()[0]
-          query = "INSERT INTO TABLE users (user_id, login, password, full_name, status) VALUES ({}+1,'{}','{}','{}','{}')".format(int(max_id),
-                                                                                                                                      self.user_login.content.value,
-                                                                                                                                      self.user_password.content.value,
-                                                                                                                                      self.user_full_name.content.value,
-                                                                                                                                      self.cb_menu_status.content.value)
+          query = "INSERT INTO TABLE users (user_id, login, password, full_name, status) VALUES ({}+1,'{}','{}','{}','{}')".format(
+            int(max_id),
+            self.user_login.content.value,
+            self.user_password.content.value,
+            self.user_full_name.content.value,
+            self.cb_menu_status.content.value
+          )
           cursor.execute(query)
           print("Запись успешно добавлена в базу данных")
           self.alter_dialog_add_new_users.open = False

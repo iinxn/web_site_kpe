@@ -1,5 +1,5 @@
 from flet import *
-from utils.colors import * 
+from utils.consts import primary_colors
 from service.connection import *
 
 class SpecialistsHandbook(Container):
@@ -9,7 +9,7 @@ class SpecialistsHandbook(Container):
         self.page.theme_mode = ThemeMode.LIGHT
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = '#FFFFFF'
+        self.bgcolor = primary_colors['WHITE']
         
         self.selected_rows = set()
 
@@ -25,9 +25,9 @@ class SpecialistsHandbook(Container):
                 DataColumn(Text("Редактировать")),
             ],
             rows=[],
-            border=border.all(1, "black"),
-            vertical_lines=border.BorderSide(1, "black"),
-            horizontal_lines=border.BorderSide(1, "black"),
+            border=border.all(1, primary_colors['BLACK']),
+            vertical_lines=border.BorderSide(1, primary_colors['BLACK']),
+            horizontal_lines=border.BorderSide(1, primary_colors['BLACK']),
             sort_column_index=0,
             sort_ascending=True,
             heading_row_color=colors.BLACK12,
@@ -52,12 +52,12 @@ class SpecialistsHandbook(Container):
           content=TextField(
                   label="Введите ФИО специалиста",
                   hint_style=TextStyle(
-                      size=12, color='#858796'
+                      size=12, color=primary_colors['MANATEE']
                   ),
-                  cursor_color='#858796',
+                  cursor_color=primary_colors['MANATEE'],
                   text_style=TextStyle(
                     size=14,
-                    color='black',
+                    color=primary_colors['BLACK'],
                   ),
                   width=400
               ),
@@ -66,12 +66,12 @@ class SpecialistsHandbook(Container):
           content=TextField(
                   label="Введите должность специалиста",
                   hint_style=TextStyle(
-                      size=12, color='#858796'
+                      size=12, color=primary_colors['MANATEE']
                   ),
-                  cursor_color='#858796',
+                  cursor_color=primary_colors['MANATEE'],
                   text_style=TextStyle(
                     size=14,
-                    color='black',
+                    color=primary_colors['BLACK'],
                   ),
                   width=400
               ),
@@ -80,7 +80,7 @@ class SpecialistsHandbook(Container):
         self.cb_menu_department = Container(
             content=Dropdown(
                 hint_text='Выберите управление',
-                color="black",
+                color=primary_colors['BLACK'],
                 width=400,
                 options=dropdown_options_department,
             ),
@@ -88,7 +88,7 @@ class SpecialistsHandbook(Container):
         self.cb_menu_status = Container(
           content=Dropdown(
                 hint_text='Выберите статус',
-                color="black",
+                color=primary_colors['BLACK'],
                 width=400,
                 options=[
                   dropdown.Option("Активный"),
@@ -120,7 +120,7 @@ class SpecialistsHandbook(Container):
         self.edit_name = Container(
           content=Dropdown(
                 hint_text='Изменить состояние',
-                color="black",
+                color=primary_colors['BLACK'],
                 width=400,
                 options=[
                   dropdown.Option("Является"),
@@ -167,7 +167,7 @@ class SpecialistsHandbook(Container):
                 Container(
                     width=8000,
                     padding=40,
-                    bgcolor='#5B7553',
+                    bgcolor=primary_colors['GREEN'],
                     content=Column(
                         horizontal_alignment='center',
                         controls=[
@@ -181,25 +181,25 @@ class SpecialistsHandbook(Container):
                                             spacing=10,
                                             controls=[
                                               Container(
-                                                  bgcolor='white',
+                                                  bgcolor=primary_colors['WHITE'],
                                                   width=70,
                                                   height=70,
                                                   border_radius=50,
                                                   content=IconButton(
                                                       icons.ARROW_BACK_OUTLINED,
-                                                      icon_color='#5B7553',
+                                                      icon_color=primary_colors['GREEN'],
                                                       icon_size=30,
                                                       on_click=lambda x: x == self.page.go('/handbook')
                                                   )
                                               ),
                                               Container(
-                                                  bgcolor='white',
+                                                  bgcolor=primary_colors['WHITE'],
                                                   width=70,
                                                   height=70,
                                                   border_radius=50,
                                                   content=IconButton(
                                                       icons.HOME,
-                                                      icon_color='#5B7553',
+                                                      icon_color=primary_colors['GREEN'],
                                                       icon_size=30,
                                                       on_click=lambda x: x == self.page.go('/home')
                                                   )
@@ -211,7 +211,7 @@ class SpecialistsHandbook(Container):
                                             content=Text(
                                                 value='Добавить специалиста в справочник',
                                                 size=18,
-                                                color='white',
+                                                color=primary_colors['WHITE'],
                                                 text_align='center',
                                             ),
                                         ),
@@ -221,8 +221,8 @@ class SpecialistsHandbook(Container):
                                             controls=[
                                               Container(
                                                 content=ElevatedButton(
-                                                  color=white,
-                                                  bgcolor='white',
+                                                  color=primary_colors['WHITE'],
+                                                  bgcolor=primary_colors['WHITE'],
                                                   width=150,
                                                   height=70,
                                                   content=Column(
@@ -234,7 +234,7 @@ class SpecialistsHandbook(Container):
                                                           Text(
                                                             value='Добавить специалиста',
                                                             size=16,
-                                                            color='#5B7553',
+                                                            color=primary_colors['GREEN'],
                                                             text_align='center',
                                                             weight='bold',
                                                           )
@@ -246,8 +246,8 @@ class SpecialistsHandbook(Container):
                                               ),
                                               Container(
                                                 content=ElevatedButton(
-                                                  color=white,
-                                                  bgcolor='white',
+                                                  color=primary_colors['WHITE'],
+                                                  bgcolor=primary_colors['WHITE'],
                                                   width=170,
                                                   height=70,
                                                   content=Column(
@@ -259,7 +259,7 @@ class SpecialistsHandbook(Container):
                                                           Text(
                                                             value='Редактировать',
                                                             size=16,
-                                                            color='#5B7553',
+                                                            color=primary_colors['GREEN'],
                                                             text_align='center',
                                                             weight='bold',
                                                           )
@@ -282,7 +282,7 @@ class SpecialistsHandbook(Container):
 # *MANUAL BUTTONS
                 Container(
                     expand=True,
-                    bgcolor='white',
+                    bgcolor=primary_colors['WHITE'],
                     content=Column(
                         expand=True,
                         horizontal_alignment='center',
@@ -335,8 +335,8 @@ class SpecialistsHandbook(Container):
 
     def show_error_dialog(self,text):
         self.page.dialog = self.alter_dialog_error
-        self.alter_dialog_error.title = Text(value="Ошибка", color="black")
-        self.alter_dialog_error.content = Text(value=text, color="black")
+        self.alter_dialog_error.title = Text(value="Ошибка", color=primary_colors['BLACK'])
+        self.alter_dialog_error.content = Text(value=text, color=primary_colors['BLACK'])
         self.alter_dialog_error.open = True
         self.page.update() 
     def close_dlg_error(self, e):
