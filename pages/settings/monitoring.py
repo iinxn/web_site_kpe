@@ -1,5 +1,5 @@
 from flet import *
-from utils.colors import * 
+from utils.consts import primary_colors
 
 class Monitoring(Container):
     def __init__(self, page: Page):
@@ -8,7 +8,7 @@ class Monitoring(Container):
         self.page.theme_mode = ThemeMode.LIGHT  # Set the theme mode
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = tea_green
+        self.bgcolor = primary_colors['GREEN']
 
         #header
         self.content = Column(
@@ -17,7 +17,7 @@ class Monitoring(Container):
                 Container(
                     width=8000,
                     padding=40,
-                    bgcolor='#5B7553',
+                    bgcolor=primary_colors['GREEN'],
                     # border_radius=15,
                     content=Column(
                         horizontal_alignment='center',  # Align the text to the right
@@ -32,7 +32,7 @@ class Monitoring(Container):
                                     content=Text(
                                     value='Мониторинг',
                                     size=18,
-                                    color='white',
+                                    color=primary_colors['WHITE'],
                                     text_align='center',
                                   ),
                                 ),
@@ -50,7 +50,7 @@ class Monitoring(Container):
                 #manual buttons
                 Container(
                     expand=True,
-                    bgcolor='white',
+                    bgcolor=primary_colors['WHITE'],
                     content=Column(
                       expand=True,
                       # alignment='center',
@@ -70,7 +70,7 @@ class Monitoring(Container):
                                     # hint_style=TextStyle(
                                     #   size=14, color='#858796'
                                     # ),
-                                    # color='#5B7553',
+                                    # color=primary_colors['GREEN'],
                                     # content_padding=30,
                                     options=[
                                       dropdown.Option('Пользователь 1'),
@@ -89,13 +89,13 @@ class Monitoring(Container):
                                   #     cursor_color='#858796',
                                   #     text_style=TextStyle(
                                   #       size=14,
-                                  #       color='#5B7553',
+                                  #       color=primary_colors['GREEN'],
                                   #     ),
                                   #     # width=400,
                                   # ),
                                   ElevatedButton(
-                                    color=white,
-                                    bgcolor='#5B7553',
+                                    color=primary_colors['WHITE'],
+                                    bgcolor=primary_colors['GREEN'],
                                     width=400,
                                     height=70,
                                     content=Column(
@@ -106,7 +106,7 @@ class Monitoring(Container):
                                             Text(
                                               value='Посмотреть',
                                               size=16,
-                                              color=white,
+                                              color=primary_colors['WHITE'],
                                               text_align='center',
                                               weight='bold',
                                             )
@@ -136,9 +136,9 @@ class Monitoring(Container):
                                         on_select_changed=lambda e: print("На запись можноназать")
                                     )
                                 ],
-                                border=border.all(1, "black"),
-                                vertical_lines=border.BorderSide(1, "black"),
-                                horizontal_lines=border.BorderSide(1, "black"),
+                                border=border.all(1, primary_colors['BLACK']),
+                                vertical_lines=border.BorderSide(1, primary_colors['BLACK']),
+                                horizontal_lines=border.BorderSide(1, primary_colors['BLACK']),
                                 sort_column_index=0,
                                 sort_ascending=True,
                                 heading_row_color=colors.BLACK12,

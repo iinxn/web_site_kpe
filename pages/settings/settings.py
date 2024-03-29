@@ -1,12 +1,12 @@
 from flet import *
-from utils.colors import * 
+from utils.consts import primary_colors
 
 class Settings(Container):
     def __init__(self, page: Page):
         super().__init__()
         self.alignment = alignment.center
         self.expand = True
-        self.bgcolor = tea_green
+        self.bgcolor = primary_colors['WHITE']
         
         #header
         self.content = Column(
@@ -15,7 +15,7 @@ class Settings(Container):
                 Container(
                     width=8000,
                     padding=40,
-                    bgcolor='#5B7553',
+                    bgcolor=primary_colors['GREEN'],
                     # border_radius=15,
                     content=Column(
                         horizontal_alignment='center',  # Align the text to the right
@@ -31,7 +31,7 @@ class Settings(Container):
                                     content=Text(
                                     value='Настройки',
                                     size=18,
-                                    color='white',
+                                    color=primary_colors['WHITE'],
                                     text_align='center',
                                   ),
                                 ),
@@ -47,7 +47,7 @@ class Settings(Container):
                 #manual buttons
                 Container(
                     expand=True,
-                    bgcolor='white',
+                    bgcolor=primary_colors['WHITE'],
                     content=Column(
                       expand=True,
                       # alignment='center',
@@ -64,8 +64,8 @@ class Settings(Container):
                                 #buttons
                                 ElevatedButton(
                                   # text='Заполнить карту КПЭ',
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=500,
                                   height=70,
                                   content=Column(
@@ -77,7 +77,7 @@ class Settings(Container):
                                           Text(
                                             value='Смена темы',
                                             size=16,
-                                            color=white,
+                                            color=primary_colors['WHITE'],
                                             text_align='center',
                                             weight='bold',
                                           )
@@ -89,8 +89,8 @@ class Settings(Container):
                                 
                                 Container(height=0),
                                 ElevatedButton(
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=500,
                                   height=70,
                                   content=Column(
@@ -101,7 +101,7 @@ class Settings(Container):
                                           Text(
                                             value='Согласование',
                                             size=16,
-                                            color=white,
+                                            color=primary_colors['WHITE'],
                                             text_align='center',
                                             weight='bold',
                                           )
@@ -113,8 +113,8 @@ class Settings(Container):
                                 
                                 Container(height=0),
                                 ElevatedButton(
-                                  color=white,
-                                  bgcolor='#5B7553',
+                                  color=primary_colors['WHITE'],
+                                  bgcolor=primary_colors['GREEN'],
                                   width=500,
                                   height=70,
                                   content=Column(
@@ -125,7 +125,7 @@ class Settings(Container):
                                           Text(
                                             value='Мониторинг',
                                             size=16,
-                                            color=white,
+                                            color=primary_colors['WHITE'],
                                             text_align='center',
                                             weight='bold',
                                           )

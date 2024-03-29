@@ -1,5 +1,4 @@
 from flet import *
-
 from pages.add_kpe.actual import Actual
 from pages.add_kpe.card import Card
 from pages.add_kpe.edit_kpe import EditKPE
@@ -47,12 +46,8 @@ class Main(UserControl):
             "/users": Users,
             "/edit_kpe": EditKPE,
         }[self.page.route](self.page)
-
         self.page.views.clear()
         self.page.views.append(
             View(route, [new_page])
         )
-
-
-# app(target=Main, assets_dir='assets')
 app(target=Main, assets_dir='assets', view=WEB_BROWSER, port=8550)
