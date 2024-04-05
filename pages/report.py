@@ -744,7 +744,7 @@ class Report(Container):
                     cell.value = header
                     cell.border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
                     cell.alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
-                    cell.font = Font(bold=True)
+                    cell.font = Font(bold=True, size=14, name=main_font)
 
                 # Merge cells D1 to I1 and add the specified phrase
                 sheet.merge_cells('D1:I1')
@@ -755,15 +755,18 @@ class Report(Container):
                 sheet['D1'].value = "УТВЕРЖДАЮ\nРуководитель агентства по труду и занятости населения Сахалинской области"
                 sheet.row_dimensions[1].height = 40
                 sheet['D1'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+                sheet['D1'].font = Font(size=14, name=main_font)
 
                 # Repeat this pattern for other merged cells
                 sheet.merge_cells('D2:I2')
                 sheet['D2'].value = "______________Т.Г. Бабич"
                 sheet['D2'].alignment = Alignment(horizontal='center', vertical='center')
+                sheet['D2'].font = Font(size=14, name=main_font)
 
                 sheet.merge_cells('D3:I3')
                 sheet['D3'].value = '"__" _________20__ года'
                 sheet['D3'].alignment = Alignment(horizontal='center', vertical='center')
+                sheet['D3'].font = Font(size=14, name=main_font)
 
                 long_text = (
                     "КАРТА КЛЮЧЕВЫХ ПОКАЗАТЕЛЕЙ ЭФФЕКТИВНОСТИ ПРОФЕССИОНАЛЬНОЙ СЛУЖЕБНОЙ ДЕЯТЕЛЬНОСТИ "
@@ -775,19 +778,19 @@ class Report(Container):
 
                 # Set the value for the merged cell (only set in the top-left cell of the merged range)
                 sheet['A4'].value = long_text
-                sheet['A4'].font = Font(bold=True)
                 sheet['A4'].alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
+                sheet['A4'].font = Font(size=14, name=main_font, bold=True)
 
                 sheet.row_dimensions[1].height = 40  # Set the height for row 4 (2 cm)
 
                 sheet.merge_cells('A5:I5')
                 sheet['A5'].value = 'Агентство по труду и занятости населения Сахалинской области'
-                sheet['A5'].font = Font(bold=True)
+                sheet['A5'].font = Font(bold=True, size=14, name=main_font)
                 sheet['A5'].alignment = Alignment(horizontal='center', vertical='center')
 
                 sheet.merge_cells('A6:I6')
                 sheet['A6'].value = f'Карта КПЭ на 2023 год {str(potition_name_dep[0]).lower()}a {str(potition_name_dep[1]).lower()} {str(self.report_spec.content.value)}'
-                sheet['A6'].font = Font(bold=True)
+                sheet['A6'].font = Font(bold=True, size=14, name=main_font)
                 sheet['A6'].alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
 
                 sheet.row_dimensions[3].height = 40  # Set the height for row 6 (2 cm)
@@ -798,6 +801,7 @@ class Report(Container):
                         sheet.cell(row=i, column=col).value = value
                         sheet.cell(row=i, column=col).alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
                         cell.border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+                        cell.font = Font(size=14, name=main_font)
                     sheet.row_dimensions[i].height = 75
 
                 # Set alignment for the entire sheet
@@ -808,10 +812,12 @@ class Report(Container):
                     potition_name_dep[1]).lower(),'_'*22, self.report_spec.content.value)
                 sheet.merge_cells(f'A{last_row}:I{last_row}')  # Merge the cells for the record
                 sheet.row_dimensions[last_row].height = 40  # Set the height for the new row (2 cm)
+                sheet.cell(row=last_row, column=1).font = Font(size=14, name=main_font)
 
                 sheet[f'L{last_row}'].value = latest_version
+                sheet[f'L{last_row}'].font = Font(size=14, name=main_font)
                 
-                filename = paths['KPE']
+                filename = paths['KPE'].replace(".xlsx",f" - {self.report_spec.content.value}.xlsx")
                 print(filename)
 
                 if filename:
@@ -850,7 +856,7 @@ class Report(Container):
                         ]
 
                 for col, header in enumerate(headers, start=1):
-                    cell = sheet.cell(row=11, column=col)
+                    cell = sheet.cell(row=13, column=col)
                     print("Before font change:", cell.font)  # Add this line to check font before change
                     cell.value = header
                     cell.border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
@@ -858,94 +864,67 @@ class Report(Container):
                     cell.alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
                     print("After font change:", cell.font)
 
-                #Columns width
-                # sheet.column_dimensions["A"].width = 25
-                sheet.column_dimensions["B"].width = 45
-                sheet.column_dimensions["C"].width = 15
-                sheet.column_dimensions["D"].width = 35
-                sheet.column_dimensions["E"].width = 15
-                sheet.column_dimensions["F"].width = 25
-                sheet.column_dimensions["G"].width = 25
+                column_widths = {
+                    'B': 45,
+                    'C': 15,
+                    'D': 35,
+                    'E': 15,
+                    'F': 25,
+                    'G': 25
+                }
+                for column, width in column_widths.items():
+                    sheet.column_dimensions[column].width = width
+
+                sheet.merge_cells('D1:I1')
+                merged_cell = sheet['D1']
+                merged_cell.alignment = Alignment(horizontal='center', vertical='center')  # Center the text
+
+                # Set the value for one of the constituent cells
+                sheet['D1'].value = "УТВЕРЖДАЮ\nРуководитель агентства по труду и занятости населения Сахалинской области"
+                sheet.row_dimensions[1].height = 40
+                sheet['D1'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+                sheet['D1'].font = Font(size=14, name=main_font)
+
+                # Repeat this pattern for other merged cells
+                sheet.merge_cells('D2:I2')
+                sheet['D2'].value = "______________Т.Г. Бабич"
+                sheet['D2'].alignment = Alignment(horizontal='center', vertical='center')
+                sheet['D2'].font = Font(size=14, name=main_font)
+
+                sheet.merge_cells('D3:I3')
+                sheet['D3'].value = '"__" _________20__ года'
+                sheet['D3'].alignment = Alignment(horizontal='center', vertical='center')
+                sheet['D3'].font = Font(size=14, name=main_font)
                 
-                #Rows height
-                # sheet.row_dimensions[2].height = 80
-                # sheet.row_dimensions[6].height = 80
-                
-                # Merge cells D1 to I1 and add the specified phrase
-                # sheet.merge_cells('E1:G1')
-                # sheet['E1'].value = 'ПРИЛОЖЕНИЕ'
-                # sheet['E1'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                # sheet['E1'].font = Font(size=10)
-                
-                # sheet.merge_cells('E2:G2')
-                # sheet['E2'].value = 'к распоряжению агентства по труду и занятости населения Сахалинской области «О внесении изменений в Положение о порядке осуществления дополнительных выплат государственным гражданским служащим агентства по труду и занятости населения Сахалинской области, утвержденное распоряжением агентства по труду и занятости населения Сахалинской области от 15.09.2022 № 458-р»'
-                # sheet['E2'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                # sheet['E2'].font = Font(size=10)
-                
-                # sheet.merge_cells('E3:G3')
-                # sheet['E3'].value = 'от ________________ № _______		'
-                # sheet['E3'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                # sheet['E3'].font = Font(size=10)
-                
-                # sheet.merge_cells('E5:G5')
-                # sheet['E5'].value = 'ПРИЛОЖЕНИЕ'
-                # sheet['E5'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                # sheet['E5'].font = Font(size=10)
-                
-                # sheet.merge_cells('E6:G6')
-                # sheet['E6'].value = 'к Положению о порядке осуществления дополнительных выплат государственным гражданским служащим агентства по труду и занятости населения Сахалинской области, утвержденному распоряжением агентства по труду и занятости населения Сахалинской области от 15.09.2022 № 458-р'
-                # sheet['E6'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                # sheet['E6'].font = Font(size=10)
-                
-                sheet.merge_cells('B1:F1')
-                sheet['B1'].value = 'Расчет коэффициента выполнения'
-                sheet['B1'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                sheet['B1'].font = Font(bold=True, size=14, name=main_font)
-                
-                sheet.merge_cells('B2:F2')
-                sheet['B2'].value = 'ключевых показателей эффективности				'
-                sheet['B2'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                sheet['B2'].font = Font(bold=True, size=14, name=main_font)
-                
-                sheet.merge_cells('B3:F3')
-                sheet['B3'].value = 'профессиональной служебной деятельности'
-                sheet['B3'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                sheet['B3'].font = Font(bold=True, size=14, name=main_font)
-                
-                sheet.merge_cells('B4:F4')
-                sheet['B4'].value = 'по итогам работы за {} квартал'.format(self.report_quater.content.value)
-                sheet['B4'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                sheet['B4'].font = Font(bold=True, size=14, name=main_font)
-                
-                sheet.merge_cells('B6:F6')
-                sheet['B6'].value = '{}, {}'.format(potition_name_dep[0], self.report_spec.content.value)
-                sheet['B6'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                sheet['B6'].font = Font(bold=True, size=14, name=main_font)
-                
-                sheet.merge_cells('B7:F7')
-                sheet['B7'].value = '(должность, ФИО гражданского служащего)'
-                sheet['B7'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                sheet['B7'].font = Font(bold=True, size=14, name=main_font)
-                
-                sheet.merge_cells('B8:F8')
-                sheet['B8'].value = '{}'.format(potition_name_dep[1])
-                sheet['B8'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                sheet['B8'].font = Font(bold=True, size=14, name=main_font)
-                
-                sheet.merge_cells('B9:F9')
-                sheet['B9'].value = '(наименование управления)'
-                sheet['B9'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                sheet['B9'].font = Font(bold=True, size=14, name=main_font)
+                texts = [
+                    ('Расчет коэффициента выполнения', 4),
+                    ('ключевых показателей эффективности', 5),
+                    ('профессиональной служебной деятельности', 6),
+                    ('по итогам работы за {} квартал'.format(self.report_quater.content.value), 7),
+                    ('{}, {}'.format(potition_name_dep[0], self.report_spec.content.value), 9),
+                    ('(должность, ФИО гражданского служащего)', 10),
+                    ('{}'.format(potition_name_dep[1]), 11),
+                    ('(наименование управления)', 12)
+                ]
+
+                # Проход по списку текстов и их строкам
+                for text, row_num in texts:
+                    merge_cell = 'B{}:F{}'.format(row_num, row_num)
+                    sheet.merge_cells(merge_cell)
+                    cell = sheet['B{}'.format(row_num)]
+                    cell.value = text
+                    cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+                    cell.font = Font(bold=True, size=14, name=main_font)
                 
                 for col in range(1, 8):
-                    sheet.cell(row=12, column=col).value = col
-                    sheet.cell(row=12, column=col).alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                    sheet.cell(row=12, column=col).font = Font(size=14, name=main_font)
-                    cell = sheet.cell(row=12, column=col)
+                    sheet.cell(row=14, column=col).value = col
+                    sheet.cell(row=14, column=col).alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+                    sheet.cell(row=14, column=col).font = Font(size=14, name=main_font)
+                    cell = sheet.cell(row=14, column=col)
                     cell.border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
                 
                 # цикл для заполнения таблицы
-                for i, row_data in enumerate(results_premi, start=13):  # Start the data from row 9
+                for i, row_data in enumerate(results_premi, start=15):  # Start the data from row 9
                     for col, value in enumerate(row_data, start=1):
                         cell = sheet.cell(row=i, column=col)
                         sheet.cell(row=i, column=col).value = value
@@ -1043,7 +1022,7 @@ class Report(Container):
                 sheet[f'G{last_row+17}'].value = latest_version
                 sheet[f'G{last_row+17}'].font = Font(size=14, name=main_font)
 
-                filename = paths['BONUS']
+                filename = paths['BONUS'].replace(".xlsx",f" - {self.report_spec.content.value}.xlsx")
                 print(filename)
 
                 if filename:
@@ -1059,30 +1038,27 @@ class Report(Container):
                 
                 workbook = openpyxl.Workbook()
                 sheet = workbook.active
-                headers = ["№ п/п", 
-                            "Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области",
-                            "Наименование структурного подразделения органа исполнительной власти Сахалинской области",
-                            "Должность",
-                            "ФИО",
-                            "Процент выполнения КПЭ по итогам отчетного периода, %"
-                            ]
-
-                for col, header in enumerate(headers, start=1):
-                    cell = sheet.cell(row=2, column=col)
-                    cell.value = header
-                    cell.border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-                    cell.alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
-                    cell.font = Font(size=14, name=main_font)
-
-                #Columns width
-                arr_of_cols_1 = ['A','B','C','D', 'E', 'F']
-                for cell in arr_of_cols_1:
-                    sheet.column_dimensions[cell].width = 25
                 
-                #Rows height
-                # sheet.row_dimensions[1].height = 44
-                sheet.row_dimensions[1].height = 68
-                sheet.row_dimensions[2].height = 108
+                sheet.merge_cells('D1:F1')
+                merged_cell = sheet['D1']
+                merged_cell.alignment = Alignment(horizontal='center', vertical='center')  # Center the text
+
+                # Set the value for one of the constituent cells
+                sheet['D1'].value = "УТВЕРЖДАЮ\nРуководитель агентства по труду и занятости населения Сахалинской области"
+                # sheet.row_dimensions[1].height = 40
+                sheet['D1'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+                sheet['D1'].font = Font(size=14, name=main_font)
+
+                # Repeat this pattern for other merged cells
+                sheet.merge_cells('D2:F2')
+                sheet['D2'].value = "______________Т.Г. Бабич"
+                sheet['D2'].alignment = Alignment(horizontal='center', vertical='center')
+                sheet['D2'].font = Font(size=14, name=main_font)
+
+                sheet.merge_cells('D3:F3')
+                sheet['D3'].value = '"__" _________20__ года'
+                sheet['D3'].alignment = Alignment(horizontal='center', vertical='center')
+                sheet['D3'].font = Font(size=14, name=main_font)
                 
                 # wrap_text_cells = ['A2', 'B2', 'C2', 'D2', 'E2', 'F2']
                 # for cell in wrap_text_cells:
@@ -1098,32 +1074,61 @@ class Report(Container):
                 # sheet['D1'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
 
                 # Merge the cells for the long text
-                sheet.merge_cells('A1:F1')
+                sheet.merge_cells('A4:F4')
 
                 # Set the value for the merged cell (only set in the top-left cell of the merged range)
-                sheet['A1'].value = f"РЕКОМЕНДУЕМАЯ ФОРМА СВЕДЕНИЙ О ВЫПОЛНЕНИИ КЛЮЧЕВЫХ ПОКАЗАТЕЛЕЙ ЭФФЕКТИВНОСТИ ПРОФЕССИОНАЛЬНОЙ СЛУЖЕБНОЙ ДЕЯТЕЛЬНОСТИ ГОСУДАРСТВЕННЫХ ГРАЖДАНСКИХ СЛУЖАЩИХ САХАЛИНСКОЙ ОБЛАСТИ\nза {self.report_quater.content.value} {datetime.now().year}г.\n(отчетный период)"
-                sheet['A1'].font = Font(bold=True)
-                sheet['A1'].alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
+                sheet['A4'].value = f"РЕКОМЕНДУЕМАЯ ФОРМА СВЕДЕНИЙ О ВЫПОЛНЕНИИ КЛЮЧЕВЫХ ПОКАЗАТЕЛЕЙ ЭФФЕКТИВНОСТИ ПРОФЕССИОНАЛЬНОЙ СЛУЖЕБНОЙ ДЕЯТЕЛЬНОСТИ ГОСУДАРСТВЕННЫХ ГРАЖДАНСКИХ СЛУЖАЩИХ САХАЛИНСКОЙ ОБЛАСТИ\nза {self.report_quater.content.value} {datetime.now().year}г.\n(отчетный период)"
+                sheet['A4'].font = Font(bold=True, size=14, name=main_font)
+                sheet['A4'].alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
+                
+                headers = ["№ п/п", 
+                            "Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области",
+                            "Наименование структурного подразделения органа исполнительной власти Сахалинской области",
+                            "Должность",
+                            "ФИО",
+                            "Процент выполнения КПЭ по итогам отчетного периода, %"
+                            ]
+
+                for col, header in enumerate(headers, start=1):
+                    cell = sheet.cell(row=5, column=col)
+                    cell.value = header
+                    cell.border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+                    cell.alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
+                    cell.font = Font(size=14, name=main_font)
+
+                #Columns width
+                arr_of_cols_1 = ['A','B','C','D', 'E', 'F']
+                for cell in arr_of_cols_1:
+                    sheet.column_dimensions[cell].width = 25
+                
+                #Rows height
+                # sheet.row_dimensions[1].height = 44
+                # sheet.row_dimensions[1].height = 68
+                # sheet.row_dimensions[2].height = 108
 
                 for col in range(1, 7):
-                    sheet.cell(row=3, column=col).value = col
-                    sheet.cell(row=3, column=col).font = Font(italic=True)
-                    sheet.cell(row=3, column=col).alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                    cell = sheet.cell(row=3, column=col)
+                    sheet.cell(row=6, column=col).value = col
+                    sheet.cell(row=6, column=col).font = Font(italic=True)
+                    sheet.cell(row=6, column=col).alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+                    cell = sheet.cell(row=6, column=col)
                     cell.border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-                
-                for i, row_data in enumerate(results_summary, start=4):  # Start the data from row 9
+                    cell.font = Font(size=14, name=main_font)
+
+                for i, row_data in enumerate(results_summary, start=7):  # Start the data from row 9
                     for col, value in enumerate(row_data, start=1):
                         cell = sheet.cell(row=i, column=col)
                         sheet.cell(row=i, column=col).value = value
                         sheet.cell(row=i, column=col).alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
                         cell.border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-                    sheet.row_dimensions[i].height = 34
+                        cell.font = Font(size=14, name=main_font)
+                    # sheet.row_dimensions[i].height = 34
 
                 last_row = sheet.max_row
                 sheet[f"F{last_row+1}"].value = latest_version
+                sheet[f"F{last_row+1}"].font = Font(size=14, name=main_font)
+                sheet[f"F{last_row+1}"].alignment = Alignment(horizontal='center', vertical='center')
 
-                filename = paths['SUMMARY']
+                filename = paths['SUMMARY'].replace(".xlsx",f" - {self.report_depart.content.value}.xlsx")
                 print(filename)
 
                 if filename:
