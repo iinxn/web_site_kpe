@@ -737,8 +737,6 @@ class Report(Container):
                 for char in arr_of_cols:
                     sheet.column_dimensions[char].width = 15
                 
-                sheet.row_dimensions[8].height = 30
-                
                 for col, header in enumerate(headers, start=1):
                     cell = sheet.cell(row=8, column=col)
                     cell.value = header
@@ -753,7 +751,7 @@ class Report(Container):
 
                 # Set the value for one of the constituent cells
                 sheet['D1'].value = "УТВЕРЖДАЮ\nРуководитель агентства по труду и занятости населения Сахалинской области"
-                sheet.row_dimensions[1].height = 40
+                
                 sheet['D1'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
                 sheet['D1'].font = Font(size=14, name=main_font)
 
@@ -781,8 +779,6 @@ class Report(Container):
                 sheet['A4'].alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
                 sheet['A4'].font = Font(size=14, name=main_font, bold=True)
 
-                sheet.row_dimensions[1].height = 40  # Set the height for row 4 (2 cm)
-
                 sheet.merge_cells('A5:I5')
                 sheet['A5'].value = 'Агентство по труду и занятости населения Сахалинской области'
                 sheet['A5'].font = Font(bold=True, size=14, name=main_font)
@@ -793,8 +789,6 @@ class Report(Container):
                 sheet['A6'].font = Font(bold=True, size=14, name=main_font)
                 sheet['A6'].alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
 
-                sheet.row_dimensions[3].height = 40  # Set the height for row 6 (2 cm)
-
                 for i, row_data in enumerate(results, start=9):  # Start the data from row 9
                     for col, value in enumerate(row_data, start=1):
                         cell = sheet.cell(row=i, column=col)
@@ -802,7 +796,6 @@ class Report(Container):
                         sheet.cell(row=i, column=col).alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
                         cell.border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
                         cell.font = Font(size=14, name=main_font)
-                    sheet.row_dimensions[i].height = 75
 
                 # Set alignment for the entire sheet
                 last_row = sheet.max_row + 2
@@ -811,11 +804,13 @@ class Report(Container):
                 sheet.cell(row=last_row, column=1).value = "{} {} {} {}".format(potition_name_dep[0], str(
                     potition_name_dep[1]).lower(),'_'*22, self.report_spec.content.value)
                 sheet.merge_cells(f'A{last_row}:I{last_row}')  # Merge the cells for the record
-                sheet.row_dimensions[last_row].height = 40  # Set the height for the new row (2 cm)
                 sheet.cell(row=last_row, column=1).font = Font(size=14, name=main_font)
 
                 sheet[f'L{last_row}'].value = latest_version
                 sheet[f'L{last_row}'].font = Font(size=14, name=main_font)
+                
+                sheet.row_dimensions[1].height = 50
+                sheet.row_dimensions[4].height = 50
                 
                 filename = paths['KPE'].replace(".xlsx",f" - {self.report_spec.content.value}.xlsx")
                 print(filename)
@@ -881,7 +876,7 @@ class Report(Container):
 
                 # Set the value for one of the constituent cells
                 sheet['D1'].value = "УТВЕРЖДАЮ\nРуководитель агентства по труду и занятости населения Сахалинской области"
-                sheet.row_dimensions[1].height = 40
+                # sheet.row_dimensions[1].height = 40
                 sheet['D1'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
                 sheet['D1'].font = Font(size=14, name=main_font)
 
@@ -931,14 +926,14 @@ class Report(Container):
                         sheet.cell(row=i, column=col).alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
                         sheet.cell(row=i, column=col).font = Font(size=14, name=main_font)
                         cell.border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-                    sheet.row_dimensions[i].height = 75
+                    # sheet.row_dimensions[i].height = 75
                 
                 # текст расположенный снизу таблицы
                 last_row = sheet.max_row
                 sheet.cell(row=last_row+1, column=2).value = "Коэффициент выполнения КПЭ:"
                 sheet.cell(row=last_row+1, column=2).alignment = Alignment(wrap_text=True)
                 sheet.cell(row=last_row+1, column=2).font = Font(size=14, name=main_font)
-                sheet.row_dimensions[last_row+1].height = 25
+                # sheet.row_dimensions[last_row+1].height = 25
                 
                 for col in range(1, 8):
                     cell = sheet.cell(row=last_row+1, column=col)
@@ -959,7 +954,7 @@ class Report(Container):
                 sheet.cell(row=last_row+5, column=1).value = "(должность непосредственного руководителя гражданского служащего)"
                 sheet.cell(row=last_row+5, column=1).font = Font(size=14, name=main_font)
                 sheet.merge_cells(f'A{last_row+5}:C{last_row+5}')
-                sheet.row_dimensions[last_row+5].height = 30
+                # sheet.row_dimensions[last_row+5].height = 30
                 sheet.cell(row=last_row+5, column=1).alignment = Alignment(wrap_text=True)
                 
                 sheet.cell(row=last_row+5, column=5).value = "(подпись)"
@@ -1004,7 +999,7 @@ class Report(Container):
                 sheet.cell(row=last_row+13, column=6).value = "(ФИО курирующего заместителя руководителя агентства)"
                 sheet.cell(row=last_row+13, column=6).font = Font(size=14, name=main_font)
                 sheet.cell(row=last_row+13, column=6).alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
-                sheet.row_dimensions[last_row+13].height = 30
+                # sheet.row_dimensions[last_row+13].height = 30
                 sheet.merge_cells(f'F{last_row+13}:G{last_row+13}')
                 
                 sheet.cell(row=last_row+15, column=1).value = "_____________________________________________________________"
@@ -1021,6 +1016,9 @@ class Report(Container):
                 
                 sheet[f'G{last_row+17}'].value = latest_version
                 sheet[f'G{last_row+17}'].font = Font(size=14, name=main_font)
+                
+                sheet.row_dimensions[1].height = 50
+                sheet.row_dimensions[34].height = 30
 
                 filename = paths['BONUS'].replace(".xlsx",f" - {self.report_spec.content.value}.xlsx")
                 print(filename)
@@ -1127,6 +1125,9 @@ class Report(Container):
                 sheet[f"F{last_row+1}"].value = latest_version
                 sheet[f"F{last_row+1}"].font = Font(size=14, name=main_font)
                 sheet[f"F{last_row+1}"].alignment = Alignment(horizontal='center', vertical='center')
+                
+                sheet.row_dimensions[1].height = 50
+                sheet.row_dimensions[4].height = 50
 
                 filename = paths['SUMMARY'].replace(".xlsx",f" - {self.report_depart.content.value}.xlsx")
                 print(filename)
