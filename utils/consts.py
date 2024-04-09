@@ -1,9 +1,5 @@
 main_font = "Times New Roman"
-paths =  {
-    'KPE': 'C:/Excel/Карта КПЭ.xlsx',
-    'BONUS': 'C:/Excel/Расчет премии.xlsx',
-    'SUMMARY': 'C:/Excel/Сводный отчет.xlsx'
-}
+path = 'C:\Excel'
 primary_colors = {
     'GREEN': '#5B7553',
     'WHITE': '#FFFFFF',

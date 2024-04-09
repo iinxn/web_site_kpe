@@ -2,7 +2,6 @@ from flet import *
 from service.connection import *
 from utils.consts import primary_colors
 
-
 class Login(Container):
     def __init__(self, page: Page):
         super().__init__()
@@ -11,10 +10,7 @@ class Login(Container):
         self.alignment = alignment.center
         self.expand = True
         self.bgcolor = primary_colors['GREEN']
-        # *USER_ID VALUE CONTAINER
-        self.took_user_id = 0
 
-        # *login container
         self.login_box = Container(
             content=TextField(
                 content_padding=padding.only(top=0, bottom=0, right=20, left=20),
@@ -28,7 +24,6 @@ class Login(Container):
                 on_submit=self.login
             ),
         )
-        # *password container
         self.password_box = Container(
             content=TextField(
                 content_padding=padding.only(top=0, bottom=0, right=20, left=20),
@@ -44,12 +39,10 @@ class Login(Container):
                 on_submit=self.login
             ),
         )
-        # *button container
         self.error_box = Container(
             alignment=alignment.center,
             content=Text(value="", color=primary_colors['RED']),
         )
-        # *center of the form container
         self.content = Column(
             alignment="center",
             horizontal_alignment="center",
@@ -87,7 +80,6 @@ class Login(Container):
         )
 
     def login(self, e):
-        # *CONNECTION TO THE CLICKHOUSE DB
         cursor = connection.cursor()
         query_select = "SELECT user_id, login, password FROM users;"
         cursor.execute(query_select)
@@ -97,8 +89,8 @@ class Login(Container):
                 self.login_box.content.value == row[1]
                 and self.password_box.content.value == row[2]
             ):
+                self.page.session.set("user_id", row[1])
                 self.page.go("/home")
-                self.took_user_id = row[0]
             else:
                 self.error_box.content.value = "Вы ввели неверный логин или пароль!"
                 self.page.update()

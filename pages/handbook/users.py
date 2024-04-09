@@ -70,7 +70,7 @@ class Users(Container):
 #*ALTERDIALOGS
         self.alter_dialog_add_new_users = AlertDialog(
             modal=True,
-            title=Text("Добавление специалиста в справочник"),
+            title=Text("Добавление пользователя в справочник"),
             content=Column(
               height=250,
               controls=[
@@ -87,10 +87,6 @@ class Users(Container):
             actions_alignment=MainAxisAlignment.END,
             on_dismiss=lambda e: print("Modal dialog dismissed!"),
         )
-
-
-
-
 
 # *HEADER
         self.content = ListView(
@@ -141,7 +137,7 @@ class Users(Container):
                                         ),
                                         Container(
                                             content=Text(
-                                                value='Добавить специалиста в справочник',
+                                                value='Добавить пользователя в справочник',
                                                 size=18,
                                                 color=primary_colors['WHITE'],
                                                 text_align='center',
@@ -160,7 +156,7 @@ class Users(Container):
                                                   Container(
                                                     
                                                     Text(
-                                                      value='Добавить специалиста',
+                                                      value='Добавить нового пользователя',
                                                       size=16,
                                                       color=primary_colors['GREEN'],
                                                       text_align='center',

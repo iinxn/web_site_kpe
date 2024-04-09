@@ -4,11 +4,12 @@ from utils.consts import primary_colors
 class Home(Container):
     def __init__(self, page: Page):
         super().__init__()
+        self.page = page
         self.alignment = alignment.center
         self.expand = True
         self.bgcolor = primary_colors['GREEN']
+        user_id = self.page.session.get("user_id")
         
-        #header
         self.content = Column(
             spacing=0,
             controls=[
@@ -26,11 +27,10 @@ class Home(Container):
                               controls=[
                                 Container(
                                   bgcolor=primary_colors['WHITE'],
-                                  
                                   border_radius=30,
                                   padding=20,
                                   content=Text(
-                                    value='Добро пожаловать user',
+                                    value=f'Добро пожаловать {user_id}',
                                     size=16,
                                     color=primary_colors['GREEN'],
                                     text_align='center',

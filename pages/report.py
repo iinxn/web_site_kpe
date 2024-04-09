@@ -4,6 +4,7 @@ from flet import *
 from openpyxl.styles import Font, Alignment, DEFAULT_FONT, Border, Side
 from service.connection import *
 from utils.consts import *
+import os
 
 class Report(Container):
     def __init__(self, page: Page):
@@ -716,7 +717,7 @@ class Report(Container):
                     INNER JOIN name_of_department AS di ON di.department_id = sp.specialist_department_id
                 WHERE sp.full_name = '{str(self.report_spec.content.value)}'
                 """)
-                potition_name_dep = cursor.fetchone()
+                position_name_dep = cursor.fetchone()
                 
                 cursor.execute(
                     f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
@@ -785,7 +786,7 @@ class Report(Container):
                 sheet['A5'].alignment = Alignment(horizontal='center', vertical='center')
 
                 sheet.merge_cells('A6:I6')
-                sheet['A6'].value = f'Карта КПЭ на 2023 год {str(potition_name_dep[0]).lower()}a {str(potition_name_dep[1]).lower()} {str(self.report_spec.content.value)}'
+                sheet['A6'].value = f'Карта КПЭ на 2023 год {str(position_name_dep[0]).lower()}a {str(position_name_dep[1]).lower()} {str(self.report_spec.content.value)}'
                 sheet['A6'].font = Font(bold=True, size=14, name=main_font)
                 sheet['A6'].alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
 
@@ -799,10 +800,10 @@ class Report(Container):
 
                 # Set alignment for the entire sheet
                 last_row = sheet.max_row + 2
-                print(potition_name_dep[0])
-                print(potition_name_dep[1])
-                sheet.cell(row=last_row, column=1).value = "{} {} {} {}".format(potition_name_dep[0], str(
-                    potition_name_dep[1]).lower(),'_'*22, self.report_spec.content.value)
+                print(position_name_dep[0])
+                print(position_name_dep[1])
+                sheet.cell(row=last_row, column=1).value = "{} {} {} {}".format(position_name_dep[0], str(
+                    position_name_dep[1]).lower(),'_'*22, self.report_spec.content.value)
                 sheet.merge_cells(f'A{last_row}:I{last_row}')  # Merge the cells for the record
                 sheet.cell(row=last_row, column=1).font = Font(size=14, name=main_font)
 
@@ -811,10 +812,14 @@ class Report(Container):
                 
                 sheet.row_dimensions[1].height = 50
                 sheet.row_dimensions[4].height = 50
+                sheet.row_dimensions[6].height = 30
                 
-                filename = paths['KPE'].replace(".xlsx",f" - {self.report_spec.content.value}.xlsx")
-                print(filename)
+                employee_folder = os.path.join(path, position_name_dep[1], self.report_spec.content.value)
+                if not os.path.exists(employee_folder):
+                    os.makedirs(employee_folder)
 
+                filename = os.path.join(employee_folder, f"Карта КПЭ - {self.report_spec.content.value}.xlsx")
+                print(filename)
                 if filename:
                     workbook.save(filename)
 
@@ -837,7 +842,7 @@ class Report(Container):
                     INNER JOIN name_of_department AS di ON di.department_id = sp.specialist_department_id
                 WHERE sp.full_name = '{str(self.report_spec.content.value)}'
                 """)
-                potition_name_dep = cursor.fetchone()
+                position_name_dep = cursor.fetchone()
                 
                 workbook = openpyxl.Workbook()
                 sheet = workbook.active
@@ -852,12 +857,10 @@ class Report(Container):
 
                 for col, header in enumerate(headers, start=1):
                     cell = sheet.cell(row=13, column=col)
-                    print("Before font change:", cell.font)  # Add this line to check font before change
                     cell.value = header
                     cell.border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
                     cell.font = Font(size=14, name=main_font)
                     cell.alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
-                    print("After font change:", cell.font)
 
                 column_widths = {
                     'B': 45,
@@ -896,9 +899,9 @@ class Report(Container):
                     ('ключевых показателей эффективности', 5),
                     ('профессиональной служебной деятельности', 6),
                     ('по итогам работы за {} квартал'.format(self.report_quater.content.value), 7),
-                    ('{}, {}'.format(potition_name_dep[0], self.report_spec.content.value), 9),
+                    ('{}, {}'.format(position_name_dep[0], self.report_spec.content.value), 9),
                     ('(должность, ФИО гражданского служащего)', 10),
-                    ('{}'.format(potition_name_dep[1]), 11),
+                    ('{}'.format(position_name_dep[1]), 11),
                     ('(наименование управления)', 12)
                 ]
 
@@ -1020,7 +1023,11 @@ class Report(Container):
                 sheet.row_dimensions[1].height = 50
                 sheet.row_dimensions[34].height = 30
 
-                filename = paths['BONUS'].replace(".xlsx",f" - {self.report_spec.content.value}.xlsx")
+                employee_folder = os.path.join(path, position_name_dep[1], self.report_spec.content.value)
+                if not os.path.exists(employee_folder):
+                    os.makedirs(employee_folder)
+
+                filename = os.path.join(employee_folder, f"Расчет премии - {self.report_spec.content.value}.xlsx")
                 print(filename)
 
                 if filename:
@@ -1129,7 +1136,11 @@ class Report(Container):
                 sheet.row_dimensions[1].height = 50
                 sheet.row_dimensions[4].height = 50
 
-                filename = paths['SUMMARY'].replace(".xlsx",f" - {self.report_depart.content.value}.xlsx")
+                employee_folder = os.path.join(path, self.report_depart.content.value)
+                if not os.path.exists(employee_folder):
+                    os.makedirs(employee_folder)
+
+                filename = os.path.join(employee_folder, f"Сводный отчет.xlsx")
                 print(filename)
 
                 if filename:
