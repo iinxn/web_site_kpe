@@ -20,11 +20,8 @@ class Scheduled(Container):
         self.dropdown_options_indicators_truncated = []
         dropdown_options_specialists = []
         dropdown_options_units = []
-        self.kpe_weight_1 = []
-        self.kpe_weight_2 = []
-        self.kpe_weight_3 = []
-        self.kpe_weight_4 = []
         self.selected_rows = set()
+        self.load_weights()
         
         # * TABLE FOR PREVIEW THE DATA
         self.data_table = DataTable(
@@ -853,6 +850,24 @@ class Scheduled(Container):
         self.alter_dialog_block.open = False
         print("Вы закрыли модульное окно блокировки")
         self.page.update()
+        
+    def load_weights(self):
+        self.kpe_weight_1 = self.page.client_storage.get("kpe_weight_1") or []
+        self.kpe_weight_2 = self.page.client_storage.get("kpe_weight_2") or [] 
+        self.kpe_weight_3 = self.page.client_storage.get("kpe_weight_3") or []
+        self.kpe_weight_4 = self.page.client_storage.get("kpe_weight_4") or []
+        print(self.kpe_weight_1)
+        print(self.kpe_weight_2)
+        print(self.kpe_weight_3)
+        print(self.kpe_weight_4)
+        # self.page.client_storage.clear() #delete the entire client storage
+    
+    def save_weights(self):
+        # Сохранение данных в клиентское хранилище
+        self.page.client_storage.set("kpe_weight_1", self.kpe_weight_1)
+        self.page.client_storage.set("kpe_weight_2", self.kpe_weight_2)
+        self.page.client_storage.set("kpe_weight_3", self.kpe_weight_3)
+        self.page.client_storage.set("kpe_weight_4", self.kpe_weight_4)
     
     # TODO: These two functions for blocked message
     def show_blocked(self):
@@ -1004,7 +1019,8 @@ class Scheduled(Container):
             self.kpe_weight_2.clear()
             self.kpe_weight_3.clear()
             self.kpe_weight_4.clear()
-
+            self.save_weights()
+        
     # TODO: This is a insert function for add new data to planned table
     def insert_into_db(self, e):
         if self.end_edit == False:
@@ -1099,6 +1115,7 @@ class Scheduled(Container):
                 self.kpe_weight_2.append(int(self.weight_second_qr_box.content.value))
                 self.kpe_weight_3.append(int(self.weight_third_qr_box.content.value))
                 self.kpe_weight_4.append(int(self.weight_fourth_qr_box.content.value))
+                self.save_weights()
 
                 query = """
                     INSERT INTO planned_value (plan_id, plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, status, KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4, number_of_version)

@@ -85,12 +85,10 @@ class Login(Container):
         cursor.execute(query_select)
         results = cursor.fetchall()
         for row in results:
-            if (
-                self.login_box.content.value == row[1]
-                and self.password_box.content.value == row[2]
-            ):
+            if (self.login_box.content.value == row[1] and self.password_box.content.value == row[2]):
                 self.page.session.set("user_id", row[1])
                 self.page.go("/home")
             else:
                 self.error_box.content.value = "Вы ввели неверный логин или пароль!"
-                self.page.update()
+                if self.page is not None:
+                    self.page.update()
