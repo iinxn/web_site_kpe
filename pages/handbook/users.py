@@ -1,6 +1,7 @@
 from flet import *
 from utils.consts import primary_colors 
 from service.connection import *
+from utils.components import *
 
 class Users(Container):
     def __init__(self, page: Page):
@@ -10,6 +11,28 @@ class Users(Container):
         self.alignment = alignment.center
         self.expand = True
         self.bgcolor = primary_colors['WHITE']
+        self.components_manager = Components(page)
+        self.selected_rows = set()
+        
+        self.data_table = DataTable(
+            columns=[
+                DataColumn(Text("Код пользователя"), numeric=True),
+                DataColumn(Text("Логин")),
+                DataColumn(Text("Пароль")),
+                DataColumn(Text("ФИО")),
+                DataColumn(Text("Статус")),
+                DataColumn(Text("Выбор")),
+            ],
+            rows=[],  # Leave this empty for now
+            border=border.all(1, primary_colors['BLACK']),
+            vertical_lines=border.BorderSide(1, primary_colors['BLACK']),
+            horizontal_lines=border.BorderSide(1, primary_colors['BLACK']),
+            sort_column_index=0,
+            sort_ascending=True,
+            heading_row_color=colors.BLACK12,
+            heading_row_height=100,
+            width=1000
+        )
 
 #*BOX FOR TEXTFIELD
         self.user_login = Container(
@@ -144,30 +167,63 @@ class Users(Container):
                                             ),
                                         ),
                                         Container(
-                                          ElevatedButton(
-                                            color=primary_colors['WHITE'],
-                                            bgcolor=primary_colors['WHITE'],
-                                            width=200,
-                                            height=70,
-                                            content=Column(
-                                              horizontal_alignment='center',
-                                              alignment='center',
-                                                controls=[
-                                                  Container(
-                                                    
-                                                    Text(
-                                                      value='Добавить нового пользователя',
-                                                      size=16,
-                                                      color=primary_colors['GREEN'],
-                                                      text_align='center',
-                                                      weight='bold',
-                                                    )
-                                                  )
-                                                ]
-                                            ),
-                                            on_click=self.show_alter_dialog
-                                          ),  
-                                        ),
+                                          width=400,
+                                          content=Row(
+                                            spacing=10,
+                                            controls= [
+                                              Container(
+                                                ElevatedButton(
+                                                  color=primary_colors['WHITE'],
+                                                  bgcolor=primary_colors['WHITE'],
+                                                  width=200,
+                                                  height=70,
+                                                  content=Column(
+                                                    horizontal_alignment='center',
+                                                    alignment='center',
+                                                      controls=[
+                                                        Container(
+                                                          
+                                                          Text(
+                                                            value='Добавить нового пользователя',
+                                                            size=16,
+                                                            color=primary_colors['GREEN'],
+                                                            text_align='center',
+                                                            weight='bold',
+                                                          )
+                                                        )
+                                                      ]
+                                                  ),
+                                                  on_click=self.show_alter_dialog
+                                                ),  
+                                              ),
+                                              Container(
+                                                ElevatedButton(
+                                                  color=primary_colors['WHITE'],
+                                                  bgcolor=primary_colors['WHITE'],
+                                                  width=200,
+                                                  height=70,
+                                                  content=Column(
+                                                    horizontal_alignment='center',
+                                                    alignment='center',
+                                                      controls=[
+                                                        Container(
+                                                          
+                                                          Text(
+                                                            value='Удалить пользователя',
+                                                            size=16,
+                                                            color=primary_colors['GREEN'],
+                                                            text_align='center',
+                                                            weight='bold',
+                                                          )
+                                                        )
+                                                      ]
+                                                  ),
+                                                  on_click=self.delete_users_from_table
+                                                ),  
+                                              ),
+                                            ],
+                                          )
+                                        )
                                     ]
                                 )
                             )
@@ -189,24 +245,7 @@ class Users(Container):
 
   # *2ND ROW (DATATABLE)
                             Container(
-                                content=DataTable(
-                                    columns=[
-                                        DataColumn(Text("Код пользователя"), numeric=True),
-                                        DataColumn(Text("Логин")),
-                                        DataColumn(Text("Пароль")),
-                                        DataColumn(Text("ФИО")),
-                                        DataColumn(Text("Статус")),
-                                    ],
-                                    rows=[],  # Leave this empty for now
-                                    border=border.all(1, primary_colors['BLACK']),
-                                    vertical_lines=border.BorderSide(1, primary_colors['BLACK']),
-                                    horizontal_lines=border.BorderSide(1, primary_colors['BLACK']),
-                                    sort_column_index=0,
-                                    sort_ascending=True,
-                                    heading_row_color=colors.BLACK12,
-                                    heading_row_height=100,
-                                    width=1000
-                                ),
+                                content = self.data_table,
                                 alignment=alignment.center,
                                 padding=padding.all(20),
                             ),
@@ -220,18 +259,37 @@ class Users(Container):
         query_select = "SELECT * FROM users ORDER BY user_id;" 
         cursor.execute(query_select)
         results = cursor.fetchall()
-
         query_result = results
-
-        data_rows = []
-
         for row in query_result:
             cells = [DataCell(Text(str(value))) for value in row]
+            checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
+            cells.append(DataCell(checkbox))
             data_row = DataRow(cells=cells)
-            data_rows.append(data_row)
-
-        self.content.controls[1].content.controls[2].content.rows = data_rows
+            self.data_table.rows.append(data_row)
+        self.content.controls[1].content.controls[2] = self.data_table
         self.page.update()
+        
+    def show_table(self):
+      cursor = connection.cursor()
+      query_select = "SELECT * FROM users ORDER BY user_id;" 
+      cursor.execute(query_select)
+      results = cursor.fetchall()
+      query_result = results
+      data_rows = []
+
+      for row in query_result:
+          cells = [DataCell(Text(str(value))) for value in row]
+          data_row = DataRow(cells=cells)
+
+          # Create a Checkbox for the third column
+          checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
+          cells.append(DataCell(checkbox))
+
+          data_rows.append(data_row)
+      # After you fetch new data from the database and create data_rows, update the DataTable like this:
+      self.data_table.rows = data_rows
+      self.page.update()
+    
 
     def show_alter_dialog(self, e):
       self.page.dialog = self.alter_dialog_add_new_users
@@ -254,8 +312,9 @@ class Users(Container):
         try:
           cursor = connection.cursor()
           
-          cursor.execute(f"SELECT max(specialist_id) FROM specialists;")
+          cursor.execute(f"SELECT max(user_id) FROM users;")
           max_id = cursor.fetchone()[0]
+          print(max_id)
           query = "INSERT INTO TABLE users (user_id, login, password, full_name, status) VALUES ({}+1,'{}','{}','{}','{}')".format(
             int(max_id),
             self.user_login.content.value,
@@ -263,32 +322,33 @@ class Users(Container):
             self.user_full_name.content.value,
             self.cb_menu_status.content.value
           )
+          print(query)
           cursor.execute(query)
+          self.user_password.content.value = ""
+          self.user_full_name.content.value = ""
+          self.user_login.content.value = ""
+          self.cb_menu_status.content.value = ""
+          self.components_manager.show_block_dialog("Запись успешно добавлена в базу данных", "Успешно")
           print("Запись успешно добавлена в базу данных")
           self.alter_dialog_add_new_users.open = False
-          self.page.update()
+          self.show_table()
           
-          query_select = "SELECT * FROM users ORDER BY user_id;" 
-          cursor.execute(query_select)
-          results = cursor.fetchall()
-
-          query_result = results
-
-          data_rows = []
-
-          for row in query_result:
-              cells = [DataCell(Text(str(value))) for value in row]
-              data_row = DataRow(cells=cells)
-              data_rows.append(data_row)
-
-          self.content.controls[1].content.controls[2].content.rows = data_rows
-          self.page.update()
-          self.user_password.content.value == ""
-          self.user_full_name.content.value == ""
-          self.user_login.content.value == ""
-          self.cb_menu_status.content.value == ""
-
-      
         except Exception as e:
-          print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
+                print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
+    
+    def toggle_row_selection(self, e, row):
+        if row not in self.selected_rows:
+            self.selected_rows.add(row)
+        else:
+            self.selected_rows.remove(row)
+    
+    def delete_users_from_table(self, e):
+        cursor = connection.cursor()
+        if not self.selected_rows:
+            print('Вы не выбрали строку')
+        else:
+          for selected_row in self.selected_rows:
+              cursor.execute(f'DELETE FROM users WHERE user_id = {selected_row[0]}')
+        self.show_table()
+        self.components_manager.show_block_dialog("Запись была успешно удалена", "Удаление")
         self.page.update()

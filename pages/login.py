@@ -56,10 +56,11 @@ class Login(Container):
                         horizontal_alignment="center",
                         controls=[
                             Text(
-                                value="Название сайта",
+                                value="Мастер КПЭ",
                                 size=18,
-                                color="black",
+                                color=primary_colors['GREEN'],
                                 text_align="center",
+                                weight='bold',
                             ),
                             self.login_box,
                             self.password_box,
@@ -80,15 +81,24 @@ class Login(Container):
         )
 
     def login(self, e):
-        cursor = connection.cursor()
-        query_select = "SELECT user_id, login, password FROM users;"
-        cursor.execute(query_select)
-        results = cursor.fetchall()
-        for row in results:
-            if (self.login_box.content.value == row[1] and self.password_box.content.value == row[2]):
-                self.page.session.set("user_id", row[1])
+        try:
+            login_value = self.login_box.content.value.replace("'", "''")
+            password_value = self.password_box.content.value.replace("'", "''")
+
+            cursor = connection.cursor()
+            query_select = f"SELECT login FROM users WHERE login = '{login_value}' AND password = '{password_value}';"
+            
+            cursor.execute(query_select)
+            result = cursor.fetchone()
+
+            if result:
+                self.page.session.set("login", result[0])
                 self.page.go("/home")
             else:
                 self.error_box.content.value = "Вы ввели неверный логин или пароль!"
-                if self.page is not None:
-                    self.page.update()
+                self.page.update()
+
+        except Exception as error:
+            self.error_box.content.value = "Ошибка при попытке входа!"
+            self.page.update()
+            print(f"Login error: {error}")

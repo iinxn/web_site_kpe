@@ -4,10 +4,88 @@ from utils.consts import primary_colors
 class Handbook(Container):
     def __init__(self, page: Page):
         super().__init__()
+        self.page = page
         self.alignment = alignment.center
         self.expand = True
         self.bgcolor = primary_colors['WHITE']
+        user_id = self.page.session.get("login")
         
+        self.right_handbook_button = None
+        self.user_handbook_button = None
+        self.scheduled_view_handbook_button = None
+        
+        if user_id == 'admin':
+          self.user_handbook_button = ElevatedButton(
+            color=primary_colors['WHITE'],
+            bgcolor=primary_colors['GREEN'],
+            width=500,
+            height=70,
+            content=Column(
+              horizontal_alignment='center',
+              alignment='center',
+                controls=[
+                  Container(
+                    Text(
+                      value='Пользователи',
+                      size=16,
+                      color=primary_colors['WHITE'],
+                      text_align='center',
+                      weight='bold',
+                    )
+                  )
+                ]
+            ),
+            on_click=lambda x: x == self.page.go('/users')
+          )
+          self.right_handbook_button = ElevatedButton(
+            color=primary_colors['WHITE'],
+            bgcolor=primary_colors['GREEN'],
+            width=500,
+            height=70,
+            content=Column(
+              horizontal_alignment='center',
+              alignment='center',
+                controls=[
+                  Container(
+                    Text(
+                      value='Права доступа',
+                      size=16,
+                      color=primary_colors['WHITE'],
+                      text_align='center',
+                      weight='bold',
+                    )
+                  )
+                ]
+            ),
+            # on_click=lambda x: x == self.page.go('/add')
+          )
+          self.scheduled_view_handbook_button = ElevatedButton(
+            color=primary_colors['WHITE'],
+            bgcolor=primary_colors['GREEN'],
+            width=500,
+            height=70,
+            content=Column(
+              horizontal_alignment='center',
+              alignment='center',
+                controls=[
+                  Container(
+                    Text(
+                      value='Плановые показатели',
+                      size=16,
+                      color=primary_colors['WHITE'],
+                      text_align='center',
+                      weight='bold',
+                    )
+                  )
+                ]
+            ),
+            on_click=lambda x: x == self.page.go('/scheduled_handbook')
+          )
+        else:
+          self.user_handbook_button = Container()
+          self.right_handbook_button = Container()
+          self.scheduled_view_handbook_button = Container()
+
         #header
         self.content = Column(
             spacing=0,
@@ -52,7 +130,7 @@ class Handbook(Container):
                         ],
                     )
                 ),
-                
+
                 #manual buttons
                 Container(
                     expand=True,
@@ -143,30 +221,6 @@ class Handbook(Container):
                                   ),
                                   on_click=lambda x: x == self.page.go('/add')
                                 ),
-#*RIGHTS BUTTON
-                                Container(height=0),
-                                ElevatedButton(
-                                  color=primary_colors['WHITE'],
-                                  bgcolor=primary_colors['GREEN'],
-                                  width=500,
-                                  height=70,
-                                  content=Column(
-                                    horizontal_alignment='center',
-                                    alignment='center',
-                                      controls=[
-                                        Container(
-                                          Text(
-                                            value='Права доступа',
-                                            size=16,
-                                            color=primary_colors['WHITE'],
-                                            text_align='center',
-                                            weight='bold',
-                                          )
-                                        )
-                                      ]
-                                  ),
-                                  on_click=lambda x: x == self.page.go('/add')
-                                ),
 #*SPECIALISTS BUTTON
                                 Container(height=0),
                                 ElevatedButton(
@@ -193,52 +247,13 @@ class Handbook(Container):
                                 ),
 #*USERS
                                 Container(height=0),
-                                ElevatedButton(
-                                  color=primary_colors['WHITE'],
-                                  bgcolor=primary_colors['GREEN'],
-                                  width=500,
-                                  height=70,
-                                  content=Column(
-                                    horizontal_alignment='center',
-                                    alignment='center',
-                                      controls=[
-                                        Container(
-                                          Text(
-                                            value='Пользователи',
-                                            size=16,
-                                            color=primary_colors['WHITE'],
-                                            text_align='center',
-                                            weight='bold',
-                                          )
-                                        )
-                                      ]
-                                  ),
-                                  on_click=lambda x: x == self.page.go('/users')
-                                ),
-                                
+                                self.user_handbook_button,
+#*RIGHTS BUTTON
                                 Container(height=0),
-                                ElevatedButton(
-                                  color=primary_colors['WHITE'],
-                                  bgcolor=primary_colors['GREEN'],
-                                  width=500,
-                                  height=70,
-                                  content=Column(
-                                    horizontal_alignment='center',
-                                    alignment='center',
-                                      controls=[
-                                        Container(
-                                          Text(
-                                            value='Плановые показатели',
-                                            size=16,
-                                            color=primary_colors['WHITE'],
-                                            text_align='center',
-                                            weight='bold',
-                                          )
-                                        )
-                                      ]
-                                  ),
-                                  on_click=lambda x: x == self.page.go('/scheduled_handbook')
-                                ),
+                                self.right_handbook_button,
+#*SCHEDULED VIEW
+                                Container(height=0),
+                                self.scheduled_view_handbook_button
                               ]
                             )
                           ), 

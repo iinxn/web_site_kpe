@@ -14,14 +14,13 @@ class Scheduled(Container):
         self.expand = True
         self.bgcolor = primary_colors['WHITE']
         self.end_edit = False
+        self.page.client_storage.clear()
 
-        self.use_truncated_options = True
         self.dropdown_options_indicators = []
-        self.dropdown_options_indicators_truncated = []
-        dropdown_options_specialists = []
+        self.dropdown_options_specialists = []
         dropdown_options_units = []
+        dropdown_options_departments = []
         self.selected_rows = set()
-        self.load_weights()
         
         # * TABLE FOR PREVIEW THE DATA
         self.data_table = DataTable(
@@ -70,14 +69,15 @@ class Scheduled(Container):
         except Exception as e:
             print(f"Error fetching data from the database: {str(e)}")
 
-        # *SELECT QUERY TO DISPLAY SPECIALISTS FROM DB
+        # * SELECT QUERY TO DISPLAY NAME IN NAME OF DEPARTMENT TABLE FROM DB
         try:
             cursor = connection.cursor()
-            cursor.execute('SELECT full_name FROM specialists ORDER BY specialist_id')
+            cursor.execute('SELECT name FROM name_of_department ORDER BY department_id')
             results = cursor.fetchall()
 
             for row in results:
-                dropdown_options_specialists.append(dropdown.Option(row[0]))
+                dropdown_options_departments.append(dropdown.Option(row[0]))
+
         except Exception as e:
             print(f"Error fetching data from the database: {str(e)}")
 
@@ -93,7 +93,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
         self.second_qr_box = Container(
@@ -107,7 +108,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
         self.third_qr_box = Container(
@@ -121,7 +123,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
         self.fourtht_qr_box = Container(
@@ -135,7 +138,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
         self.year_box = Container(
@@ -149,7 +153,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
         # * THERE ARE MY NEXT BOXES FOR MY 3RD ROW
@@ -164,7 +169,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
         self.weight_second_qr_box = Container(
@@ -178,7 +184,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
         self.weight_third_qr_box = Container(
@@ -192,7 +199,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
         self.weight_fourth_qr_box = Container(
@@ -206,7 +214,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
         self.textfiled_input_new_indicator = Container(
@@ -229,9 +238,9 @@ class Scheduled(Container):
             content=Dropdown(
                 label='Выберите наименование показателя',
                 color=primary_colors['BLACK'],
-                width=450,
+                width=500,
                 # filled=True,
-                options=self.dropdown_options_indicators_truncated,
+                options=self.dropdown_options_indicators,
                 on_change=self.added_new_to_indicators,
             ),
         )
@@ -248,9 +257,18 @@ class Scheduled(Container):
                 hint_text='Выберите специалиста',
                 color=primary_colors['BLACK'],
                 width=330,
-                options=dropdown_options_specialists,
+                options=self.dropdown_options_specialists,
                 on_change=self.show_indicators
             )
+        )
+        self.name_of_department_menu_box = Container(
+            content=Dropdown(
+                hint_text='Выберите управление',
+                color=primary_colors['BLACK'],
+                width=500,
+                options=dropdown_options_departments,
+                on_change=self.show_specialists
+            ),
         )
         # *MODULE FORM
         self.alter_dialog = AlertDialog(
@@ -326,7 +344,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
         self.second_qr_box_2 = Container(
@@ -340,7 +359,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
         self.third_qr_box_2 = Container(
@@ -354,7 +374,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
         self.fourtht_qr_box_2 = Container(
@@ -368,7 +389,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
         self.year_box_2 = Container(
@@ -382,7 +404,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
 
@@ -398,7 +421,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
         self.weight_second_qr_box_2 = Container(
@@ -412,7 +436,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
         self.weight_third_qr_box_2 = Container(
@@ -426,7 +451,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
         self.weight_fourth_qr_box_2 = Container(
@@ -440,7 +466,8 @@ class Scheduled(Container):
                     size=14,
                     color=primary_colors['GREEN'],
                 ),
-                width=100
+                width=100,
+                on_change=self.validate
             ),
         )
 
@@ -549,7 +576,7 @@ class Scheduled(Container):
                         )
                     ]
                 ),
-                on_click=self.end_input_data
+                on_click=self.show_blocked
             )
         )
         # *THIS IS A HEADER
@@ -664,6 +691,7 @@ class Scheduled(Container):
                                     # horizontal_alignment='center',
                                     controls=[
                                         # Container(width=90)
+                                        self.name_of_department_menu_box,
                                         self.specialist_menu_box,
                                         self.cb_menu_spec,
                                     ]
@@ -754,47 +782,51 @@ class Scheduled(Container):
                 ),
             ]
         )
-
-    def show_indicators(self, e):
+    def validate(self, e):
+        txt_field = e.control
+        current_text = txt_field.value
+        if not current_text.replace('.', '', 1).isdigit():
+            txt_field.value = ''.join(filter(lambda x: x.isdigit() or x == '.', current_text[:-1]))
+        txt_field.update() 
+    
+    def show_specialists(self, e):
+        self.dropdown_options_specialists.clear()
         try:
-            self.dropdown_options_indicators.clear()
-            self.dropdown_options_indicators_truncated.clear()
             cursor = connection.cursor()
-            sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.specialist_menu_box.content.value)
-            cursor.execute(sql_select_specialist_id)
-            specialist_id = cursor.fetchone()[0]
+            cursor.execute(f"SELECT department_id FROM name_of_department WHERE name = '{self.name_of_department_menu_box.content.value}'")
+            specialist_department_id = cursor.fetchone()[0]
+            
+            cursor.execute(f"SELECT full_name FROM specialists WHERE specialist_department_id = {specialist_department_id}")
+            specialists_full_name = cursor.fetchall()
 
-            cursor.execute('SELECT indicators_id, name FROM name_of_indicators WHERE specialist_id = {} ORDER BY indicators_id'.format(specialist_id))
-            results = cursor.fetchall()
-
-            max_length = 50
-            for row in results:
-                indicator_id = row[0]
-                name = row[1]
-
-                # Truncate the name if it exceeds the maximum length
-                if len(name) > max_length:
-                    first_part = name[:max_length // 2].rstrip()
-                    second_part = name[-max_length // 2:].lstrip()
-                    truncated_text = f"{first_part}...{second_part}"
-                else:
-                    truncated_text = name
-
-                # Add both the indicator_id and the truncated name to the dropdown options
-                self.dropdown_options_indicators.append(dropdown.Option(indicator_id, name))
-                self.dropdown_options_indicators_truncated.append(dropdown.Option(indicator_id, truncated_text))
-
-            # Add "Нет в списке" option at the end
-            self.dropdown_options_indicators.append(dropdown.Option('Нет в списке'))
-            self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
-
+            for row in specialists_full_name:
+                self.dropdown_options_specialists.append(dropdown.Option(row[0]))
+                
             self.page.update()
         except Exception as e:
             print(f"Error fetching data from the database: {str(e)}")
 
-    
-    def end_input_data(self, e):
-        self.show_blocked()
+    def show_indicators(self, e):
+        try:
+            self.dropdown_options_indicators.clear()
+
+            cursor = connection.cursor()
+            sql_select_specialist_id = f"SELECT specialist_id FROM specialists WHERE full_name = '{self.specialist_menu_box.content.value}'"
+            cursor.execute(sql_select_specialist_id)
+            specialist_id = cursor.fetchone()[0]
+
+            cursor.execute(f'SELECT indicators_id, name FROM name_of_indicators WHERE specialist_id = {specialist_id} ORDER BY indicators_id')
+            results = cursor.fetchall()
+
+            for indicator_id, name in results:
+                self.dropdown_options_indicators.append(dropdown.Option(indicator_id, name))
+
+            no_list_option = dropdown.Option('Нет в списке')
+            self.dropdown_options_indicators.append(no_list_option)
+
+            self.page.update()
+        except Exception as e:
+            print(f"Error fetching data from the database: {str(e)}")
 
     def added_new_to_indicators(self, e):
         selected_item = self.cb_menu_spec.content.value  # Получите выбранную опцию
@@ -811,32 +843,44 @@ class Scheduled(Container):
             sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.specialist_menu_box.content.value)
             cursor.execute(sql_select_specialist_id)
             specialist_id = cursor.fetchone()[0]
+
             cursor.execute(f"SELECT measurement_id FROM units_of_measurement WHERE type = '{self.units_menu_box.content.value}'")
             units_id = cursor.fetchone()[0]
+
             cursor.execute(f"SELECT max(indicators_id) FROM name_of_indicators;")
             max_id = cursor.fetchone()[0]
-            query = "INSERT INTO TABLE name_of_indicators (indicators_id, measurement_id, name, specialist_id) VALUES ({}+1,{},'{}',{})".format(
-                int(max_id), units_id, self.textfiled_input_new_indicator.content.value, specialist_id)
+
+            new_indicator_name = self.textfiled_input_new_indicator.content.value
+            new_indicator_id = max_id + 1
+            query = "INSERT INTO TABLE name_of_indicators (indicators_id, measurement_id, name, specialist_id) VALUES ({},{},'{}',{})".format(
+                new_indicator_id, units_id, new_indicator_name, specialist_id)
             cursor.execute(query)
+            connection.commit()  # Убедитесь, что данные добавлены
+
             print("Запись успешно добавлена в базу данных")
-            self.cb_menu_spec.content.value = self.textfiled_input_new_indicator.content.value
+
+            # Заново загрузите показатели и обновите выпадающий список
+            self.dropdown_options_indicators.clear()
+            self.show_indicators("")
+
+            # Устанавливаем новый элемент как выбранный в Dropdown
+            self.cb_menu_spec.content.value = str(new_indicator_id)  # Предполагается, что значение id это строка
+
             self.textfiled_input_new_indicator.content.value = ''
             self.units_menu_box.content.value = ''
-            #clear indicators cb and add new data
-            self.dropdown_options_indicators_truncated.clear()
-            self.show_indicators("")
-            self.page.dialog = self.alter_dialog
+
             self.alter_dialog.open = False
             self.page.update()
         except Exception as e:
             print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
+
 
     def close_dlg(self, e):
         self.page.dialog = self.alter_dialog
         self.alter_dialog.open = False
         self.page.update()
 
-    # TODO: These two functions for succes message
+    # TODO: These two functions for success message
 
     def show_block_dialog(self, content_text, title_text):
         self.page.dialog = self.alter_dialog_block
@@ -850,27 +894,8 @@ class Scheduled(Container):
         self.alter_dialog_block.open = False
         print("Вы закрыли модульное окно блокировки")
         self.page.update()
-        
-    def load_weights(self):
-        self.kpe_weight_1 = self.page.client_storage.get("kpe_weight_1") or []
-        self.kpe_weight_2 = self.page.client_storage.get("kpe_weight_2") or [] 
-        self.kpe_weight_3 = self.page.client_storage.get("kpe_weight_3") or []
-        self.kpe_weight_4 = self.page.client_storage.get("kpe_weight_4") or []
-        print(self.kpe_weight_1)
-        print(self.kpe_weight_2)
-        print(self.kpe_weight_3)
-        print(self.kpe_weight_4)
-        # self.page.client_storage.clear() #delete the entire client storage
     
-    def save_weights(self):
-        # Сохранение данных в клиентское хранилище
-        self.page.client_storage.set("kpe_weight_1", self.kpe_weight_1)
-        self.page.client_storage.set("kpe_weight_2", self.kpe_weight_2)
-        self.page.client_storage.set("kpe_weight_3", self.kpe_weight_3)
-        self.page.client_storage.set("kpe_weight_4", self.kpe_weight_4)
-    
-    # TODO: These two functions for blocked message
-    def show_blocked(self):
+    def show_blocked(self, e):
         # try:
 
         date = datetime.datetime.now()
@@ -886,12 +911,13 @@ class Scheduled(Container):
         indicator_original_list = cursor.fetchall()
         indicators = [item[0] for item in indicator_original_list]
 
-        query_select = """
+        query_select = f"""
         SELECT
             plan_user_id,
             plan_indicators_id,
             MAX(number_of_version) AS latest_version
         FROM planned_value
+        WHERE plan_user_id = (SELECT specialist_id FROM specialists WHERE full_name = '{self.specialist_menu_box.content.value}')
         GROUP BY
             plan_user_id,
             plan_indicators_id
@@ -923,6 +949,7 @@ class Scheduled(Container):
             """.format(specialist_id, indicator_id, latest_version)
             cursor.execute(query_exists)
             data_exists = cursor.fetchone()
+            
             if not data_exists:
                 # Получение данных из planned_value
                 query_select = """
@@ -940,27 +967,29 @@ class Scheduled(Container):
 
                 if data:
                     plan_indicators_id, user_id, units_id, first_qr_value, second_qr_value, third_qr_value, fourth_qr_value, year, status, weight_1, weight_2, weight_3, weight_4 = data
-                    print(sum(self.kpe_weight_1))
-                    print(sum(self.kpe_weight_2))
-                    print(sum(self.kpe_weight_3))
-                    print(sum(self.kpe_weight_4))
-                    weight_1_below_100 = sum(self.kpe_weight_1) != 100
-                    weight_2_below_100 = sum(self.kpe_weight_2) != 100
-                    weight_3_below_100 = sum(self.kpe_weight_3) != 100
-                    weight_4_below_100 = sum(self.kpe_weight_4) != 100
-
-                    if weight_1_below_100 or weight_2_below_100 or weight_3_below_100 or weight_4_below_100:
-                        messages = []
-                        if weight_1_below_100:
-                            messages.append("1 квартала")
-                        if weight_2_below_100:
-                            messages.append("2 квартала")
-                        if weight_3_below_100:
-                            messages.append("3 квартала")
-                        if weight_4_below_100:
-                            messages.append("4 квартала")
-                        # self.show_block_dialog(f"Сумма Веса КПЭ {', '.join(messages)} меньше 100%","Предупреждение")
-                        self.show_block_dialog(f"Сумма Веса КПЭ\n1 квартала = {sum(self.kpe_weight_1)}%\n2 квартала = {sum(self.kpe_weight_2)}%\n3 квартала = {sum(self.kpe_weight_3)}%\n4 квартала = {sum(self.kpe_weight_4)}%\nСумма каждого квартала должна равняться 100%","Предупреждение")
+                    weight_query = f"""
+                    SELECT
+                        SUM(KPE_weight_1) AS total_weight_1,
+                        SUM(KPE_weight_2) AS total_weight_2,
+                        SUM(KPE_weight_3) AS total_weight_3,
+                        SUM(KPE_weight_4) AS total_weight_4
+                    FROM planned_value
+                    WHERE plan_user_id = {specialist_id} 
+                    AND status = 'Активно'
+                    AND number_of_version = '{latest_version}'
+                    """
+                    cursor.execute(weight_query)
+                    sum_weight_1, sum_weight_2, sum_weight_3, sum_weight_4 = cursor.fetchone()
+                    print(sum_weight_1)
+                    print(sum_weight_2)
+                    print(sum_weight_3)
+                    print(sum_weight_4)
+                    
+                    if sum_weight_1 < 100 or sum_weight_2 < 100 or sum_weight_3 < 100 or sum_weight_4 < 100:
+                        self.show_block_dialog(
+                            f"Сумма Веса КПЭ\n1 квартала = {sum_weight_1}%\n2 квартала = {sum_weight_2}%\n3 квартала = {sum_weight_3}%\n4 квартала = {sum_weight_4}%\nСумма каждого квартала должна равняться 100%", 
+                            "Предупреждение"
+                        )
                     else:
                         # Вставка данных в kpe_table
                         insert_query_to_kpe_table = """
@@ -1008,19 +1037,8 @@ class Scheduled(Container):
                         print("Success")
                         self.specialist_menu_box.content.value = ""
                         self.show_block_dialog("Вы завершили формирование карты КПЭ","Карта КПЭ сформирована")
-                else:
-                    self.show_block_dialog("Данные уже есть в карте КПЭ","Информация")
-                    print("All data is in kpe_table")
-        if sum(self.kpe_weight_1) != 100 or sum(self.kpe_weight_2) != 100 or sum(self.kpe_weight_3) != 100 or sum(self.kpe_weight_4) != 100:
-            print("Sum of kpe_weight arrays is not equal to 100")
-        else:
-            # Clear the arrays if all records are successfully inserted
-            self.kpe_weight_1.clear()
-            self.kpe_weight_2.clear()
-            self.kpe_weight_3.clear()
-            self.kpe_weight_4.clear()
-            self.save_weights()
-        
+            else:
+                self.show_block_dialog("Данные уже есть в карте КПЭ","Информация")
     # TODO: This is a insert function for add new data to planned table
     def insert_into_db(self, e):
         if self.end_edit == False:
@@ -1111,12 +1129,6 @@ class Scheduled(Container):
 
                 number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
                 
-                self.kpe_weight_1.append(int(self.weight_first_qr_box.content.value))
-                self.kpe_weight_2.append(int(self.weight_second_qr_box.content.value))
-                self.kpe_weight_3.append(int(self.weight_third_qr_box.content.value))
-                self.kpe_weight_4.append(int(self.weight_fourth_qr_box.content.value))
-                self.save_weights()
-
                 query = """
                     INSERT INTO planned_value (plan_id, plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, status, KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4, number_of_version)
                     VALUES ({}+1, {}, {}, {}, {}, {}, {}, {}, {},'{}', {}, {}, {}, {},'{}');
@@ -1155,10 +1167,6 @@ class Scheduled(Container):
                 self.units_menu_box.content.value = ""
                 # self.specialist_menu_box.content.value = ""
                 print("Запись успешно добавлена в базу данных")
-                print(self.kpe_weight_1)
-                print(self.kpe_weight_2)
-                print(self.kpe_weight_3)
-                print(self.kpe_weight_4)
                 
 
             except Exception as e:
@@ -1259,7 +1267,6 @@ class Scheduled(Container):
             if self.first_qr_box.content.value != selected_row[3]:
                 query_1st_qr = "ALTER TABLE planned_value UPDATE 1st_quater_value = {} WHERE plan_id = {};".format(self.first_qr_box_2.content.value, plan_id)
                 cursor.execute(query_1st_qr)
-                self.kpe_weight_1[int(plan_id)-1] = int(self.first_qr_box_2.content.value)
                 self.page.dialog = self.alter_dialog_edit
                 self.alter_dialog_edit.open = False
 
@@ -1290,28 +1297,24 @@ class Scheduled(Container):
             if self.weight_first_qr_box.content.value != selected_row[8]:
                 query_weight_firts_qr = "ALTER TABLE planned_value UPDATE KPE_weight_1 = {} WHERE plan_id = {};".format(self.weight_first_qr_box_2.content.value, plan_id)
                 cursor.execute(query_weight_firts_qr)
-                self.kpe_weight_1[int(selected_row[0])-1] = int(self.weight_first_qr_box_2.content.value)
                 self.page.dialog = self.alter_dialog_edit
                 self.alter_dialog_edit.open = False
 
             if self.weight_second_qr_box.content.value != selected_row[9]:
                 query_weight_second_qr = "ALTER TABLE planned_value UPDATE KPE_weight_2 = {} WHERE plan_id = {};".format(self.weight_second_qr_box_2.content.value, plan_id)
                 cursor.execute(query_weight_second_qr)
-                self.kpe_weight_2[int(selected_row[0])-1] = int(self.weight_second_qr_box_2.content.value)
                 self.page.dialog = self.alter_dialog_edit
                 self.alter_dialog_edit.open = False
 
             if self.weight_third_qr_box.content.value != selected_row[10]:
                 query_weight_third_qr = "ALTER TABLE planned_value UPDATE KPE_weight_3 = {} WHERE plan_id = {};".format(self.weight_third_qr_box_2.content.value, plan_id)
                 cursor.execute(query_weight_third_qr)
-                self.kpe_weight_3[int(selected_row[0])-1] = int(self.weight_third_qr_box_2.content.value)
                 self.page.dialog = self.alter_dialog_edit
                 self.alter_dialog_edit.open = False
 
             if self.weight_fourth_qr_box.content.value != selected_row[11]:
                 query_weight_fourth_qr = "ALTER TABLE planned_value UPDATE KPE_weight_4 = {} WHERE plan_id = {};".format(self.weight_fourth_qr_box_2.content.value, plan_id)
                 cursor.execute(query_weight_fourth_qr)
-                self.kpe_weight_4[int(selected_row[0])-1] = int(self.weight_fourth_qr_box_2.content.value)
                 self.page.dialog = self.alter_dialog_edit
                 self.alter_dialog_edit.open = False
             else:
@@ -1334,6 +1337,7 @@ class Scheduled(Container):
     def close_edit_dialog(self, e):
         self.page.dialog = self.alter_dialog_edit
         self.alter_dialog_edit.open = False
+        self.preview(e)
         self.page.update()
 
     def delete_preview_data(self, e):
@@ -1352,13 +1356,9 @@ class Scheduled(Container):
             print(sql_select)
             plan_id = cursor.fetchone()[0]
             print(plan_id)
-            query_status = "ALTER TABLE planned_value UPDATE status = 'Неактивно' WHERE plan_id = {};".format(plan_id)
-            cursor.execute(query_status)
+            query_delete = "DELETE FROM planned_value WHERE plan_id = {};".format(plan_id)
+            cursor.execute(query_delete)
         self.page.dialog = self.alter_dialog_preview
         self.alter_dialog_preview.open = False
-        self.kpe_weight_1.clear()
-        self.kpe_weight_2.clear()
-        self.kpe_weight_3.clear()
-        self.kpe_weight_4.clear()
         self.show_block_dialog("Запись была успешно удалена", "Успешно")
         self.page.update()

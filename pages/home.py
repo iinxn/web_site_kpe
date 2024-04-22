@@ -8,7 +8,7 @@ class Home(Container):
         self.alignment = alignment.center
         self.expand = True
         self.bgcolor = primary_colors['GREEN']
-        user_id = self.page.session.get("user_id")
+        user_id = self.page.session.get("login")
         
         self.content = Column(
             spacing=0,
@@ -39,10 +39,11 @@ class Home(Container):
                                 ),
                                 Container(
                                     content=Text(
-                                    value='Название сайта',
+                                    value='Мастер КПЭ',
                                     size=18,
                                     color='white',
                                     text_align='center',
+                                    weight='bold',
                                   ),
                                 ),
                                 Container(

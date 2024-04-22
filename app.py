@@ -50,4 +50,4 @@ class Main(UserControl):
         self.page.views.append(
             View(route, [new_page])
         )
-app(target=Main, assets_dir='assets', view=WEB_BROWSER, port=8550)
+app(target=Main, view=WEB_BROWSER, port=8550)
