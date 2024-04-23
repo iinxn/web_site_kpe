@@ -1,5 +1,6 @@
 from flet import *
 from utils.consts import primary_colors
+from utils.components import *
 from service.connection import *
 
 class MeasurementHandbook(Container):
@@ -11,7 +12,7 @@ class MeasurementHandbook(Container):
         self.expand = True
         self.bgcolor = primary_colors['WHITE']
         self.selected_rows = set()
-
+        self.components_manager = Components(page)
         # Creating the DataTable
         self.data_table = DataTable(
             columns=[
@@ -29,6 +30,7 @@ class MeasurementHandbook(Container):
             heading_row_height=100,
             width=1000,
         )
+        
 #*BOX FOR TEXTFIELD
         self.textfield_box = Container(
             content=TextField(
@@ -55,13 +57,6 @@ class MeasurementHandbook(Container):
                         color=primary_colors['GREEN'],
                     ),
                         ),
-        )
-        self.alter_dialog_error = AlertDialog(
-            modal=True,
-            title=Text("Default Title"),
-            content=Text("Default Content"),
-            actions=[TextButton("OK", on_click=self.close_dlg_error)],
-            on_dismiss=lambda e: print("Modal dialog dismissed!")
         )
         self.alter_dialog_add_new_specialists = AlertDialog(
             modal=True,
@@ -155,15 +150,14 @@ class MeasurementHandbook(Container):
                             Container(height=50),
                             Container(
                                 Row(
-                                    spacing='50',
+                                    spacing='40',
                                     alignment='center',
                                     controls=[
-                                        Container(width=90),
                                         self.textfield_box,
                                         ElevatedButton(
                                             color=primary_colors['WHITE'],
                                             bgcolor=primary_colors['GREEN'],
-                                            width=200,
+                                            width=180,
                                             height=70,
                                             content=Column(
                                                 horizontal_alignment='center',
@@ -185,7 +179,7 @@ class MeasurementHandbook(Container):
                                         ElevatedButton(
                                             color=primary_colors['WHITE'],
                                             bgcolor=primary_colors['GREEN'],
-                                            width=200,
+                                            width=180,
                                             height=70,
                                             content=Column(
                                                 horizontal_alignment='center',
@@ -202,9 +196,30 @@ class MeasurementHandbook(Container):
                                                     )
                                                 ]
                                             ),
-                                            # on_click=lambda e: self.output_selected_rows(),
-                                            on_click=lambda e: self.show_edit_dialog(),
-                                        )
+                                            on_click=self.show_edit_dialog,
+                                        ),
+                                        ElevatedButton(
+                                            color=primary_colors['WHITE'],
+                                            bgcolor=primary_colors['GREEN'],
+                                            width=180,
+                                            height=70,
+                                            content=Column(
+                                                horizontal_alignment='center',
+                                                alignment='center',
+                                                controls=[
+                                                    Container(
+                                                        Text(
+                                                            value='Удалить',
+                                                            size=16,
+                                                            color=primary_colors['WHITE'],
+                                                            text_align='center',
+                                                            weight='bold',
+                                                        )
+                                                    )
+                                                ]
+                                            ),
+                                            on_click=self.delete_measuerement,
+                                        ),
                                     ]
                                 )
                             ),
@@ -218,138 +233,82 @@ class MeasurementHandbook(Container):
                 ),
             ]
         )
+        self.show_measurement()
+
+    def show_measurement(self):
+        self.data_table.rows.clear()
         cursor = connection.cursor()
         query_select = 'SELECT * FROM units_of_measurement ORDER BY measurement_id'
         cursor.execute(query_select)
         results = cursor.fetchall()
-
         for row in results:
-            # Create cells for the row
             cells = [DataCell(Text(str(value))) for value in row]
-
-            # Create a Checkbox for row selection
             checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
             cells.append(DataCell(checkbox))
-
-            # Create the DataRow with cells
             data_row = DataRow(cells=cells)
-
-            # Add the row to the DataTable
             self.data_table.rows.append(data_row)
-
-        # Add the DataTable to the content
         self.content.controls[1].content.controls[2] = self.data_table
-        
+
     def toggle_row_selection(self, e, row):
-        # Toggle the row's selection when the Checkbox value changes
         if row not in self.selected_rows:
             self.selected_rows.add(row)
         else:
             self.selected_rows.remove(row)
+
     
-    
-    def show_edit_dialog(self):
+    def insert_into_db(self, e):
+        if self.textfield_box.content.value == "":
+            self.components_manager.show_block_dialog("Заполните поле", "Ошибка")
+        else:
+            try:
+                cursor = connection.cursor()
+                cursor.execute(f"SELECT max(measurement_id) FROM units_of_measurement;")
+                max_id = cursor.fetchone()[0]
+                query = "INSERT INTO TABLE units_of_measurement (measurement_id, type) VALUES ({}+1,'{}')".format(int(max_id), self.textfield_box.content.value)
+                cursor.execute(query)
+                print("Запись успешно добавлена в базу данных")
+                self.show_measurement()
+                self.textfield_box.content.value = ""
+                self.page.update()
+            except Exception as e:
+                print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
+
+    def show_edit_dialog(self, e):
         if not self.selected_rows:
-            # If no rows are selected, show an error dialog
             self.show_error_dialog("Вы не выбрали строку в таблице")
         else:
-            # Get the first selected row (you can adjust this logic if you want to handle multiple selected rows)
             selected_row = next(iter(self.selected_rows))
-            # Assuming the selected data is in the second column of the DataTable, index 1
             selected_data = selected_row[1]
-
-            # Set the value of the edit_name TextField
             self.edit_name.content.value = selected_data
-
-            
-            # Show the edit dialog
             self.page.dialog = self.alter_dialog_add_new_specialists
             self.alter_dialog_add_new_specialists.open = True
             self.page.update()
 
-
     def edit_name_in_table(self, e):
         selected_row = next(iter(self.selected_rows))
-
         cursor = connection.cursor()
-
-        # Use the UPDATE statement to modify the record
         query = "ALTER TABLE units_of_measurement UPDATE type = '{}' WHERE measurement_id = {}".format(self.edit_name.content.value, selected_row[0])
         cursor.execute(query)
-
-        # Fetch the updated data from the database
-
-        query_select = 'SELECT * FROM units_of_measurement ORDER BY measurement_id'
-
-        cursor.execute(query_select)
-        results = cursor.fetchall()
-        query_result = results
-        data_rows = []
-
-        for row in query_result:
-            cells = [DataCell(Text(str(value))) for value in row]
-            data_row = DataRow(cells=cells)
-            checkbox_1 = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-            cells.append(DataCell(checkbox_1))
-
-            data_rows.append(data_row)
-
-        # After you fetch new data from the database and create data_rows, update the DataTable like this:
-        self.data_table.rows = data_rows
+        self.show_measurement()
         self.selected_rows.clear()
         self.page.dialog = self.alter_dialog_add_new_specialists
         self.alter_dialog_add_new_specialists.open = False
         self.page.update()
 
-    
     def close_edit_dialog(self, e):
         self.page.dialog = self.alter_dialog_add_new_specialists
         self.alter_dialog_add_new_specialists.open = False
         self.page.update()
-    
-    def show_error_dialog(self, text):
-        self.page.dialog = self.alter_dialog_error
-        self.alter_dialog_error.title = Text(value="Ошибка", color=primary_colors['BLACK'])
-        self.alter_dialog_error.content = Text(value=text, color=primary_colors['BLACK'])
-        self.alter_dialog_error.open = True
-        self.page.update() 
-    
-    def close_dlg_error(self, e):
-        self.page.dialog = self.alter_dialog_error
-        self.alter_dialog_error.open = False
-        print("It's closed successfully")
+
+    def delete_measuerement(self, e):
+        cursor = connection.cursor()
+        for selected_row in self.selected_rows:
+            query_delete_measurement = f"DELETE FROM units_of_measurement WHERE measurement_id = {selected_row[0]}"
+            cursor.execute(query_delete_measurement)
+            connection.commit()
+            print(query_delete_measurement)
+        self.show_measurement()
+        self.selected_rows.clear()
+        self.components_manager.show_block_dialog("Запись удалена", "Успешно")
         self.page.update()
     
-    def insert_into_db(self, e):
-      if self.textfield_box.content.value == "":
-        self.show_error_dialog("Заполните поле")
-      else:
-        try:
-          cursor = connection.cursor()
-          cursor.execute(f"SELECT max(measurement_id) FROM units_of_measurement;")
-          max_id = cursor.fetchone()[0]
-          query = "INSERT INTO TABLE units_of_measurement (measurement_id, type) VALUES ({}+1,'{}')".format(int(max_id), self.textfield_box.content.value)
-          cursor.execute(query)
-          print("Запись успешно добавлена в базу данных")
-
-          cursor.execute('SELECT * FROM units_of_measurement ORDER BY measurement_id')
-          results = cursor.fetchall()
-          query_result = results
-          data_rows = []
-
-          for row in query_result:
-            cells = [DataCell(Text(str(value))) for value in row]
-            data_row = DataRow(cells=cells)
-
-            # Create a Checkbox for the third column
-            checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-            cells.append(DataCell(checkbox))
-
-            data_rows.append(data_row)
-          # After you fetch new data from the database and create data_rows, update the DataTable like this:
-          self.data_table.rows = data_rows
-          self.textfield_box.content.value = ""
-          self.page.update()
-
-        except Exception as e:
-            print(f"Ошибка при добавлении записи в базу данных: {str(e)}")

@@ -1,10 +1,10 @@
 import openpyxl
+import os
 from datetime import datetime
 from flet import *
-from openpyxl.styles import Font, Alignment, DEFAULT_FONT, Border, Side
+from openpyxl.styles import Font, Alignment, Border, Side
 from service.connection import *
 from utils.consts import *
-import os
 
 class Report(Container):
     def __init__(self, page: Page):
@@ -15,20 +15,10 @@ class Report(Container):
         self.expand = True
         self.bgcolor = primary_colors['WHITE']
 
-        dropdown_options_specialists = []
+        self.dropdown_options_specialists = []
         dropdown_options_departments = []
-        # *SELECT QUERY TO DISPLAY SPECIALISTS FROM DB
-        try:
-            cursor = connection.cursor()
-            cursor.execute('SELECT full_name FROM specialists ORDER BY specialist_id')
-            results = cursor.fetchall()
 
-            for row in results:
-                dropdown_options_specialists.append(dropdown.Option(row[0]))
-        except Exception as e:
-            print(f"Error fetching data from the database: {str(e)}")
-
-        # *SELECT QUERY TO DISPLAY SPECIALISTS FROM DB
+        # *SELECT QUERY TO DISPLAY DEPARTMENTS FROM DB
         try:
             cursor = connection.cursor()
             cursor.execute('SELECT name FROM name_of_department ORDER BY department_id')
@@ -62,7 +52,7 @@ class Report(Container):
                 hint_text='Выберите специалиста',
                 color='black',
                 # content_padding=30,
-                options=dropdown_options_specialists
+                options=self.dropdown_options_specialists
             )
         )
 
@@ -72,7 +62,8 @@ class Report(Container):
                 hint_text='Выберите управление',
                 color='black',
                 # content_padding=30,
-                options=dropdown_options_departments
+                options=dropdown_options_departments,
+                on_change=self.show_specialists
             )
         )
 
@@ -103,7 +94,9 @@ class Report(Container):
             title=Text("Формирование отчета"),
             content=Column(
                 height=250,
+                width=700,
                 controls=[
+                    self.report_depart,
                     self.report_spec,
                     self.report_quater
                 ]
@@ -120,8 +113,10 @@ class Report(Container):
             title=Text("Формирование отчета"),
             content=Column(
                 height=250,
+                width=700,
                 controls=[
-                    self.report_spec,
+                    self.report_depart,
+                    self.report_spec
                 ]
             ),
             actions=[
@@ -139,8 +134,8 @@ class Report(Container):
                 height=250,
                 width=700,
                 controls=[
-                    self.report_quater,
-                    self.report_depart
+                    self.report_depart,
+                    self.report_quater
                 ]
             ),
             actions=[
@@ -311,6 +306,23 @@ class Report(Container):
         )
 
     # !FUCNTIONS
+    def show_specialists(self, e):
+        self.dropdown_options_specialists.clear()
+        try:
+            cursor = connection.cursor()
+            cursor.execute(f"SELECT department_id FROM name_of_department WHERE name = '{self.report_depart.content.value}'")
+            specialist_department_id = cursor.fetchone()[0]
+            
+            cursor.execute(f"SELECT full_name FROM specialists WHERE specialist_department_id = {specialist_department_id}")
+            specialists_full_name = cursor.fetchall()
+
+            for row in specialists_full_name:
+                self.dropdown_options_specialists.append(dropdown.Option(row[0]))
+                
+            self.page.update()
+        except Exception as e:
+            print(f"Error fetching data from the database: {str(e)}")
+    
     def show_block_dialog(self, content_text, title_text):
         self.page.dialog = self.alter_dialog_block
         self.alter_dialog_block.content = Text(f"{content_text}")
@@ -428,11 +440,6 @@ class Report(Container):
             self.number_of_version_kpe.content.value = latest_version
             self.page.update()
         except:
-            # if self.report_spec.content.value == "":
-            #   self.show_block_dialog("Вы не выбрали специалиста", "Ошибка")
-            # if self.report_quater.content.value == "":
-            #   self.show_block_dialog("Вы не выбрали номер квартала", "Ошибка")
-            # if self.report_quater.content.value == "" and self.report_spec.content.value == "":
             self.show_block_dialog("Вы не выбрали специалиста или номер квартала", "Ошибка")
 
     def close_dlg(self, e):
@@ -678,17 +685,24 @@ class Report(Container):
     def form_report(self, e):
         selected_report_type = self.report_template.content.value
         if selected_report_type == "Карта КПЭ":
+            self.report_depart.content.value = ''
+            self.report_quater.content.value = ''
             self.report_spec.content.value = ''
+            self.dropdown_options_specialists.clear()
             self.open_dialog_kpe()
         # * РАСЧЕТ ПРЕМИИ
         elif selected_report_type == "Расчет премии":
-            self.report_spec.content.value = ''
+            self.report_depart.content.value = ''
             self.report_quater.content.value = ''
+            self.report_spec.content.value = ''
+            self.dropdown_options_specialists.clear()
             self.open_dialog()
         # *СВОДНЫЕ ДАННЫЕ ПО ИСПОЛНЕНИЮ
         elif selected_report_type == "Сводные данные по исполнению":
-            self.report_quater.content.value = ''
             self.report_depart.content.value = ''
+            self.report_quater.content.value = ''
+            self.report_spec.content.value = ''
+            self.dropdown_options_specialists.clear()
             self.open_dialog_summary()
         else:
             self.show_block_dialog("Вы не выбрали шаблон отчета", "Ошибка")
@@ -708,6 +722,9 @@ class Report(Container):
             global results
             global results_summary
             global results_premi
+            date = datetime.now()
+            formatted_date = date.strftime("%d.%m.%Y %H.%M.%S")
+            print(formatted_date)
             selected_report_type = self.report_template.content.value
             if selected_report_type == "Карта КПЭ":
                 cursor = connection.cursor()
@@ -818,7 +835,7 @@ class Report(Container):
                 if not os.path.exists(employee_folder):
                     os.makedirs(employee_folder)
 
-                filename = os.path.join(employee_folder, f"Карта КПЭ - {self.report_spec.content.value}.xlsx")
+                filename = os.path.join(employee_folder, f"Карта КПЭ - {self.report_spec.content.value} - {formatted_date}.xlsx")
                 print(filename)
                 if filename:
                     workbook.save(filename)
@@ -1027,7 +1044,7 @@ class Report(Container):
                 if not os.path.exists(employee_folder):
                     os.makedirs(employee_folder)
 
-                filename = os.path.join(employee_folder, f"Расчет премии - {self.report_spec.content.value}.xlsx")
+                filename = os.path.join(employee_folder, f"Расчет премии - {self.report_spec.content.value} - {formatted_date}.xlsx")
                 print(filename)
 
                 if filename:
@@ -1140,7 +1157,7 @@ class Report(Container):
                 if not os.path.exists(employee_folder):
                     os.makedirs(employee_folder)
 
-                filename = os.path.join(employee_folder, f"Сводный отчет.xlsx")
+                filename = os.path.join(employee_folder, f"Сводный отчет - {formatted_date}.xlsx")
                 print(filename)
 
                 if filename:
