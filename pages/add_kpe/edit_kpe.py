@@ -14,6 +14,11 @@ class EditKPE(Container):
         self.bgcolor = primary_colors['WHITE']
         self.selected_rows = set()
         self.sql_query = []
+        self.dropdown_options_indicators = []
+        self.dropdown_options_specialists = []
+        dropdown_options_units = []
+        dropdown_options_departments = []
+        
         self.data_table = DataTable(
             columns=[
                 DataColumn(Text("п/п"), numeric=True),
@@ -50,23 +55,6 @@ class EditKPE(Container):
             width=2000
         )
 
-        self.dropdown_options_indicators_truncated = []
-        dropdown_options_specialists_1 = []
-        dropdown_options_specialists_2 = []
-        dropdown_options_units = []
-
-        # * SPECIALIST ARRAY
-        try:
-            cursor = connection.cursor()
-            cursor.execute('SELECT full_name FROM specialists ORDER BY specialist_id')
-            results = cursor.fetchall()
-
-            for row in results:
-                dropdown_options_specialists_1.append(dropdown.Option(row[0]))
-                dropdown_options_specialists_2.append(dropdown.Option(row[0]))
-        except Exception as e:
-            print(f"Error fetching data from the database: {str(e)}")
-
         # * SELECT UNITS NAME FROM MEASUREMNT TABLE
         try:
             cursor = connection.cursor()
@@ -78,20 +66,23 @@ class EditKPE(Container):
         except Exception as e:
             print(f"Error fetching data from the database: {str(e)}")
 
+        try:
+            cursor = connection.cursor()
+            cursor.execute('SELECT name FROM name_of_department ORDER BY department_id')
+            results = cursor.fetchall()
+
+            for row in results:
+                dropdown_options_departments.append(dropdown.Option(row[0]))
+
+        except Exception as e:
+            print(f"Error fetching data from the database: {str(e)}")
         # *DROPDOWNS
         self.report_spec = Container(
             content=Dropdown(
                 hint_text='Выберите специалиста',
                 color=primary_colors['BLACK'],
-                options=dropdown_options_specialists_1,
+                options=self.dropdown_options_specialists,
                 on_change=self.show_indicators
-            )
-        )
-        self.specialist_menu_box = Container(
-            content=Dropdown(
-                hint_text='Выберите специалиста',
-                color=primary_colors['BLACK'],
-                options=dropdown_options_specialists_2
             )
         )
         self.units_menu_box = Container(
@@ -100,6 +91,15 @@ class EditKPE(Container):
                 color=primary_colors['BLACK'],
                 width=300,
                 options=dropdown_options_units,  # Set the options from the fetched data
+            ),
+        )
+        self.name_of_department_menu_box = Container(
+            content=Dropdown(
+                hint_text='Выберите управление',
+                color=primary_colors['BLACK'],
+                width=500,
+                options=dropdown_options_departments,
+                on_change=self.show_specialists
             ),
         )
         self.first_qr_box = Container(
@@ -232,8 +232,8 @@ class EditKPE(Container):
             content=Dropdown(
                 label='Выберите наименование показателя',
                 color=primary_colors['BLACK'],
-                width=350,
-                options=self.dropdown_options_indicators_truncated,
+                width=850,
+                options=self.dropdown_options_indicators,
                 on_change=self.added_new_to_indicators
             ),
         )
@@ -525,6 +525,14 @@ class EditKPE(Container):
                             Container(height=25),
                             Container(
                                 content=Row(
+                                    controls=[
+                                        Container(width=29),
+                                        self.name_of_department_menu_box,
+                                    ]
+                                )
+                            ),
+                            Container(
+                                content=Row(
                                     spacing='30',
                                     alignment='center',
                                     controls=[
@@ -689,35 +697,40 @@ class EditKPE(Container):
                 ),
             ]
         )
+    def show_specialists(self, e):
+        self.dropdown_options_specialists.clear()
+        try:
+            cursor = connection.cursor()
+            cursor.execute(f"SELECT department_id FROM name_of_department WHERE name = '{self.name_of_department_menu_box.content.value}'")
+            specialist_department_id = cursor.fetchone()[0]
+            
+            cursor.execute(f"SELECT full_name FROM specialists WHERE specialist_department_id = {specialist_department_id}")
+            specialists_full_name = cursor.fetchall()
+
+            for row in specialists_full_name:
+                self.dropdown_options_specialists.append(dropdown.Option(row[0]))
+                
+            self.page.update()
+        except Exception as e:
+            print(f"Error fetching data from the database: {str(e)}")
+
     def show_indicators(self, e):
         try:
-            self.dropdown_options_indicators_truncated.clear()
+            self.dropdown_options_indicators.clear()
+
             cursor = connection.cursor()
-            sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.report_spec.content.value)
+            sql_select_specialist_id = f"SELECT specialist_id FROM specialists WHERE full_name = '{self.report_spec.content.value}'"
             cursor.execute(sql_select_specialist_id)
             specialist_id = cursor.fetchone()[0]
 
-            cursor.execute('SELECT indicators_id, name FROM name_of_indicators WHERE specialist_id = {} ORDER BY indicators_id'.format(specialist_id))
+            cursor.execute(f'SELECT indicators_id, name FROM name_of_indicators WHERE specialist_id = {specialist_id} ORDER BY indicators_id')
             results = cursor.fetchall()
 
-            max_length = 50
-            for row in results:
-                indicator_id = row[0]
-                name = row[1]
+            for indicator_id, name in results:
+                self.dropdown_options_indicators.append(dropdown.Option(indicator_id, name))
 
-                # Truncate the name if it exceeds the maximum length
-                if len(name) > max_length:
-                    first_part = name[:max_length // 2].rstrip()
-                    second_part = name[-max_length // 2:].lstrip()
-                    truncated_text = f"{first_part}...{second_part}"
-                else:
-                    truncated_text = name
-
-                # Add both the indicator_id and the truncated name to the dropdown options
-                self.dropdown_options_indicators_truncated.append(dropdown.Option(indicator_id, truncated_text))
-
-            # Add "Нет в списке" option at the end
-            self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
+            no_list_option = dropdown.Option('Нет в списке')
+            self.dropdown_options_indicators.append(no_list_option)
 
             self.page.update()
         except Exception as e:
@@ -768,7 +781,7 @@ class EditKPE(Container):
                 WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно'
                 ORDER BY kpe_id;
             """
-
+            print(query_select)
             cursor.execute(query_select)
             results = cursor.fetchall()
             query_result = results
@@ -841,61 +854,32 @@ class EditKPE(Container):
             formatted_date = max_version.split('-')[1]
             number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
             print(number_of_verison_plus)
-            if self.first_qr_box.content.value != selected_row[3]:
-                query_1st_qr = "ALTER TABLE kpe_table UPDATE 1st_quater_value = {} WHERE kpe_id = {};".format(self.first_qr_box.content.value, kpe_id)
-                self.sql_query.append(query_1st_qr)
-                self.page.dialog = self.alter_dialog_edit
-                self.alter_dialog_edit.open = False
+            changes_made = False
 
-            if self.second_qr_box.content.value != selected_row[4]:
-                query_2nd_qr = "ALTER TABLE kpe_table UPDATE 2nd_quater_value = {} WHERE kpe_id = {};".format(self.second_qr_box.content.value, kpe_id)
-                self.sql_query.append(query_2nd_qr)
-                self.page.dialog = self.alter_dialog_edit
-                self.alter_dialog_edit.open = False
+            fields_to_check = [
+                (self.first_qr_box.content.value, selected_row[3], '1st_quater_value'),
+                (self.second_qr_box.content.value, selected_row[4], '2nd_quater_value'),
+                (self.third_qr_box.content.value, selected_row[5], '3rd_quater_value'),
+                (self.fourtht_qr_box.content.value, selected_row[6], '4th_quater_value'),
+                (self.year_box.content.value, selected_row[7], 'year'),
+                (self.weight_first_qr_box.content.value, selected_row[8], 'KPE_weight_1'),
+                (self.weight_second_qr_box.content.value, selected_row[9], 'KPE_weight_2'),
+                (self.weight_third_qr_box.content.value, selected_row[10], 'KPE_weight_3'),
+                (self.weight_fourth_qr_box.content.value, selected_row[11], 'KPE_weight_4'),
+            ]
 
-            if self.third_qr_box.content.value != selected_row[5]:
-                query_3rd_qr = "ALTER TABLE kpe_table UPDATE 3rd_quater_value = {} WHERE kpe_id = {};".format(self.third_qr_box.content.value, kpe_id)
-                self.sql_query.append(query_3rd_qr)
-                self.page.dialog = self.alter_dialog_edit
-                self.alter_dialog_edit.open = False
+            for new_value, old_value, column_name in fields_to_check:
+                if new_value != old_value:
+                    query = f"ALTER TABLE kpe_table UPDATE {column_name} = {new_value} WHERE kpe_id = {kpe_id};"
+                    self.sql_query.append(query)
+                    changes_made = True
 
-            if self.fourtht_qr_box.content.value != selected_row[6]:
-                query_4th_qr = "ALTER TABLE kpe_table UPDATE 4th_quater_value = {} WHERE kpe_id = {};".format(self.fourtht_qr_box.content.value, kpe_id)
-                self.sql_query.append(query_4th_qr)
-                self.page.dialog = self.alter_dialog_edit
-                self.alter_dialog_edit.open = False
-
-            if self.year_box.content.value != selected_row[7]:
-                query_year = "ALTER TABLE kpe_table UPDATE year = {} WHERE kpe_id = {};".format(self.year_box.content.value, kpe_id)
-                self.sql_query.append(query_year)
-                self.page.dialog = self.alter_dialog_edit
-                self.alter_dialog_edit.open = False
-
-            if self.weight_first_qr_box.content.value != selected_row[8]:
-                query_weight_firts_qr = "ALTER TABLE kpe_table UPDATE KPE_weight_1 = {} WHERE kpe_id = {};".format(self.weight_first_qr_box.content.value, kpe_id)
-                self.sql_query.append(query_weight_firts_qr)
-                self.page.dialog = self.alter_dialog_edit
-                self.alter_dialog_edit.open = False
-
-            if self.weight_second_qr_box.content.value != selected_row[9]:
-                query_weight_second_qr = "ALTER TABLE kpe_table UPDATE KPE_weight_2 = {} WHERE kpe_id = {};".format(self.weight_second_qr_box.content.value, kpe_id)
-                self.sql_query.append(query_weight_second_qr)
-                self.page.dialog = self.alter_dialog_edit
-                self.alter_dialog_edit.open = False
-
-            if self.weight_third_qr_box.content.value != selected_row[10]:
-                query_weight_third_qr = "ALTER TABLE kpe_table UPDATE KPE_weight_3 = {} WHERE kpe_id = {};".format(self.weight_third_qr_box.content.value, kpe_id)
-                self.sql_query.append(query_weight_third_qr)
-                self.page.dialog = self.alter_dialog_edit
-                self.alter_dialog_edit.open = False
-
-            if self.weight_fourth_qr_box.content.value != selected_row[11]:
-                query_weight_fourth_qr = "ALTER TABLE kpe_table UPDATE KPE_weight_4 = {} WHERE kpe_id = {};".format(self.weight_fourth_qr_box.content.value, kpe_id)
-                self.sql_query.append(query_weight_fourth_qr)
+            if changes_made:
                 self.page.dialog = self.alter_dialog_edit
                 self.alter_dialog_edit.open = False
             else:
                 print("Поля никак не изменились")
+
             query_number_of_version = "ALTER TABLE kpe_table UPDATE number_of_version = '{}' WHERE kpe_id = {};".format(str(number_of_verison_plus), kpe_id)
             self.sql_query.append(query_number_of_version)
             self.first_qr_box.content.value = ""
@@ -1002,7 +986,7 @@ class EditKPE(Container):
             self.textfiled_input_new_indicator.content.value = ''
             self.units_menu_box.content.value = ''
             #clear indicators cb and add new data
-            self.dropdown_options_indicators_truncated.clear()
+            self.dropdown_options_indicators.clear()
             self.show_indicators("")
 
             self.page.dialog = self.alter_dialog_no_in_list
@@ -1024,7 +1008,6 @@ class EditKPE(Container):
         self.page.update()
 
     def add_new_specialist(self, e):
-        # *FOR USER DATA INFORMATION
         try:
             cursor = connection.cursor()
             cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
@@ -1101,47 +1084,7 @@ class EditKPE(Container):
             self.cb_menu_spec.content.value = ""
             self.page.dialog = self.alter_dialog_add_new
             self.alter_dialog_add_new.open = False
-            
-            cursor = connection.cursor()
-            cursor.execute(
-                f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
-            user_id = cursor.fetchone()[0]
-            query_select = "SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = '{}'".format(user_id)
-            cursor.execute(query_select)
-            latest_version = cursor.fetchone()[0]
-            query_select = f"""
-                SELECT
-                    ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
-                    ni.name AS indicator_name,
-                    um.type AS unit_of_measurement,
-                    kt.1st_quater_value,
-                    kt.2nd_quater_value,
-                    kt.3rd_quater_value,
-                    kt.4th_quater_value,
-                    kt.year,
-                    kt.KPE_weight_1,
-                    kt.KPE_weight_2,
-                    kt.KPE_weight_3,
-                    kt.KPE_weight_4
-                FROM kpe_table AS kt
-                JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
-                JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
-                WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно'
-                ORDER BY kpe_id;
-            """
-            cursor.execute(query_select)
-            results = cursor.fetchall()
-            query_result = results
-            data_rows = []
-            for row in query_result:
-                cells = [DataCell(Text(str(value))) for value in row]
-                data_row = DataRow(cells=cells)
-                # Create a Checkbox for the third column
-                checkbox_1 = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-                cells.append(DataCell(checkbox_1))
-                data_rows.append(data_row)
-            # After you fetch new data from the database and create data_rows, update the DataTable like this:
-            self.data_table.rows = data_rows
+            self.show_kpe_table(e)
             self.page.update()
         except:
             self.show_block_dialog("При внесение новой записи произошла ошибка", "Ошибка")
@@ -1168,45 +1111,7 @@ class EditKPE(Container):
                 cursor.execute(queryes)
             self.sql_query.clear()
             print(self.sql_query)
-            cursor.execute(
-                f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
-            user_id = cursor.fetchone()[0]
-            query_select = "SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = '{}'".format(user_id)
-            cursor.execute(query_select)
-            latest_version = cursor.fetchone()[0]
-            query_select = f"""
-                SELECT
-                    ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
-                    ni.name AS indicator_name,
-                    um.type AS unit_of_measurement,
-                    kt.1st_quater_value,
-                    kt.2nd_quater_value,
-                    kt.3rd_quater_value,
-                    kt.4th_quater_value,
-                    kt.year,
-                    kt.KPE_weight_1,
-                    kt.KPE_weight_2,
-                    kt.KPE_weight_3,
-                    kt.KPE_weight_4
-                FROM kpe_table AS kt
-                JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
-                JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
-                WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно'
-                ORDER BY kpe_id;
-            """
-            cursor.execute(query_select)
-            results = cursor.fetchall()
-            query_result = results
-            data_rows = []
-            for row in query_result:
-                cells = [DataCell(Text(str(value))) for value in row]
-                data_row = DataRow(cells=cells)
-                # Create a Checkbox for the third column
-                checkbox_1 = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-                cells.append(DataCell(checkbox_1))
-                data_rows.append(data_row)
-            # After you fetch new data from the database and create data_rows, update the DataTable like this:
-            self.data_table.rows = data_rows
+            self.show_kpe_table(e)
             self.page.dialog = self.alter_dialog_are_you_sure
             self.alter_dialog_are_you_sure.open = False
             self.page.update()

@@ -16,36 +16,34 @@ class Actual(Container):
 
         self.use_truncated_options = True
         self.dropdown_options_indicators = []
-        self.dropdown_options_indicators_truncated = []
-        dropdown_options_specialists = []
-
-        # *SELECT QUERY TO DISPLAY SPECIALISTS FROM DB
+        self.dropdown_options_specialists = []
+        dropdown_options_departments = []
+        
         try:
             cursor = connection.cursor()
-            cursor.execute('SELECT full_name FROM specialists ORDER BY specialist_id')
+            cursor.execute('SELECT name FROM name_of_department ORDER BY department_id')
             results = cursor.fetchall()
 
             for row in results:
-                dropdown_options_specialists.append(dropdown.Option(row[0]))
+                dropdown_options_departments.append(dropdown.Option(row[0]))
+
         except Exception as e:
             print(f"Error fetching data from the database: {str(e)}")
-
         # *BOX FOR DROPDOWN MENU
         self.cb_menu_spec = Container(
-            padding=40,
             content=Dropdown(
                 label='Выберите наименование показателя',
                 # max_width=200,
                 width=400,
-                color="black",
-                options=self.dropdown_options_indicators_truncated,
+                color=primary_colors['BLACK'],
+                options=self.dropdown_options_indicators,
                 on_change=self.update_plan_values,
             ),
         )
         self.cb_quter_menu = Container(
             content=Dropdown(
                 label='Выберите номер квартала',
-                color="black",
+                color=primary_colors['BLACK'],
                 options=[
                     dropdown.Option('1-й квартал'),
                     dropdown.Option('2-й квартал'),
@@ -57,13 +55,21 @@ class Actual(Container):
         self.cb_specialist_menu = Container(
             content=Dropdown(
                 hint_text='Выберите специалиста',
-                color="black",
+                color=primary_colors['BLACK'],
                 width=330,
-                options=dropdown_options_specialists,
+                options=self.dropdown_options_specialists,
                 on_change=self.show_indicators
             )
         )
-
+        self.name_of_department_menu_box = Container(
+            content=Dropdown(
+                hint_text='Выберите управление',
+                color=primary_colors['BLACK'],
+                width=500,
+                options=dropdown_options_departments,
+                on_change=self.show_specialists
+            ),
+        )
         # *TEXTFIELD AREA
         self.plan_value_box = Container(
             content=TextField(
@@ -107,23 +113,9 @@ class Actual(Container):
                 # content_padding=30,
             ),
         )
-        self.textfiled_input_new_indicator = Container(
-            content=TextField(
-                label="Введите наименование показателя",
-                hint_style=TextStyle(
-                    size=12, color=primary_colors['MANATEE']
-                ),
-                cursor_color=primary_colors['MANATEE'],
-                text_style=TextStyle(
-                    size=14,
-                    color=primary_colors['BLACK'],
-                ),
-                width=100
-            ),
-        )
         self.search_input = Container(
             content=TextField(
-                label='Поиск по наименованию',
+                label='Поиск показателя по наименованию',
                 hint_style=TextStyle(size=12, color=primary_colors['MANATEE']),
                 cursor_color=primary_colors['MANATEE'],
                 text_style=TextStyle(size=14, color=primary_colors['GREEN']),
@@ -132,18 +124,6 @@ class Actual(Container):
             ),
         )
 
-        # *This is a alter dialog for spawn a module form to create new indicatros in db
-        self.alter_dialog = AlertDialog(
-            modal=True,
-            title=Text("Добавление показателя в справочник"),
-            content=self.textfiled_input_new_indicator,
-            actions=[
-                TextButton("Добавить", on_click=self.alter_dialoge_input_data),
-                TextButton("Назад", on_click=self.close_dlg),
-            ],
-            actions_alignment=MainAxisAlignment.END,
-            on_dismiss=lambda e: print("Modal dialog dismissed!"),
-        )
         self.alter_dialog_block = AlertDialog(
             modal=True,
             title=Text("Default Title"),
@@ -230,10 +210,9 @@ class Actual(Container):
                         # horizontal_alignment='center',
                         controls=[
                             # *1ST ROW
-                            Container(height=50),
+                            Container(height=30),
                             Container(
-                                height=50,
-                                content=Row(
+                                Row(
                                     spacing='50',
                                     alignment='center',
                                     # horizontal_alignment='center',
@@ -244,24 +223,20 @@ class Actual(Container):
                                     ]
                                 )
                             ),
+                            Container(height=30),
                             Container(
                                 Row(
-                                    spacing='50',
                                     alignment='center',
-                                    # horizontal_alignment='center',
+                                    spacing='40',
                                     controls=[
-                                        Container(width=90),
-                                        # dropdown 1st row
-                                        # specialist
+                                        self.name_of_department_menu_box,
                                         self.cb_specialist_menu,
-                                        # Name of indicator
                                         self.cb_quter_menu,
                                         self.cb_menu_spec,
                                     ]
                                 )
                             ),
-
-                            # Container(height=50),
+                            Container(height=30),
                             # *2ND ROW
                             Container(
                                 Row(
@@ -286,7 +261,7 @@ class Actual(Container):
                                 )
                             ),
 
-                            Container(height=50),
+                            Container(height=30),
                             # *3RD ROW
                             Container(
                                 Row(
@@ -305,7 +280,7 @@ class Actual(Container):
                                     ]
                                 )
                             ),
-                            Container(height=50),
+                            Container(height=30),
                             # *4TH ROW
                             Container(
                                 Row(
@@ -343,74 +318,42 @@ class Actual(Container):
                 ),
             ]
         )
+    def show_specialists(self, e):
+        self.dropdown_options_specialists.clear()
+        try:
+            cursor = connection.cursor()
+            cursor.execute(f"SELECT department_id FROM name_of_department WHERE name = '{self.name_of_department_menu_box.content.value}'")
+            specialist_department_id = cursor.fetchone()[0]
+            
+            cursor.execute(f"SELECT full_name FROM specialists WHERE specialist_department_id = {specialist_department_id}")
+            specialists_full_name = cursor.fetchall()
+
+            for row in specialists_full_name:
+                self.dropdown_options_specialists.append(dropdown.Option(row[0]))
+                
+            self.page.update()
+        except Exception as e:
+            print(f"Error fetching data from the database: {str(e)}")
+
     def show_indicators(self, e):
         try:
             self.dropdown_options_indicators.clear()
-            self.dropdown_options_indicators_truncated.clear()
+
             cursor = connection.cursor()
-            sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.cb_specialist_menu.content.value)
+            sql_select_specialist_id = f"SELECT specialist_id FROM specialists WHERE full_name = '{self.cb_specialist_menu.content.value}'"
             cursor.execute(sql_select_specialist_id)
             specialist_id = cursor.fetchone()[0]
 
-            cursor.execute('SELECT indicators_id, name FROM name_of_indicators WHERE specialist_id = {} ORDER BY indicators_id'.format(specialist_id))
+            cursor.execute(f'SELECT indicators_id, name FROM name_of_indicators WHERE specialist_id = {specialist_id} ORDER BY indicators_id')
             results = cursor.fetchall()
 
-            max_length = 50
-            for row in results:
-                indicator_id = row[0]
-                name = row[1]
-
-                # Truncate the name if it exceeds the maximum length
-                if len(name) > max_length:
-                    first_part = name[:max_length // 2].rstrip()
-                    second_part = name[-max_length // 2:].lstrip()
-                    truncated_text = f"{first_part}...{second_part}"
-                else:
-                    truncated_text = name
-
-                # Add both the indicator_id and the truncated name to the dropdown options
+            for indicator_id, name in results:
                 self.dropdown_options_indicators.append(dropdown.Option(indicator_id, name))
-                self.dropdown_options_indicators_truncated.append(dropdown.Option(indicator_id, truncated_text))
-
-            # Add "Нет в списке" option at the end
-            self.dropdown_options_indicators.append(dropdown.Option('Нет в списке'))
-            self.dropdown_options_indicators_truncated.append(dropdown.Option('Нет в списке'))
 
             self.page.update()
         except Exception as e:
             print(f"Error fetching data from the database: {str(e)}")
-    
-    def added_new_to_indicators(self, e):
-        selected_item = self.cb_menu_spec.content.value
-        print(f"Selected item: {selected_item}")  # Отладочный вывод: Выведите выбранную опцию
-        if selected_item == "Нет в списке":
-            self.page.dialog = self.alter_dialog
-            print("Opening dialog...")  # Отладочный вывод: Откройте диалоговое окно
-            self.alter_dialog.open = True
-        self.page.update()
 
-    def alter_dialoge_input_data(self, e):
-        try:
-            cursor = connection.cursor()
-            cursor.execute(f"SELECT max(indicators_id) FROM name_of_indicators;")
-            max_id = cursor.fetchone()[0]
-            query = "INSERT INTO TABLE name_of_indicators (indicators_id, name) VALUES ({},'{}')".format(
-                int(max_id) + 1, self.textfiled_input_new_indicator.content.value)
-            cursor.execute(query)
-            print("Запись успешно добавлена в базу данных")
-            self.page.dialog = self.alter_dialog
-            self.alter_dialog.open = False
-
-        except Exception as e:
-            print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
-        self.page.update()
-
-    def close_dlg(self, e):
-        self.page.dialog = self.alter_dialog
-        self.alter_dialog.open = False
-        self.page.update()
-
-    # TODO: These two functions for success message
     def show_block_dialog(self, content_text, title_text):
         self.page.dialog = self.alter_dialog_block
         self.alter_dialog_block.content = Text(f"{content_text}")
@@ -424,7 +367,6 @@ class Actual(Container):
         print("It's closed successfully")
         self.page.update()
 
-    # TODO: These are a functions for insert data to actual data table and update planned values for two textfileds
     def insert_data_to_actual_table(self, e):
         try:
             cursor = connection.cursor()
@@ -532,19 +474,23 @@ class Actual(Container):
         search_text = self.search_input.content.value.lower()
         filtered_options = []
 
-        if self.dropdown_options_indicators_truncated is not None:
-            for option in self.dropdown_options_indicators_truncated:
-                if option is not None and option.key is not None:
-                    if search_text.lower() in option.key.lower():
+        if self.dropdown_options_indicators is not None:
+            for option in self.dropdown_options_indicators:
+                # Проверка, что опция не None и что у опции есть текст
+                if option is not None and getattr(option, 'text', None) is not None:
+                    # Применяем фильтрацию к текстовому свойству опции
+                    if search_text in option.text.lower():
                         filtered_options.append(option)
         else:
             print("Dropdown options are None")
 
+        # Если строка поиска пуста, возвращаем все опции
         if not search_text:
-            filtered_options = self.dropdown_options_indicators_truncated
+            filtered_options = self.dropdown_options_indicators
 
-        print("Search Text:", search_text)  # Debugging message
-        print("Filtered options:", [option.key for option in filtered_options])  # Debugging message
+        print("Search Text:", search_text)  # Отладочное сообщение
+        print("Filtered options:", [option.text for option in filtered_options])  # Отладочное сообщение
 
+        # Обновляем опции в выпадающем списке
         self.cb_menu_spec.content.options = filtered_options
         self.page.update()
