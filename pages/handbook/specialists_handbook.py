@@ -1,5 +1,6 @@
 from flet import *
 from utils.consts import primary_colors
+from utils.components import *
 from service.connection import *
 
 class SpecialistsHandbook(Container):
@@ -8,6 +9,7 @@ class SpecialistsHandbook(Container):
         self.page = page
         self.page.theme_mode = ThemeMode.LIGHT
         self.alignment = alignment.center
+        self.components_manager = Components(page)
         self.expand = True
         self.bgcolor = primary_colors['WHITE']
         
@@ -17,7 +19,7 @@ class SpecialistsHandbook(Container):
         self.data_table = DataTable(
             columns=[
                 DataColumn(Text("Код специалиста"), numeric=True),
-                DataColumn(Text("Код управления"), numeric=True),
+                DataColumn(Text("Наименование управления"), numeric=True),
                 DataColumn(Text("ФИО")),
                 DataColumn(Text("Должность")),
                 DataColumn(Text("Статус")),
@@ -149,16 +151,6 @@ class SpecialistsHandbook(Container):
             actions_alignment=MainAxisAlignment.END,
             on_dismiss=lambda e: print("Modal dialog dismissed!"),
         )
-        self.alter_dialog_error = AlertDialog(
-            modal=True,
-            title=Text("Default Title"),
-            content=Text("Default Content"),
-            actions=[TextButton("OK", on_click=self.close_dlg_error)],
-            on_dismiss=lambda e: print("Modal dialog dismissed!")
-        )
-
-
-
 
 # *HEADER
         self.content = ListView(
@@ -216,59 +208,77 @@ class SpecialistsHandbook(Container):
                                             ),
                                         ),
                                         Container(
-                                          width=300,
                                           content=Row(
                                             controls=[
-                                              Container(
-                                                content=ElevatedButton(
-                                                  color=primary_colors['WHITE'],
-                                                  bgcolor=primary_colors['WHITE'],
-                                                  width=150,
-                                                  height=70,
-                                                  content=Column(
-                                                    horizontal_alignment='center',
-                                                    alignment='center',
-                                                      controls=[
-                                                        Container(
-                                                          
-                                                          Text(
-                                                            value='Добавить специалиста',
-                                                            size=16,
-                                                            color=primary_colors['GREEN'],
-                                                            text_align='center',
-                                                            weight='bold',
-                                                          )
+                                              ElevatedButton(
+                                                color=primary_colors['WHITE'],
+                                                bgcolor=primary_colors['WHITE'],
+                                                width=150,
+                                                height=70,
+                                                content=Column(
+                                                  horizontal_alignment='center',
+                                                  alignment='center',
+                                                    controls=[
+                                                      Container(
+                                                        
+                                                        Text(
+                                                          value='Добавить специалиста',
+                                                          size=16,
+                                                          color=primary_colors['GREEN'],
+                                                          text_align='center',
+                                                          weight='bold',
                                                         )
-                                                      ]
-                                                  ),
-                                                  on_click=self.show_alter_dialog
-                                                ),  
-                                              ),
-                                              Container(
-                                                content=ElevatedButton(
-                                                  color=primary_colors['WHITE'],
-                                                  bgcolor=primary_colors['WHITE'],
-                                                  width=170,
-                                                  height=70,
-                                                  content=Column(
-                                                    horizontal_alignment='center',
-                                                    alignment='center',
-                                                      controls=[
-                                                        Container(
-                                                          
-                                                          Text(
-                                                            value='Редактировать',
-                                                            size=16,
-                                                            color=primary_colors['GREEN'],
-                                                            text_align='center',
-                                                            weight='bold',
-                                                          )
+                                                      )
+                                                    ]
+                                                ),
+                                                on_click=self.show_alter_dialog
+                                              ),  
+                                              ElevatedButton(
+                                                color=primary_colors['WHITE'],
+                                                bgcolor=primary_colors['WHITE'],
+                                                width=170,
+                                                height=70,
+                                                content=Column(
+                                                  horizontal_alignment='center',
+                                                  alignment='center',
+                                                    controls=[
+                                                      Container(
+                                                        
+                                                        Text(
+                                                          value='Редактировать',
+                                                          size=16,
+                                                          color=primary_colors['GREEN'],
+                                                          text_align='center',
+                                                          weight='bold',
                                                         )
-                                                      ]
-                                                  ),
-                                                  on_click=lambda e: self.show_edit_dialog(),
-                                                ),  
-                                              ),
+                                                      )
+                                                    ]
+                                                ),
+                                                on_click=self.show_edit_dialog,
+                                              ),  
+                                              ElevatedButton(
+                                                color=primary_colors['WHITE'],
+                                                bgcolor=primary_colors['WHITE'],
+                                                width=170,
+                                                height=70,
+                                                content=Column(
+                                                  horizontal_alignment='center',
+                                                  alignment='center',
+                                                    controls=[
+                                                      Container(
+                                                        
+                                                        Text(
+                                                          value='Удалить',
+                                                          size=16,
+                                                          color=primary_colors['GREEN'],
+                                                          text_align='center',
+                                                          weight='bold',
+                                                        )
+                                                      )
+                                                    ]
+                                                ),
+                                                on_click=self.delete_specialists,
+                                              ),  
                                             ]
                                           )
                                         ),
@@ -303,168 +313,59 @@ class SpecialistsHandbook(Container):
                 ),
             ]
         )
-        cursor = connection.cursor()
-        query_select = '''
-        SELECT
-            sc.specialist_id,
-            nd.name,
-            sc.full_name,
-            sc.position,
-            sc.status,
-            sc.is_user
-        FROM specialists AS sc
-        JOIN name_of_department AS nd ON sc.specialist_department_id = nd.department_id
-        ORDER BY sc.specialist_id;
-        '''
-        cursor.execute(query_select)
-        results = cursor.fetchall()
-        query_result = results
-        data_rows = []
+        self.show_specialists()
 
-        for row in query_result:
-          cells = [DataCell(Text(str(value))) for value in row]
-          data_row = DataRow(cells=cells)
-
-          # Create a Checkbox for the third column
-          checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-          cells.append(DataCell(checkbox))
-
-          data_rows.append(data_row)
-        # After you fetch new data from the database and create data_rows, update the DataTable like this:
-        self.data_table.rows = data_rows
-
-    def show_error_dialog(self,text):
-        self.page.dialog = self.alter_dialog_error
-        self.alter_dialog_error.title = Text(value="Ошибка", color=primary_colors['BLACK'])
-        self.alter_dialog_error.content = Text(value=text, color=primary_colors['BLACK'])
-        self.alter_dialog_error.open = True
-        self.page.update() 
-    def close_dlg_error(self, e):
-      self.page.dialog = self.alter_dialog_error
-      self.alter_dialog_error.open = False
-      print("It's closed successfully")
-      self.page.update()
-    
-    def show_alter_dialog(self, e):
-      self.page.dialog = self.alter_dialog_add_new_specialists
-      self.page.dialog.open = True
-      self.page.update()
-    def close_dlg(self, e):
-        self.page.dialog = self.alter_dialog_add_new_specialists
-        self.page.dialog.open = False
-        self.page.update()      
-
-    def toggle_row_selection(self, e, row):
-        # Toggle the row's selection when the Checkbox value changes
-        if row not in self.selected_rows:
-            self.selected_rows.add(row)
-        else:
-            self.selected_rows.remove(row)
-    
-    
-    def show_edit_dialog(self):
-      if not self.selected_rows:
-          self.show_error_dialog("Вы не выбрали строку в таблице")
-      else:
-          selected_row = next(iter(self.selected_rows))
-          self.cb_menu_department.content.value = selected_row[1]
-          self.specialist_new_full_name.content.value = selected_row[2]
-          self.specialist_new_position.content.value = selected_row[3]
-          self.cb_menu_status.content.value = selected_row[4]
-          self.edit_name.content.value = selected_row[5]
-          # self.dp_units.content.value = selected_row[1]
-          self.page.dialog = self.alter_dialog_edit
-          self.alter_dialog_edit.open = True
-          self.page.update()
-
-
-    def edit_name_in_table(self, e):
-        selected_row = next(iter(self.selected_rows))
-
-        cursor = connection.cursor()
-        sql_select = "SELECT department_id FROM name_of_department WHERE name = '{}'".format(self.cb_menu_department.content.value)
-        cursor.execute(sql_select)
-        department_id = cursor.fetchone()[0]
-        # Use the UPDATE statement to modify the record
-        query_department = "ALTER TABLE specialists UPDATE specialist_department_id = {} WHERE specialist_id = {}".format(department_id, selected_row[0])
-        query_full_name = "ALTER TABLE specialists UPDATE full_name = '{}' WHERE specialist_id = {}".format(self.specialist_new_full_name.content.value, selected_row[0])
-        query_position = "ALTER TABLE specialists UPDATE position = '{}' WHERE specialist_id = {}".format(self.specialist_new_position.content.value, selected_row[0])
-        query_status = "ALTER TABLE specialists UPDATE status = '{}' WHERE specialist_id = {}".format(self.cb_menu_status.content.value, selected_row[0])
-        query_is_user = "ALTER TABLE specialists UPDATE is_user = '{}' WHERE specialist_id = {}".format(self.edit_name.content.value, selected_row[0])
-        cursor.execute(query_department)
-        cursor.execute(query_full_name)
-        cursor.execute(query_position)
-        cursor.execute(query_status)
-        cursor.execute(query_is_user)
-
-        # Fetch the updated data from the database
-        query_select = '''
-        SELECT
-            sc.specialist_id,
-            nd.name,
-            sc.full_name,
-            sc.position,
-            sc.status,
-            sc.is_user
-        FROM specialists AS sc
-        JOIN name_of_department AS nd ON sc.specialist_department_id = nd.department_id
-        ORDER BY sc.specialist_id;
-        '''
-        cursor.execute(query_select)
-        results = cursor.fetchall()
-        query_result = results
-        data_rows = []
-
-        for row in query_result:
-            cells = [DataCell(Text(str(value))) for value in row]
-            data_row = DataRow(cells=cells)
-            checkbox_1 = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-            cells.append(DataCell(checkbox_1))
-
-            data_rows.append(data_row)
-
-        # After you fetch new data from the database and create data_rows, update the DataTable like this:
-        self.data_table.rows = data_rows
-        self.selected_rows.clear()
-        self.page.dialog = self.alter_dialog_edit
-        self.alter_dialog_edit.open = False
-        self.page.update()
-
-    
-    def close_edit_dialog(self, e):
-        self.page.dialog = self.alter_dialog_edit
-        self.alter_dialog_edit.open = False
-        self.page.update()
+    def show_specialists(self):
+      self.data_table.rows.clear()
+      cursor = connection.cursor()
+      query_select = '''
+      SELECT
+        sc.specialist_id,
+        nd.name,
+        sc.full_name,
+        sc.position,
+        sc.status,
+        sc.is_user
+      FROM specialists AS sc
+      JOIN name_of_department AS nd ON sc.specialist_department_id = nd.department_id
+      ORDER BY sc.specialist_id;
+      '''
+      cursor.execute(query_select)
+      results = cursor.fetchall()
+      query_result = results
+      data_rows = []
+      for row in query_result:
+        cells = [DataCell(Text(str(value))) for value in row]
+        data_row = DataRow(cells=cells)
+        checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
+        cells.append(DataCell(checkbox))
+        data_rows.append(data_row)
+      self.data_table.rows = data_rows
 
     def add_new_specialist(self, e):
       cursor = connection.cursor()
-      
       quary_select_from_users = "SELECT full_name FROM users ORDER BY user_id"
       cursor.execute(quary_select_from_users)
       results_from_users = cursor.fetchall()
       full_names_from_users = [result[0] for result in results_from_users]
       typed_full_name = self.specialist_new_full_name.content.value
       if typed_full_name in full_names_from_users:
-          print(f"{typed_full_name} является пользователем")
-          is_user = "Является"
+        print(f"{typed_full_name} является пользователем")
+        is_user = "Является"
       else:
-          print(f"{typed_full_name} не является пользователем")
-          is_user = "Не является"
-
-      
+        print(f"{typed_full_name} не является пользователем")
+        is_user = "Не является"
       if (self.specialist_new_full_name == "" or
-          self.specialist_new_position == "" or
-          self.cb_menu_department.content.value == "" or
-          self.cb_menu_status == ""):
+        self.specialist_new_position == "" or
+        self.cb_menu_department.content.value == "" or
+        self.cb_menu_status == ""):
         print("Please")
       else:
         try:
           cursor = connection.cursor()
-          
           sql_select = "SELECT department_id FROM name_of_department WHERE name = '{}'".format(self.cb_menu_department.content.value)
           cursor.execute(sql_select)
           department_id = cursor.fetchone()[0]
-          
           cursor.execute(f"SELECT max(specialist_id) FROM specialists;")
           max_id = cursor.fetchone()[0]
           query = "INSERT INTO TABLE specialists (specialist_id, specialist_department_id, full_name, position, status, is_user) VALUES ({}+1,{},'{}','{}','{}','{}');".format(
@@ -478,44 +379,101 @@ class SpecialistsHandbook(Container):
           cursor.execute(query)
           print("Запись успешно добавлена в базу данных")
           self.alter_dialog_add_new_specialists.open = False
+          self.show_specialists()
           self.page.update()
           
-          query_select = '''
-          SELECT
-              sc.specialist_id,
-              nd.name,
-              sc.full_name,
-              sc.position,
-              sc.status,
-              sc.is_user
-          FROM specialists AS sc
-          JOIN name_of_department AS nd ON sc.specialist_department_id = nd.department_id
-          ORDER BY sc.specialist_id;
-          '''
-          cursor.execute(query_select)
-          results = cursor.fetchall()
-          query_result = results
-          data_rows = []
-
-          for row in query_result:
-            cells = [DataCell(Text(str(value))) for value in row]
-            data_row = DataRow(cells=cells)
-
-            # Create a Checkbox for the third column
-            checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-            cells.append(DataCell(checkbox))
-
-            data_rows.append(data_row)
-          # After you fetch new data from the database and create data_rows, update the DataTable like this:
-          self.data_table.rows = data_rows
-          self.page.update()
-          self.specialist_new_full_name.content.value = ""
-          self.specialist_new_position.content.value = ""
-          self.cb_menu_department.content.value = ""
-          self.cb_menu_status.content.value = ""
-
-      
         except Exception as e:
           print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
+          self.components_manager.show_block_dialog("Заполните все поля!", "Ошибка")
+        self.page.update()
+        self.clear_enters()
+
+    def show_alter_dialog(self, e):
+      self.page.dialog = self.alter_dialog_add_new_specialists
+      self.page.dialog.open = True
+      self.page.update()
+
+    def close_dlg(self, e):
+      self.page.dialog = self.alter_dialog_add_new_specialists
+      self.page.dialog.open = False
+      self.page.update()      
+
+    def toggle_row_selection(self, e, row):
+      if row not in self.selected_rows:
+        self.selected_rows.add(row)
+      else:
+        self.selected_rows.remove(row)
+
+    def show_edit_dialog(self, e):
+      if not self.selected_rows:
+        self.components_manager.show_block_dialog("Вы не выбрали строку в таблице", "Ошибка")
+      else:
+        selected_row = next(iter(self.selected_rows))
+        self.cb_menu_department.content.value = selected_row[1]
+        self.specialist_new_full_name.content.value = selected_row[2]
+        self.specialist_new_position.content.value = selected_row[3]
+        self.cb_menu_status.content.value = selected_row[4]
+        self.edit_name.content.value = selected_row[5]
+        self.page.dialog = self.alter_dialog_edit
+        self.alter_dialog_edit.open = True
         self.page.update()
 
+    def edit_name_in_table(self, e):
+      selected_row = next(iter(self.selected_rows))
+      cursor = connection.cursor()
+      sql_select = "SELECT department_id FROM name_of_department WHERE name = '{}'".format(self.cb_menu_department.content.value)
+      cursor.execute(sql_select)
+      department_id = cursor.fetchone()[0]
+      if self.cb_menu_department.content.value != selected_row[1]:
+        query_department = "ALTER TABLE specialists UPDATE specialist_department_id = {} WHERE specialist_id = {}".format(department_id, selected_row[0])
+        cursor.execute(query_department)
+        self.selected_rows.clear()
+      if self.specialist_new_full_name.content.value != selected_row[2]:
+        query_full_name = "ALTER TABLE specialists UPDATE full_name = '{}' WHERE specialist_id = {}".format(self.specialist_new_full_name.content.value, selected_row[0])
+        cursor.execute(query_full_name)
+        self.selected_rows.clear()
+      if self.specialist_new_position.content.value != selected_row[3]:
+        query_position = "ALTER TABLE specialists UPDATE position = '{}' WHERE specialist_id = {}".format(self.specialist_new_position.content.value, selected_row[0])
+        cursor.execute(query_position)
+        self.selected_rows.clear()
+      if self.cb_menu_status.content.value != selected_row[4]:
+        query_status = "ALTER TABLE specialists UPDATE status = '{}' WHERE specialist_id = {}".format(self.cb_menu_status.content.value, selected_row[0])
+        cursor.execute(query_status)
+        self.selected_rows.clear()
+      if self.edit_name.content.value != selected_row[5]:
+        query_is_user = "ALTER TABLE specialists UPDATE is_user = '{}' WHERE specialist_id = {}".format(self.edit_name.content.value, selected_row[0])
+        cursor.execute(query_is_user)
+        self.selected_rows.clear()
+      self.page.dialog = self.alter_dialog_edit
+      self.alter_dialog_edit.open = False
+      self.components_manager.show_block_dialog("Запись была отредактирована успешно", "Успешно")
+      self.show_specialists()
+      self.page.update()
+      self.clear_enters()
+
+    def close_edit_dialog(self, e):
+      self.clear_enters()
+      self.page.dialog = self.alter_dialog_edit
+      self.alter_dialog_edit.open = False
+      self.page.update()
+
+    def clear_enters(self):
+      self.specialist_new_full_name.content.value = ""
+      self.specialist_new_position.content.value = ""
+      self.cb_menu_department.content.value = ""
+      self.cb_menu_status.content.value = ""
+
+    def delete_specialists(self, e):
+      if not self.selected_rows:
+            self.components_manager.show_block_dialog("Вы не выбрали строку в таблице", "Ошибка")
+      else:
+        cursor = connection.cursor()
+        for selected_row in self.selected_rows:
+            query_delete_department = f"DELETE FROM specialists WHERE specialist_id = {selected_row[0]}"
+            cursor.execute(query_delete_department)
+            connection.commit()
+            print(query_delete_department)
+        self.components_manager.show_block_dialog("Запись удалена", "Успешно")
+        self.page.update()
+        self.selected_rows.clear()
+        self.show_specialists()

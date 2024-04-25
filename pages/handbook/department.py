@@ -1,11 +1,13 @@
 from flet import *
 from utils.consts import primary_colors 
 from service.connection import *
+from utils.components import *
 
 class Department(Container):
     def __init__(self, page: Page):
         super().__init__()
         self.page = page
+        self.components_manager = Components(page)
         self.page.theme_mode = ThemeMode.LIGHT
         self.alignment = alignment.center
         self.expand = True
@@ -33,7 +35,7 @@ class Department(Container):
         
 #*BOX FOR TEXTFIELD
         self.textfield_box = Container(
-          content=TextField(
+            content=TextField(
                     hint_style=TextStyle(
                         size=12, color=primary_colors['MANATEE']
                     ),
@@ -45,16 +47,9 @@ class Department(Container):
                     ),
                         ),
         )
-        self.alter_dialog_error = AlertDialog(
-            modal=True,
-            title=Text("Default Title"),
-            content=Text("Default Content"),
-            actions=[TextButton("OK", on_click=self.close_dlg_error)],
-            on_dismiss=lambda e: print("Modal dialog dismissed!")
-        )
         
         self.edit_name = Container(
-          content=TextField(
+            content=TextField(
                     hint_style=TextStyle(
                         size=12, color=primary_colors['MANATEE']
                     ),
@@ -70,10 +65,10 @@ class Department(Container):
             modal=True,
             title=Text("Изменить строку"),
             content=Column(
-              height=250,
-              controls=[
+            height=250,
+            controls=[
                 self.edit_name
-              ]
+            ]
             ),
             actions=[
                 TextButton("Изменить", on_click=self.edit_name_in_table),
@@ -132,7 +127,7 @@ class Department(Container):
                                         ),
                                         Container(
                                             content=Text(
-                                                value='Добавить упарвление в справочник',
+                                                value='Добавить управление в справочник',
                                                 size=18,
                                                 color=primary_colors['WHITE'],
                                                 text_align='center',
@@ -158,15 +153,14 @@ class Department(Container):
                             Container(height=50),
                             Container(
                                 Row(
-                                    spacing='50',
+                                    spacing='40',
                                     alignment='center',
                                     controls=[
-                                        Container(width=90),
                                         self.textfield_box,
                                         ElevatedButton(
                                             color=primary_colors['WHITE'],
                                             bgcolor=primary_colors['GREEN'],
-                                            width=200,
+                                            width=180,
                                             height=70,
                                             content=Column(
                                                 horizontal_alignment='center',
@@ -188,7 +182,7 @@ class Department(Container):
                                         ElevatedButton(
                                             color=primary_colors['WHITE'],
                                             bgcolor=primary_colors['GREEN'],
-                                            width=200,
+                                            width=180,
                                             height=70,
                                             content=Column(
                                                 horizontal_alignment='center',
@@ -205,9 +199,30 @@ class Department(Container):
                                                     )
                                                 ]
                                             ),
-                                            # on_click=lambda e: self.output_selected_rows(),
-                                            on_click=lambda e: self.show_edit_dialog(),
-                                        )
+                                            on_click=self.show_edit_dialog,
+                                        ),
+                                        ElevatedButton(
+                                            color=primary_colors['WHITE'],
+                                            bgcolor=primary_colors['GREEN'],
+                                            width=180,
+                                            height=70,
+                                            content=Column(
+                                                horizontal_alignment='center',
+                                                alignment='center',
+                                                controls=[
+                                                    Container(
+                                                        Text(
+                                                            value='Удалить',
+                                                            size=16,
+                                                            color=primary_colors['WHITE'],
+                                                            text_align='center',
+                                                            weight='bold',
+                                                        )
+                                                    )
+                                                ]
+                                            ),
+                                            on_click=self.delete_department,
+                                        ),
                                     ]
                                 )
                             ),
@@ -221,11 +236,14 @@ class Department(Container):
                 ),
             ]
         )
+        self.show_department()
+
+    def show_department(self):
+        self.data_table.rows.clear()
         cursor = connection.cursor()
         query_select = 'SELECT * FROM name_of_department ORDER BY department_id'
-        # query_select = 'select * from actual_value'
         cursor.execute(query_select)
-        results= cursor.fetchall()
+        results=cursor.fetchall()
         for row in results:
             cells = [DataCell(Text(str(value))) for value in row]
             checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
@@ -235,78 +253,9 @@ class Department(Container):
         self.content.controls[1].content.controls[2] = self.data_table
         self.page.update()
 
-    def toggle_row_selection(self, e, row):
-        # Toggle the row's selection when the Checkbox value changes
-        if row not in self.selected_rows:
-            self.selected_rows.add(row)
-        else:
-            self.selected_rows.remove(row)
-    
-    
-    def show_edit_dialog(self):
-        if not self.selected_rows:
-            self.show_error_dialog("Вы не выбрали строку в таблице")
-        else:
-            selected_row = next(iter(self.selected_rows))
-            selected_data = selected_row[1]
-            self.edit_name.content.value = selected_data
-            self.page.dialog = self.alter_dialog_add_new_specialists
-            self.alter_dialog_add_new_specialists.open = True
-            self.page.update()
-
-
-    def edit_name_in_table(self, e):
-        selected_row = next(iter(self.selected_rows))
-
-        cursor = connection.cursor()
-
-        # Use the UPDATE statement to modify the record
-        query = "ALTER TABLE name_of_department UPDATE name = '{}' WHERE department_id = {}".format(self.edit_name.content.value, selected_row[0])
-        cursor.execute(query)
-
-        # Fetch the updated data from the database
-        query_select = 'SELECT * FROM name_of_department ORDER BY department_id'
-
-        cursor.execute(query_select)
-        results = cursor.fetchall()
-        query_result = results
-        data_rows = []
-
-        for row in query_result:
-            cells = [DataCell(Text(str(value))) for value in row]
-            data_row = DataRow(cells=cells)
-            checkbox_1 = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-            cells.append(DataCell(checkbox_1))
-
-            data_rows.append(data_row)
-
-        # After you fetch new data from the database and create data_rows, update the DataTable like this:
-        self.data_table.rows = data_rows
-        self.page.dialog = self.alter_dialog_add_new_specialists
-        self.alter_dialog_add_new_specialists.open = False
-        self.selected_rows.clear()
-        self.page.update()
-
-    
-    def close_edit_dialog(self, e):
-        self.page.dialog = self.alter_dialog_add_new_specialists
-        self.alter_dialog_add_new_specialists.open = False
-        self.page.update()
-
-    def show_error_dialog(self, text):
-        self.page.dialog = self.alter_dialog_error
-        self.alter_dialog_error.title = Text(value="Ошибка", color=primary_colors['BLACK'])
-        self.alter_dialog_error.content = Text(value=text, color=primary_colors['BLACK'])
-        self.alter_dialog_error.open = True
-        self.page.update() 
-    def close_dlg_error(self, e):
-        self.page.dialog = self.alter_dialog_error
-        self.alter_dialog_error.open = False
-        print("It's closed successfully")
-        self.page.update()
     def insert_into_db(self, e):
         if self.textfield_box.content.value == "":
-            self.show_error_dialog("Заполните поле перед внесением")
+            self.components_manager.show_block_dialog("Заполните поле перед внесением", "Ошибка")
         else:
             try:
                 cursor = connection.cursor()
@@ -315,24 +264,57 @@ class Department(Container):
                 query = "INSERT INTO TABLE name_of_department (department_id, name) VALUES ({}+1,'{}')".format(int(max_id), self.textfield_box.content.value)
                 cursor.execute(query)
                 print("Запись успешно добавлена в базу данных")
-
-                cursor.execute('SELECT * FROM name_of_department ORDER BY department_id')
-                results = cursor.fetchall()
-                query_result = results
-                data_rows = []
-
-                for row in query_result:
-                    cells = [DataCell(Text(str(value))) for value in row]
-                    data_row = DataRow(cells=cells)
-
-                    # Create a Checkbox for the third column
-                    checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-                    cells.append(DataCell(checkbox))
-
-                    data_rows.append(data_row)
-                # After you fetch new data from the database and create data_rows, update the DataTable like this:
-                self.data_table.rows = data_rows
+                self.show_department()
                 self.textfield_box.content.value = ""
                 self.page.update()
             except Exception as e:
                 print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
+
+    def toggle_row_selection(self, e, row):
+        if row not in self.selected_rows:
+            self.selected_rows.add(row)
+        else:
+            self.selected_rows.remove(row)
+
+    def show_edit_dialog(self, e):
+        if not self.selected_rows:
+            self.components_manager.show_block_dialog("Вы не выбрали строку в таблице", "Ошибка")
+        else:
+            selected_row = next(iter(self.selected_rows))
+            selected_data = selected_row[1]
+            self.edit_name.content.value = selected_data
+            self.page.dialog = self.alter_dialog_add_new_specialists
+            self.alter_dialog_add_new_specialists.open = True
+            self.page.update()
+
+    def edit_name_in_table(self, e):
+        selected_row = next(iter(self.selected_rows))
+        cursor = connection.cursor()
+        query = "ALTER TABLE name_of_department UPDATE name = '{}' WHERE department_id = {}".format(self.edit_name.content.value, selected_row[0])
+        cursor.execute(query)
+        self.page.dialog = self.alter_dialog_add_new_specialists
+        self.alter_dialog_add_new_specialists.open = False
+        self.selected_rows.clear()
+        self.data_table.rows.clear()
+        self.page.update()
+        self.show_department()
+
+    def close_edit_dialog(self, e):
+        self.page.dialog = self.alter_dialog_add_new_specialists
+        self.alter_dialog_add_new_specialists.open = False
+        self.page.update()
+
+    def delete_department(self, e):
+        if not self.selected_rows:
+            self.components_manager.show_block_dialog("Вы не выбрали строку в таблице", "Ошибка")
+        else:
+            cursor = connection.cursor()
+            for selected_row in self.selected_rows:
+                query_delete_department = f"DELETE FROM name_of_department WHERE department_id = {selected_row[0]}"
+                cursor.execute(query_delete_department)
+                connection.commit()
+                print(query_delete_department)
+            self.show_department()
+            self.selected_rows.clear()
+            self.components_manager.show_block_dialog("Запись удалена", "Успешно")
+            self.page.update()

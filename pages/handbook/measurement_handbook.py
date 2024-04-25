@@ -301,14 +301,16 @@ class MeasurementHandbook(Container):
         self.page.update()
 
     def delete_measuerement(self, e):
-        cursor = connection.cursor()
-        for selected_row in self.selected_rows:
-            query_delete_measurement = f"DELETE FROM units_of_measurement WHERE measurement_id = {selected_row[0]}"
-            cursor.execute(query_delete_measurement)
-            connection.commit()
-            print(query_delete_measurement)
-        self.show_measurement()
-        self.selected_rows.clear()
-        self.components_manager.show_block_dialog("Запись удалена", "Успешно")
-        self.page.update()
-    
+        if not self.selected_rows:
+            self.components_manager.show_block_dialog("Вы не выбрали строку в таблице", "Ошибка")
+        else:
+            cursor = connection.cursor()
+            for selected_row in self.selected_rows:
+                query_delete_measurement = f"DELETE FROM units_of_measurement WHERE measurement_id = {selected_row[0]}"
+                cursor.execute(query_delete_measurement)
+                connection.commit()
+                print(query_delete_measurement)
+            self.show_measurement()
+            self.selected_rows.clear()
+            self.components_manager.show_block_dialog("Запись удалена", "Успешно")
+            self.page.update()
