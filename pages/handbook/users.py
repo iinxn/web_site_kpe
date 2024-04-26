@@ -110,6 +110,25 @@ class Users(Container):
             actions_alignment=MainAxisAlignment.END,
             on_dismiss=lambda e: print("Modal dialog dismissed!"),
         )
+        self.alter_dialog_edit_user = AlertDialog(
+            modal=True,
+            title=Text("Редактировать пользователя"),
+            content=Column(
+              height=250,
+              controls=[
+                self.user_login,
+                self.user_password,
+                self.user_full_name,
+                self.cb_menu_status,
+              ]
+            ),
+            actions=[
+                TextButton("Редактировать", on_click=self.edit_user_in_table),
+                TextButton("Закрыть", on_click=self.close_edit_dialog),
+            ],
+            actions_alignment=MainAxisAlignment.END,
+            on_dismiss=lambda e: print("Modal dialog dismissed!"),
+        )
 
 # *HEADER
         self.content = ListView(
@@ -167,7 +186,7 @@ class Users(Container):
                                             ),
                                         ),
                                         Container(
-                                          width=400,
+                                          width=550,
                                           content=Row(
                                             spacing=10,
                                             controls= [
@@ -175,7 +194,7 @@ class Users(Container):
                                                 ElevatedButton(
                                                   color=primary_colors['WHITE'],
                                                   bgcolor=primary_colors['WHITE'],
-                                                  width=200,
+                                                  width=180,
                                                   height=70,
                                                   content=Column(
                                                     horizontal_alignment='center',
@@ -184,7 +203,7 @@ class Users(Container):
                                                         Container(
                                                           
                                                           Text(
-                                                            value='Добавить нового пользователя',
+                                                            value='Добавить',
                                                             size=16,
                                                             color=primary_colors['GREEN'],
                                                             text_align='center',
@@ -200,7 +219,7 @@ class Users(Container):
                                                 ElevatedButton(
                                                   color=primary_colors['WHITE'],
                                                   bgcolor=primary_colors['WHITE'],
-                                                  width=200,
+                                                  width=180,
                                                   height=70,
                                                   content=Column(
                                                     horizontal_alignment='center',
@@ -209,7 +228,32 @@ class Users(Container):
                                                         Container(
                                                           
                                                           Text(
-                                                            value='Удалить пользователя',
+                                                            value='Редактировать',
+                                                            size=16,
+                                                            color=primary_colors['GREEN'],
+                                                            text_align='center',
+                                                            weight='bold',
+                                                          )
+                                                        )
+                                                      ]
+                                                  ),
+                                                  on_click=self.show_edit_dialog 
+                                                ), 
+                                              ),
+                                              Container(
+                                                ElevatedButton(
+                                                  color=primary_colors['WHITE'],
+                                                  bgcolor=primary_colors['WHITE'],
+                                                  width=180,
+                                                  height=70,
+                                                  content=Column(
+                                                    horizontal_alignment='center',
+                                                    alignment='center',
+                                                      controls=[
+                                                        Container(
+                                                          
+                                                          Text(
+                                                            value='Удалить',
                                                             size=16,
                                                             color=primary_colors['GREEN'],
                                                             text_align='center',
@@ -255,20 +299,8 @@ class Users(Container):
                 ),
             ]
         )
-        cursor = connection.cursor()
-        query_select = "SELECT * FROM users ORDER BY user_id;" 
-        cursor.execute(query_select)
-        results = cursor.fetchall()
-        query_result = results
-        for row in query_result:
-            cells = [DataCell(Text(str(value))) for value in row]
-            checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-            cells.append(DataCell(checkbox))
-            data_row = DataRow(cells=cells)
-            self.data_table.rows.append(data_row)
-        self.content.controls[1].content.controls[2] = self.data_table
-        self.page.update()
-        
+        self.show_table()
+
     def show_table(self):
       cursor = connection.cursor()
       query_select = "SELECT * FROM users ORDER BY user_id;" 
@@ -276,32 +308,31 @@ class Users(Container):
       results = cursor.fetchall()
       query_result = results
       data_rows = []
-
       for row in query_result:
           cells = [DataCell(Text(str(value))) for value in row]
           data_row = DataRow(cells=cells)
-
-          # Create a Checkbox for the third column
           checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
           cells.append(DataCell(checkbox))
-
           data_rows.append(data_row)
-      # After you fetch new data from the database and create data_rows, update the DataTable like this:
       self.data_table.rows = data_rows
       self.page.update()
-    
+
+    def clear_enters(self):
+      self.user_login.content.value = ""
+      self.user_password.content.value = ""
+      self.user_full_name.content.value = ""
+      self.cb_menu_status.content.value = ""
 
     def show_alter_dialog(self, e):
       self.page.dialog = self.alter_dialog_add_new_users
       self.page.dialog.open = True
       self.page.update()
     
-    
     def close_dlg(self, e):
       self.page.dialog = self.alter_dialog_add_new_users
       self.page.dialog.open = False
       self.page.update()
-      
+
     def add_new_specialist(self, e):
       if (self.user_password.content.value == "" or 
           self.user_full_name.content.value == "" or
@@ -311,7 +342,6 @@ class Users(Container):
       else:
         try:
           cursor = connection.cursor()
-          
           cursor.execute(f"SELECT max(user_id) FROM users;")
           max_id = cursor.fetchone()[0]
           print(max_id)
@@ -324,31 +354,66 @@ class Users(Container):
           )
           print(query)
           cursor.execute(query)
-          self.user_password.content.value = ""
-          self.user_full_name.content.value = ""
-          self.user_login.content.value = ""
-          self.cb_menu_status.content.value = ""
-          self.components_manager.show_block_dialog("Запись успешно добавлена в базу данных", "Успешно")
+          self.clear_enters
+          # self.components_manager.show_block_dialog("Запись успешно добавлена в базу данных", "Успешно")
           print("Запись успешно добавлена в базу данных")
-          self.alter_dialog_add_new_users.open = False
+          self.close_dlg(e)
           self.show_table()
-          
         except Exception as e:
                 print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
-    
+
     def toggle_row_selection(self, e, row):
         if row not in self.selected_rows:
             self.selected_rows.add(row)
         else:
             self.selected_rows.remove(row)
-    
+
     def delete_users_from_table(self, e):
+      if not self.selected_rows:
+        self.components_manager.show_block_dialog("Вы не выбрали запись", "Ошибка")
+      else:
         cursor = connection.cursor()
-        if not self.selected_rows:
-            print('Вы не выбрали строку')
-        else:
-          for selected_row in self.selected_rows:
-              cursor.execute(f'DELETE FROM users WHERE user_id = {selected_row[0]}')
+        for selected_row in self.selected_rows:
+            cursor.execute(f'DELETE FROM users WHERE user_id = {selected_row[0]}')
         self.show_table()
         self.components_manager.show_block_dialog("Запись была успешно удалена", "Удаление")
         self.page.update()
+
+    def show_edit_dialog(self, e):
+      if not self.selected_rows:
+        self.components_manager.show_block_dialog("Вы не выбрали строку в таблице", "Ошибка")
+      else:
+        selected_row = next(iter(self.selected_rows))
+        self.user_login.content.value = selected_row[1]
+        self.user_password.content.value = selected_row[2]
+        self.user_full_name.content.value = selected_row[3]
+        self.cb_menu_status.content.value = selected_row[4]
+        self.page.dialog = self.alter_dialog_edit_user
+        self.alter_dialog_edit_user.open = True
+        self.page.update()
+
+    def edit_user_in_table(self, e):
+      selected_row = next(iter(self.selected_rows))
+      cursor = connection.cursor()
+      if self.user_login.content.value != selected_row[1]:
+        cursor.execute("ALTER TABLE users UPDATE login = '{}' WHERE user_id = {}".format(self.user_login.content.value, int(selected_row[0])))
+        self.selected_rows.clear()
+      if self.user_password.content.value != selected_row[2]:
+        cursor.execute("ALTER TABLE users UPDATE password = '{}' WHERE user_id = {}".format(self.user_password.content.value, int(selected_row[0])))
+        self.selected_rows.clear()
+      if self.user_full_name.content.value != selected_row[3]:
+        cursor.execute("ALTER TABLE users UPDATE full_name = '{}' WHERE user_id = {}".format(self.user_full_name.content.value, int(selected_row[0])))
+        self.selected_rows.clear()
+      if self.cb_menu_status.content.value != selected_row[4]:
+        cursor.execute("ALTER TABLE users UPDATE status = '{}' WHERE user_id = {}".format(self.cb_menu_status.content.value, int(selected_row[0])))
+        self.selected_rows.clear()
+      self.close_edit_dialog(e)
+      self.components_manager.show_block_dialog("Запись была отредактирована успешно", "Успешно")
+      self.show_table()
+      self.page.update()
+
+    def close_edit_dialog(self, e):
+      self.clear_enters()
+      self.page.dialog = self.alter_dialog_edit_user
+      self.alter_dialog_edit_user.open = False
+      self.page.update()
