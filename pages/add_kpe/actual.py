@@ -401,7 +401,7 @@ class Actual(Container):
                 int(indicator_id),
                 int(user_id),
                 str(self.cb_quter_menu.content.value),
-                int(self.textfiled_input_actual_value.content.value),
+                float(self.textfiled_input_actual_value.content.value),
                 number_of_verison_plus
             )
             cursor.execute(query)

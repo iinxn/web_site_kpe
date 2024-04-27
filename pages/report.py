@@ -803,7 +803,7 @@ class Report(Container):
                 sheet['A5'].alignment = Alignment(horizontal='center', vertical='center')
 
                 sheet.merge_cells('A6:I6')
-                sheet['A6'].value = f'Карта КПЭ на 2023 год {str(position_name_dep[0]).lower()}a {str(position_name_dep[1]).lower()} {str(self.report_spec.content.value)}'
+                sheet['A6'].value = f'Карта КПЭ на {datetime.now().year} год {str(position_name_dep[0]).lower()}a {str(position_name_dep[1]).lower()} {str(self.report_spec.content.value)}'
                 sheet['A6'].font = Font(bold=True, size=14, name=main_font)
                 sheet['A6'].alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
 
