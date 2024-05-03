@@ -371,7 +371,7 @@ class Actual(Container):
         try:
             cursor = connection.cursor()
             date = datetime.datetime.now()
-            formatted_date = date.strftime("%d%m%Y")
+            formatted_date = date.strftime("%Y%m%d")
 
             cursor.execute(
                 f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.cb_specialist_menu.content.value)}';")
@@ -380,29 +380,55 @@ class Actual(Container):
             cursor.execute(f"SELECT max(actual_id) FROM actual_value;")
             max_id = cursor.fetchone()[0]
             indicator_id = self.cb_menu_spec.content.value
-
             cursor.execute(
-                f"SELECT MAX(number_of_version) FROM actual_value WHERE actual_indicators_id = {int(indicator_id)} AND actual_users_id = {int(user_id)}")
-            max_version = cursor.fetchone()[0]
-            # Check if max_version has the expected format (3 hyphen-separated parts)
-            if max_version and len(max_version.split('-')) >= 3:
-                current_version = int(max_version.split('-')[2])
-
+                    f"""
+                    SELECT 
+                        concat(
+                            toString(kpe_user_id), '-',
+                            substring(replace(toString(date), '-', ''), 7, 2),
+                            substring(replace(toString(date), '-', ''), 5, 2),
+                            substring(replace(toString(date), '-', ''), 1, 4),
+                            '-', toString(number)
+                        ) AS number_of_version
+                    FROM kpe_table
+                    WHERE 
+                        kpe_user_id = {int(user_id)} AND 
+                        kpe_indicators_id = {int(self.cb_menu_spec.content.value)} AND
+                        date = (
+                            SELECT MAX(date)
+                            FROM kpe_table
+                            WHERE kpe_user_id = {int(user_id)} AND kpe_indicators_id = {int(self.cb_menu_spec.content.value)}
+                        ) AND 
+                        number = (
+                            SELECT MAX(number)
+                            FROM kpe_table
+                            WHERE 
+                                kpe_user_id = {int(user_id)} AND 
+                                kpe_indicators_id = {int(self.cb_menu_spec.content.value)} AND
+                                date = (
+                                    SELECT MAX(date)
+                                    FROM kpe_table
+                                    WHERE kpe_user_id = {int(user_id)} AND kpe_indicators_id = {int(self.cb_menu_spec.content.value)}
+                                )
+                        );
+                    """
+                    )
+            max_version = cursor.fetchone()
+            if max_version is None:
+                current_version = 1
             else:
-                current_version = 0  # Start with version 1 if the format is unexpected or max_version is None
-            print(current_version)
-            number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
-
+                current_version = int(max_version[0].split('-')[2]) + 1
             query = """
-            INSERT INTO actual_value (actual_id, actual_indicators_id, actual_users_id, quarter_number, value, number_of_version)
-            VALUES ({}, {}, {}, '{}', {}, '{}');
+            INSERT INTO actual_value (actual_id, actual_indicators_id, actual_users_id, quarter_number, value, date, number)
+            VALUES ({}, {}, {}, '{}', {}, '{}',{});
         """.format(
                 int(max_id) + 1,
                 int(indicator_id),
                 int(user_id),
                 str(self.cb_quter_menu.content.value),
                 float(self.textfiled_input_actual_value.content.value),
-                number_of_verison_plus
+                str(formatted_date),
+                int(current_version)
             )
             cursor.execute(query)
             connection.commit()
@@ -422,53 +448,57 @@ class Actual(Container):
     def update_plan_values(self, e):
         try:
             cursor = connection.cursor()
-            # *FOR USER DATA INFORMATION
-
+            # Получение user_id на основе выбранного специалиста
             cursor.execute(
-                f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.cb_specialist_menu.content.value)}';")
+                f"SELECT specialist_id FROM specialists WHERE full_name='{self.cb_specialist_menu.content.value}';")
             user_id = cursor.fetchone()[0]
-            indicator_id = self.cb_menu_spec.content.value
+
+            indicator_id = int(self.cb_menu_spec.content.value)
+
+            # Получение максимальных date и number
+            cursor.execute(
+                f"""
+                SELECT MAX(date), MAX(number)
+                FROM kpe_table
+                WHERE kpe_indicators_id = {indicator_id} AND kpe_user_id = {user_id}
+                """
+            )
+            max_date, max_number = cursor.fetchone()
+
+            quarter_mapping = {
+                "1-й квартал": ("1st_quater_value", "KPE_weight_1"),
+                "2-й квартал": ("2nd_quater_value", "KPE_weight_2"),
+                "3-й квартал": ("3rd_quater_value", "KPE_weight_3"),
+                "4-й квартал": ("4th_quater_value", "KPE_weight_4")
+            }
+            quarter_column, weight_column = quarter_mapping[self.cb_quter_menu.content.value]
 
             cursor.execute(
-                f"SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_indicators_id = {int(indicator_id)} AND kpe_user_id = {int(user_id)}")
-            max_version = cursor.fetchone()[0]
-
-            selected_quarter = self.cb_quter_menu.content.value
-            if selected_quarter == "1-й квартал":
-                quarter_column = "1st_quater_value"
-                weight_column = "KPE_weight_1"
-            elif selected_quarter == "2-й квартал":
-                quarter_column = "2nd_quater_value"
-                weight_column = "KPE_weight_2"
-            elif selected_quarter == "3-й квартал":
-                quarter_column = "3rd_quater_value"
-                weight_column = "KPE_weight_3"
-            else:
-                quarter_column = "4th_quater_value"
-                weight_column = "KPE_weight_4"
-
-            # Query to retrieve the plan value based on indicator and quarter
-            query = f"SELECT {quarter_column}, {weight_column} FROM kpe_table WHERE kpe_indicators_id = {int(indicator_id)} AND kpe_user_id = {int(user_id)} AND number_of_version = '{max_version}';"
-            cursor.execute(query)
+                f"""
+                SELECT {quarter_column}, {weight_column}
+                FROM kpe_table
+                WHERE kpe_indicators_id = {indicator_id}
+                AND kpe_user_id = {user_id}
+                AND date = '{max_date}'
+                AND number = {max_number}
+                """
+            )
 
             result = cursor.fetchone()
 
             if result:
-                plan_value = result[0]
-                weight_value = result[1]
-                # Update the plan value and weight value boxes
-                self.plan_value_box.content.value = str(plan_value)
-                self.plan_weight_value_box.content.value = str(weight_value)
+                self.plan_value_box.content.value = str(result[0])
+                self.plan_weight_value_box.content.value = str(result[1])
                 self.page.update()
-
             else:
-                self.show_block_dialog("Запись не найдена в базе данных","Не найдено")
+                self.show_block_dialog("Запись не найдена в базе данных", "Не найдено")
                 print("Запись не найдена в базе данных")
                 self.page.update()
 
         except Exception as e:
-            self.show_block_dialog("Ошибка при добавлении записи в базу данных","Ошибка")
+            self.show_block_dialog("Ошибка при добавлении записи в базу данных", "Ошибка")
             print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
+
 
     def filter_dropdown_options(self, e):
         search_text = self.search_input.content.value.lower()

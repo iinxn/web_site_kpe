@@ -8,13 +8,11 @@ class Scheduled(Container):
     def __init__(self, page: Page):
         super().__init__()
         self.page = page
-        # page.theme = theme.Theme(color_scheme_seed="green")
         self.page.theme_mode = ThemeMode.LIGHT
         self.alignment = alignment.center
         self.expand = True
         self.bgcolor = primary_colors['WHITE']
         self.end_edit = False
-        self.page.client_storage.clear()
 
         self.dropdown_options_indicators = []
         self.dropdown_options_specialists = []
@@ -238,7 +236,7 @@ class Scheduled(Container):
             content=Dropdown(
                 label='Выберите наименование показателя',
                 color=primary_colors['BLACK'],
-                width=500,
+                width=600,
                 # filled=True,
                 options=self.dropdown_options_indicators,
                 on_change=self.added_new_to_indicators,
@@ -249,7 +247,7 @@ class Scheduled(Container):
                 hint_text='ед. изм.',
                 color=primary_colors['BLACK'],
                 width=300,
-                options=dropdown_options_units,  # Set the options from the fetched data
+                options=dropdown_options_units,
             ),
         )
         self.specialist_menu_box = Container(
@@ -265,7 +263,7 @@ class Scheduled(Container):
             content=Dropdown(
                 hint_text='Выберите управление',
                 color=primary_colors['BLACK'],
-                width=500,
+                width=600,
                 options=dropdown_options_departments,
                 on_change=self.show_specialists
             ),
@@ -542,7 +540,6 @@ class Scheduled(Container):
                     ),
                 ]
             ),
-
             actions=[
                 TextButton("Изменить", on_click=self.edit_preview_data),
                 TextButton("Закрыть", on_click=self.close_edit_dialog),
@@ -788,7 +785,7 @@ class Scheduled(Container):
         if not current_text.replace('.', '', 1).isdigit():
             txt_field.value = ''.join(filter(lambda x: x.isdigit() or x == '.', current_text[:-1]))
         txt_field.update() 
-    
+
     def show_specialists(self, e):
         self.dropdown_options_specialists.clear()
         try:
@@ -798,7 +795,6 @@ class Scheduled(Container):
             
             cursor.execute(f"SELECT full_name FROM specialists WHERE specialist_department_id = {specialist_department_id}")
             specialists_full_name = cursor.fetchall()
-
             for row in specialists_full_name:
                 self.dropdown_options_specialists.append(dropdown.Option(row[0]))
                 
@@ -809,31 +805,26 @@ class Scheduled(Container):
     def show_indicators(self, e):
         try:
             self.dropdown_options_indicators.clear()
-
             cursor = connection.cursor()
             sql_select_specialist_id = f"SELECT specialist_id FROM specialists WHERE full_name = '{self.specialist_menu_box.content.value}'"
             cursor.execute(sql_select_specialist_id)
             specialist_id = cursor.fetchone()[0]
-
             cursor.execute(f'SELECT indicators_id, name FROM name_of_indicators WHERE specialist_id = {specialist_id} ORDER BY indicators_id')
             results = cursor.fetchall()
-
             for indicator_id, name in results:
                 self.dropdown_options_indicators.append(dropdown.Option(indicator_id, name))
-
             no_list_option = dropdown.Option('Нет в списке')
             self.dropdown_options_indicators.append(no_list_option)
-
             self.page.update()
         except Exception as e:
             print(f"Error fetching data from the database: {str(e)}")
 
     def added_new_to_indicators(self, e):
-        selected_item = self.cb_menu_spec.content.value  # Получите выбранную опцию
-        print(f"Selected item: {selected_item}")  # Отладочный вывод: Выведите выбранную опцию
+        selected_item = self.cb_menu_spec.content.value 
+        print(f"Selected item: {selected_item}")
         if selected_item == "Нет в списке":
             self.page.dialog = self.alter_dialog
-            print("Opening dialog...")  # Отладочный вывод: Откройте диалоговое окно
+            print("Opening dialog...")
             self.alter_dialog.open = True
         self.page.update()
 
@@ -843,44 +834,31 @@ class Scheduled(Container):
             sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.specialist_menu_box.content.value)
             cursor.execute(sql_select_specialist_id)
             specialist_id = cursor.fetchone()[0]
-
             cursor.execute(f"SELECT measurement_id FROM units_of_measurement WHERE type = '{self.units_menu_box.content.value}'")
             units_id = cursor.fetchone()[0]
-
             cursor.execute(f"SELECT max(indicators_id) FROM name_of_indicators;")
             max_id = cursor.fetchone()[0]
-
             new_indicator_name = self.textfiled_input_new_indicator.content.value
             new_indicator_id = max_id + 1
             query = "INSERT INTO TABLE name_of_indicators (indicators_id, measurement_id, name, specialist_id) VALUES ({},{},'{}',{})".format(
                 new_indicator_id, units_id, new_indicator_name, specialist_id)
             cursor.execute(query)
-            connection.commit()  # Убедитесь, что данные добавлены
-
+            connection.commit()
             print("Запись успешно добавлена в базу данных")
-
-            # Заново загрузите показатели и обновите выпадающий список
             self.dropdown_options_indicators.clear()
             self.show_indicators("")
-
-            # Устанавливаем новый элемент как выбранный в Dropdown
-            self.cb_menu_spec.content.value = str(new_indicator_id)  # Предполагается, что значение id это строка
-
+            self.cb_menu_spec.content.value = str(new_indicator_id)
             self.textfiled_input_new_indicator.content.value = ''
             self.units_menu_box.content.value = ''
-
             self.alter_dialog.open = False
             self.page.update()
         except Exception as e:
             print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
 
-
     def close_dlg(self, e):
         self.page.dialog = self.alter_dialog
         self.alter_dialog.open = False
         self.page.update()
-
-    # TODO: These two functions for success message
 
     def show_block_dialog(self, content_text, title_text):
         self.page.dialog = self.alter_dialog_block
@@ -888,158 +866,154 @@ class Scheduled(Container):
         self.alter_dialog_block.title = Text(f"{title_text}")
         self.alter_dialog_block.open = True
         self.page.update()
-    
+
     def close_dlg_block(self, e):
         self.page.dialog = self.alter_dialog_block
         self.alter_dialog_block.open = False
         print("Вы закрыли модульное окно блокировки")
         self.page.update()
-    
+
     def show_blocked(self, e):
-        # try:
+        try:
+            date = datetime.datetime.now()
+            formatted_date = date.strftime("%Y%m%d")
+            # *FOR AUTO ID INCRIPTION
+            cursor = connection.cursor()
+            cursor.execute(f"SELECT max(plan_id) FROM planned_value;")
+            max_plan_id = cursor.fetchone()[0]
+            query_select = 'SELECT plan_indicators_id FROM planned_value'
+            cursor.execute(query_select)
+            indicator_original_list = cursor.fetchall()
+            indicators = [item[0] for item in indicator_original_list]
 
-        date = datetime.datetime.now()
-        formatted_date = date.strftime("%d%m%Y")
+            query_select = f"""
+            SELECT
+                plan_user_id,
+                plan_indicators_id,
+                MAX(date) AS latest_date,
+                MAX(number) AS latest_number
+            FROM planned_value
+            WHERE plan_user_id = (SELECT specialist_id FROM specialists WHERE full_name = '{self.specialist_menu_box.content.value}')
+            GROUP BY
+                plan_user_id,
+                plan_indicators_id
+            ORDER BY plan_indicators_id
+            """
+            cursor.execute(query_select)
+            latest_data = cursor.fetchall()
 
-        # *FOR AUTO ID INCRIPTION
-        cursor = connection.cursor()
-        cursor.execute(f"SELECT max(plan_id) FROM planned_value;")
-        max_plan_id = cursor.fetchone()[0]
-
-        query_select = 'SELECT plan_indicators_id FROM planned_value'
-        cursor.execute(query_select)
-        indicator_original_list = cursor.fetchall()
-        indicators = [item[0] for item in indicator_original_list]
-
-        query_select = f"""
-        SELECT
-            plan_user_id,
-            plan_indicators_id,
-            MAX(number_of_version) AS latest_version
-        FROM planned_value
-        WHERE plan_user_id = (SELECT specialist_id FROM specialists WHERE full_name = '{self.specialist_menu_box.content.value}')
-        GROUP BY
-            plan_user_id,
-            plan_indicators_id
-        ORDER BY plan_indicators_id
-        """
-        cursor.execute(query_select)
-        latest_number_of_version_with_user_indicator_ids = cursor.fetchall()
-        # Loop through the results of the first query
-
-        for specialist_id, indicator_id, latest_version in latest_number_of_version_with_user_indicator_ids:
-            cursor.execute(
-                f"SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_indicators_id = {int(indicator_id)} AND kpe_user_id = {int(specialist_id)}")
-            max_version = cursor.fetchone()[0]
-            # Check if max_version has the expected format (3 hyphen-separated parts)
-            if max_version and len(max_version.split('-')) >= 3:
-                current_version = int(max_version.split('-')[2])
-            else:
-                current_version = 0  # Start with version 1 if the format is unexpected or max_version is None
-
-            number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
-
-            max_plan_id += 1
-            query_exists = """
-                SELECT 1
-                FROM kpe_table
-                WHERE kpe_user_id = {}
-                AND kpe_indicators_id = {}
-                AND number_of_version = '{}'
-            """.format(specialist_id, indicator_id, latest_version)
-            cursor.execute(query_exists)
-            data_exists = cursor.fetchone()
-            
-            if not data_exists:
-                # Получение данных из planned_value
-                query_select = """
-                SELECT plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, status,
-                    KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4
+            for specialist_id, indicator_id, latest_date, latest_number in latest_data:
+                query_max_number = f"""
+                SELECT MAX(number)
                 FROM planned_value
-                WHERE
-                number_of_version = '{}'
-                AND plan_indicators_id = {}
-                AND plan_user_id = {}
-                AND status = 'Активно'
-            """.format(latest_version, indicator_id, specialist_id)
-                cursor.execute(query_select)
-                data = cursor.fetchone()
+                WHERE plan_user_id = {int(specialist_id)} 
+                AND plan_indicators_id = {int(indicator_id)} 
+                AND date = '{latest_date}'
+                """
+                cursor.execute(query_max_number)
+                current_version = cursor.fetchone()[0] or 0
 
-                if data:
-                    plan_indicators_id, user_id, units_id, first_qr_value, second_qr_value, third_qr_value, fourth_qr_value, year, status, weight_1, weight_2, weight_3, weight_4 = data
-                    weight_query = f"""
-                    SELECT
-                        SUM(KPE_weight_1) AS total_weight_1,
-                        SUM(KPE_weight_2) AS total_weight_2,
-                        SUM(KPE_weight_3) AS total_weight_3,
-                        SUM(KPE_weight_4) AS total_weight_4
+                max_plan_id += 1
+                query_exists = """
+                    SELECT 1
+                    FROM kpe_table
+                    WHERE kpe_user_id = {}
+                    AND kpe_indicators_id = {}
+                    AND date = '{}'
+                    AND number = {}
+                """.format(specialist_id, indicator_id, latest_date, latest_number)
+                cursor.execute(query_exists)
+                data_exists = cursor.fetchone()
+                if not data_exists:
+                    query_select = """
+                    SELECT plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, status,
+                        KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4
                     FROM planned_value
-                    WHERE plan_user_id = {specialist_id} 
+                    WHERE
+                    date = '{}'
+                    AND number = {}
+                    AND plan_indicators_id = {}
+                    AND plan_user_id = {}
                     AND status = 'Активно'
-                    AND number_of_version = '{latest_version}'
-                    """
-                    cursor.execute(weight_query)
-                    sum_weight_1, sum_weight_2, sum_weight_3, sum_weight_4 = cursor.fetchone()
-                    print(sum_weight_1)
-                    print(sum_weight_2)
-                    print(sum_weight_3)
-                    print(sum_weight_4)
-                    
-                    if sum_weight_1 < 100 or sum_weight_2 < 100 or sum_weight_3 < 100 or sum_weight_4 < 100:
-                        self.show_block_dialog(
-                            f"Сумма Веса КПЭ\n1 квартала = {sum_weight_1}%\n2 квартала = {sum_weight_2}%\n3 квартала = {sum_weight_3}%\n4 квартала = {sum_weight_4}%\nСумма каждого квартала должна равняться 100%", 
-                            "Предупреждение"
-                        )
-                    else:
-                        # Вставка данных в kpe_table
-                        insert_query_to_kpe_table = """
-                        INSERT INTO
-                            kpe_table (
-                            kpe_id, 
-                            kpe_indicators_id, 
-                            kpe_user_id, 
-                            kpe_units_id, 
-                            1st_quater_value, 
-                            2nd_quater_value, 
-                            3rd_quater_value, 
-                            4th_quater_value, 
-                            year,
-                            status,
-                            KPE_weight_1, 
-                            KPE_weight_2, 
-                            KPE_weight_3, 
-                            KPE_weight_4, 
-                            number_of_version, 
-                            plan_number_of_version
+                    """.format(latest_date, latest_number, indicator_id, specialist_id)
+                    cursor.execute(query_select)
+                    data = cursor.fetchone()
+                    if data:
+                        plan_indicators_id, user_id, units_id, first_qr_value, second_qr_value, third_qr_value, fourth_qr_value, year, status, weight_1, weight_2, weight_3, weight_4 = data
+                        weight_query = f"""
+                        SELECT
+                            SUM(KPE_weight_1) AS total_weight_1,
+                            SUM(KPE_weight_2) AS total_weight_2,
+                            SUM(KPE_weight_3) AS total_weight_3,
+                            SUM(KPE_weight_4) AS total_weight_4
+                        FROM planned_value
+                        WHERE plan_user_id = {specialist_id} 
+                        AND status = 'Активно'
+                        AND date = '{latest_date}'
+                        AND number = {latest_number}
+                        """
+                        cursor.execute(weight_query)
+                        sum_weight_1, sum_weight_2, sum_weight_3, sum_weight_4 = cursor.fetchone()
+                        print(sum_weight_1)
+                        print(sum_weight_2)
+                        print(sum_weight_3)
+                        print(sum_weight_4)
+                        if sum_weight_1 < 100 or sum_weight_2 < 100 or sum_weight_3 < 100 or sum_weight_4 < 100:
+                            self.show_block_dialog(
+                                f"Сумма Веса КПЭ\n1 квартала = {sum_weight_1}%\n2 квартала = {sum_weight_2}%\n3 квартала = {sum_weight_3}%\n4 квартала = {sum_weight_4}%\nСумма каждого квартала должна равняться 100%", 
+                                "Предупреждение"
                             )
-                        VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, '{}', {}, {}, {}, {}, '{}','{}');
-                        """.format(
-                                int(max_plan_id),
-                                int(plan_indicators_id),
-                                int(user_id),
-                                int(units_id),
-                                float(first_qr_value),
-                                float(second_qr_value),
-                                float(third_qr_value),
-                                float(fourth_qr_value),
-                                float(year),
-                                str(status),
-                                float(weight_1),
-                                float(weight_2),
-                                float(weight_3),
-                                float(weight_4),
-                                str(number_of_verison_plus),
-                                str(latest_version)
-                            )
-                        # print("SQL Query:", insert_query_to_kpe_table)
+                        else:
+                            insert_query_to_kpe_table = """
+                            INSERT INTO
+                                kpe_table (
+                                kpe_id, 
+                                kpe_indicators_id, 
+                                kpe_user_id, 
+                                kpe_units_id, 
+                                1st_quater_value, 
+                                2nd_quater_value, 
+                                3rd_quater_value, 
+                                4th_quater_value, 
+                                year,
+                                status,
+                                KPE_weight_1, 
+                                KPE_weight_2, 
+                                KPE_weight_3, 
+                                KPE_weight_4, 
+                                date,
+                                number
+                                )
+                            VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, '{}', {}, {}, {}, {}, '{}',{});
+                            """.format(
+                                    int(max_plan_id),
+                                    int(plan_indicators_id),
+                                    int(user_id),
+                                    int(units_id),
+                                    float(first_qr_value),
+                                    float(second_qr_value),
+                                    float(third_qr_value),
+                                    float(fourth_qr_value),
+                                    float(year),
+                                    str(status),
+                                    float(weight_1),
+                                    float(weight_2),
+                                    float(weight_3),
+                                    float(weight_4),
+                                    str(formatted_date),
+                                    int(current_version)
+                                )
+                            cursor.execute(insert_query_to_kpe_table)
+                            print("Success")
+                            self.specialist_menu_box.content.value = ""
+                            self.show_block_dialog("Вы завершили формирование карты КПЭ","Карта КПЭ сформирована")
+                else:
+                    self.show_block_dialog("Данные уже есть в карте КПЭ","Информация")
+        except Exception as ex:
+            print(ex)
+            self.show_block_dialog("Произошла ошибка","Ошибка")
 
-                        cursor.execute(insert_query_to_kpe_table)
-                        print("Success")
-                        self.specialist_menu_box.content.value = ""
-                        self.show_block_dialog("Вы завершили формирование карты КПЭ","Карта КПЭ сформирована")
-            else:
-                self.show_block_dialog("Данные уже есть в карте КПЭ","Информация")
-    # TODO: This is a insert function for add new data to planned table
+
     def insert_into_db(self, e):
         if self.end_edit == False:
             try:
@@ -1056,7 +1030,6 @@ class Scheduled(Container):
                 'cb_menu_spec': 'Наименование показателя',
                 'specialist_menu_box': 'Специалиста'
                 }
-
                 required_fields = [
                     self.first_qr_box.content.value,
                     self.second_qr_box.content.value,
@@ -1070,68 +1043,68 @@ class Scheduled(Container):
                     self.cb_menu_spec.content.value,
                     self.specialist_menu_box.content.value
                 ]
-
                 empty_fields = [field_names_mapping[field_name] for field_name, field_value in zip(
                     ['first_qr_box', 'second_qr_box', 'third_qr_box', 'fourtht_qr_box', 'year_box',
                     'weight_first_qr_box', 'weight_second_qr_box', 'weight_third_qr_box',
                     'weight_fourth_qr_box', 'cb_menu_spec', 'specialist_menu_box'], required_fields)
                     if not field_value]
-
                 if empty_fields:
                     error_message = f"Вы не заполнили следующие поля:\n{', '.join(empty_fields)}"
                     print(f"Error: {error_message}")
                     self.show_block_dialog(error_message, "Ошибка")
                     return
                 date = datetime.datetime.now()
-                formatted_date = date.strftime("%d%m%Y")
-                # print(formatted_date)
-                # *FOR USER DATA INFORMATION
+                formatted_date = date.strftime("%Y%m%d")
                 cursor = connection.cursor()
                 cursor.execute(
                     f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.specialist_menu_box.content.value)}';")
                 user_id = cursor.fetchone()[0]
-
-                # *FOR AUTO ID INCRIPTION
-                cursor = connection.cursor()
                 cursor.execute(f"SELECT max(plan_id) FROM planned_value;")
                 max_id = cursor.fetchone()[0]
-                # print(f"{user_id}-{formatted_date}-{max_id}")
-                # *FOR INDICATORS
-                selected_indicator = self.cb_menu_spec.content.value
-                cursor = connection.cursor()
-                selected_indicator_without_dots = selected_indicator.replace(".", "")
-                # cursor.execute(
-                #     f"SELECT indicators_id FROM name_of_indicators WHERE name LIKE '{selected_indicator_without_dots}%'")
-                # indicator_id = cursor.fetchone()[0]
-                # *FRO PLAN_INDICATOR
-                cursor = connection.cursor()
-                cursor.execute(f"SELECT plan_indicators_id FROM planned_value")
-                plan_indicator_id = cursor.fetchone()
-                # *FOR UNITS
-                # selected_unit = self.units_menu_box.content.value
-                cursor = connection.cursor()
-                # cursor.execute(f"SELECT measurement_id FROM name_of_indicators WHERE name LIKE '{selected_indicator}%'")
                 cursor.execute(
                     f"SELECT measurement_id FROM name_of_indicators WHERE indicators_id = '{int(self.cb_menu_spec.content.value)}'")
                 units_id = cursor.fetchone()[0]
-
-                # Определите максимальное значение номера версии для данного показателя
-                # Determine the maximum version for the current indicator and user combination
                 cursor.execute(
-                    f"SELECT MAX(number_of_version) FROM planned_value WHERE plan_indicators_id = {int(self.cb_menu_spec.content.value)} AND plan_user_id = {int(user_id)}")
-                max_version = cursor.fetchone()[0]
-
-                # Check if max_version has the expected format (3 hyphen-separated parts)
-                if max_version and len(max_version.split('-')) >= 3:
-                    current_version = int(max_version.split('-')[2])
+                    f"""
+                    SELECT 
+                        concat(
+                            toString(plan_user_id), '-',
+                            substring(replace(toString(date), '-', ''), 7, 2),
+                            substring(replace(toString(date), '-', ''), 5, 2),
+                            substring(replace(toString(date), '-', ''), 1, 4),
+                            '-', toString(number)
+                        ) AS number_of_version
+                    FROM planned_value
+                    WHERE 
+                        plan_user_id = {int(user_id)} AND 
+                        plan_indicators_id = {int(self.cb_menu_spec.content.value)} AND
+                        date = (
+                            SELECT MAX(date)
+                            FROM planned_value
+                            WHERE plan_user_id = {int(user_id)} AND plan_indicators_id = {int(self.cb_menu_spec.content.value)}
+                        ) AND 
+                        number = (
+                            SELECT MAX(number)
+                            FROM planned_value
+                            WHERE 
+                                plan_user_id = {int(user_id)} AND 
+                                plan_indicators_id = {int(self.cb_menu_spec.content.value)} AND
+                                date = (
+                                    SELECT MAX(date)
+                                    FROM planned_value
+                                    WHERE plan_user_id = {int(user_id)} AND plan_indicators_id = {int(self.cb_menu_spec.content.value)}
+                                )
+                        );
+                    """
+                    )
+                max_version = cursor.fetchone()
+                if max_version is None:
+                    current_version = 1
                 else:
-                    current_version = 0  # Start with version 1 if the format is unexpected or max_version is None
-
-                number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
-                
+                    current_version = int(max_version[0].split('-')[2]) + 1
                 query = """
-                    INSERT INTO planned_value (plan_id, plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, status, KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4, number_of_version)
-                    VALUES ({}+1, {}, {}, {}, {}, {}, {}, {}, {},'{}', {}, {}, {}, {},'{}');
+                    INSERT INTO planned_value (plan_id, plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, status, KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4, date, number)
+                    VALUES ({}+1, {}, {}, {}, {}, {}, {}, {}, {},'{}', {}, {}, {}, {},'{}', {});
                 """.format(
                         int(max_id),
                         int(self.cb_menu_spec.content.value),
@@ -1147,9 +1120,9 @@ class Scheduled(Container):
                         float(self.weight_second_qr_box.content.value),
                         float(self.weight_third_qr_box.content.value),
                         float(self.weight_fourth_qr_box.content.value),
-                        str(number_of_verison_plus),
+                        str(formatted_date),
+                        int(current_version)
                     )
-
                 cursor.execute(query)
                 connection.commit()
                 self.show_block_dialog("Запись успешно добавлена в базу данных","Успешно")
@@ -1163,12 +1136,8 @@ class Scheduled(Container):
                 self.weight_third_qr_box.content.value = ''
                 self.weight_fourth_qr_box.content.value = ''
                 self.cb_menu_spec.content.value = ''
-                # self.cb_menu_spec.content.option = self.dropdown_options_indicators
                 self.units_menu_box.content.value = ""
-                # self.specialist_menu_box.content.value = ""
                 print("Запись успешно добавлена в базу данных")
-                
-
             except Exception as e:
                 self.show_block_dialog("Ошибка при добавлении записи в базу данных","Ошибка")
                 print(f"Ошибка при добавлении записи в базу данных: {str(e)}")
@@ -1182,11 +1151,6 @@ class Scheduled(Container):
             cursor.execute(
                 f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.specialist_menu_box.content.value)}';")
             user_id = cursor.fetchone()[0]
-
-            query_select = "SELECT MAX(number_of_version) FROM planned_value WHERE plan_user_id = '{}';".format(user_id)
-            cursor.execute(query_select)
-            latest_version = cursor.fetchone()[0]
-
             query_select = f"""
             SELECT
                 ROW_NUMBER() OVER (ORDER BY plan_id) AS "порядковый номер",
@@ -1204,9 +1168,28 @@ class Scheduled(Container):
             FROM planned_value AS pn
             JOIN name_of_indicators AS ni ON pn.plan_indicators_id = ni.indicators_id
             JOIN units_of_measurement AS um ON pn.plan_units_id = um.measurement_id
-            WHERE pn.plan_user_id = {user_id} AND pn.number_of_version = '{latest_version}' AND pn.status = 'Активно'
+            WHERE
+                pn.plan_user_id = {int(user_id)} AND
+                pn.status = 'Активно' AND
+                pn.date = (
+                    SELECT MAX(date)
+                    FROM planned_value
+                    WHERE plan_user_id = {int(user_id)} AND status = 'Активно'
+                ) AND
+                pn.number = (
+                    SELECT MAX(number)
+                    FROM planned_value
+                    WHERE
+                        plan_user_id = {int(user_id)} AND
+                        status = 'Активно' AND
+                        date = (
+                            SELECT MAX(date)
+                            FROM planned_value
+                            WHERE plan_user_id = {int(user_id)} AND status = 'Активно'
+                        )
+                )
             ORDER BY plan_id;
-        """
+            """
             cursor.execute(query_select)
             results = cursor.fetchall()
             query_result = results
@@ -1269,49 +1252,41 @@ class Scheduled(Container):
                 cursor.execute(query_1st_qr)
                 self.page.dialog = self.alter_dialog_edit
                 self.alter_dialog_edit.open = False
-
             if self.second_qr_box.content.value != selected_row[4]:
                 query_2nd_qr = "ALTER TABLE planned_value UPDATE 2nd_quater_value = {} WHERE plan_id = {};".format(self.second_qr_box_2.content.value, plan_id)
                 cursor.execute(query_2nd_qr)
                 self.page.dialog = self.alter_dialog_edit
                 self.alter_dialog_edit.open = False
-
             if self.third_qr_box.content.value != selected_row[5]:
                 query_3rd_qr = "ALTER TABLE planned_value UPDATE 3rd_quater_value = {} WHERE plan_id = {};".format(self.third_qr_box_2.content.value, plan_id)
                 cursor.execute(query_3rd_qr)
                 self.page.dialog = self.alter_dialog_edit
                 self.alter_dialog_edit.open = False
-
             if self.fourtht_qr_box.content.value != selected_row[6]:
                 query_4th_qr = "ALTER TABLE planned_value UPDATE 4th_quater_value = {} WHERE plan_id = {};".format(self.fourtht_qr_box_2.content.value, plan_id)
                 cursor.execute(query_4th_qr)
                 self.page.dialog = self.alter_dialog_edit
                 self.alter_dialog_edit.open = False
-
             if self.year_box.content.value != selected_row[7]:
                 query_year = "ALTER TABLE planned_value UPDATE year = {} WHERE plan_id = {};".format(self.year_box_2.content.value, plan_id)
                 cursor.execute(query_year)
                 self.page.dialog = self.alter_dialog_edit
                 self.alter_dialog_edit.open = False
-
             if self.weight_first_qr_box.content.value != selected_row[8]:
                 query_weight_firts_qr = "ALTER TABLE planned_value UPDATE KPE_weight_1 = {} WHERE plan_id = {};".format(self.weight_first_qr_box_2.content.value, plan_id)
                 cursor.execute(query_weight_firts_qr)
                 self.page.dialog = self.alter_dialog_edit
                 self.alter_dialog_edit.open = False
-
             if self.weight_second_qr_box.content.value != selected_row[9]:
                 query_weight_second_qr = "ALTER TABLE planned_value UPDATE KPE_weight_2 = {} WHERE plan_id = {};".format(self.weight_second_qr_box_2.content.value, plan_id)
                 cursor.execute(query_weight_second_qr)
                 self.page.dialog = self.alter_dialog_edit
                 self.alter_dialog_edit.open = False
-
             if self.weight_third_qr_box.content.value != selected_row[10]:
                 query_weight_third_qr = "ALTER TABLE planned_value UPDATE KPE_weight_3 = {} WHERE plan_id = {};".format(self.weight_third_qr_box_2.content.value, plan_id)
                 cursor.execute(query_weight_third_qr)
                 self.page.dialog = self.alter_dialog_edit
                 self.alter_dialog_edit.open = False
-
             if self.weight_fourth_qr_box.content.value != selected_row[11]:
                 query_weight_fourth_qr = "ALTER TABLE planned_value UPDATE KPE_weight_4 = {} WHERE plan_id = {};".format(self.weight_fourth_qr_box_2.content.value, plan_id)
                 cursor.execute(query_weight_fourth_qr)
@@ -1332,7 +1307,7 @@ class Scheduled(Container):
             self.show_block_dialog("Данные были успешно занесены в список изменений", "Успешно")
             self.page.update()
         # except:
-        #     self.show_block_dialog("При измение данных произошла ошибка", "Ошибка")
+        #     self.show_block_dialog("При изменении данных произошла ошибка", "Ошибка")
 
     def close_edit_dialog(self, e):
         self.page.dialog = self.alter_dialog_edit
