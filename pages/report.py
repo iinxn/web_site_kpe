@@ -16,20 +16,7 @@ class Report(Container):
         self.bgcolor = primary_colors['WHITE']
 
         self.dropdown_options_specialists = []
-        dropdown_options_departments = []
-
-        # *SELECT QUERY TO DISPLAY DEPARTMENTS FROM DB
-        try:
-            cursor = connection.cursor()
-            cursor.execute('SELECT name FROM name_of_department ORDER BY department_id')
-            results = cursor.fetchall()
-
-            for row in results:
-                dropdown_options_departments.append(dropdown.Option(row[0]))
-            dropdown_options_departments.append(dropdown.Option("Все управления"))
-
-        except Exception as e:
-            print(f"Error fetching data from the database: {str(e)}")
+        self.dropdown_options_departments = []
 
         # * DROPDOWN LISTS
         self.report_template = Container(
@@ -42,7 +29,8 @@ class Report(Container):
                     dropdown.Option('Карта КПЭ'),
                     dropdown.Option('Расчет премии'),
                     dropdown.Option('Сводные данные по исполнению')
-                ]
+                ],
+                on_change=self.show_department
             )
         )
 
@@ -62,7 +50,7 @@ class Report(Container):
                 hint_text='Выберите управление',
                 color='black',
                 # content_padding=30,
-                options=dropdown_options_departments,
+                options=self.dropdown_options_departments,
                 on_change=self.show_specialists
             )
         )
@@ -304,8 +292,24 @@ class Report(Container):
                 ),
             ]
         )
+    def show_department(self, e):
+        self.dropdown_options_departments.clear()
+        try:
+            cursor = connection.cursor()
+            cursor.execute('SELECT name FROM name_of_department ORDER BY department_id')
+            results = cursor.fetchall()
 
-    # !FUCNTIONS
+            for row in results:
+                self.dropdown_options_departments.append(dropdown.Option(row[0]))
+            
+            if self.report_template.content.value == "Сводные данные по исполнению":
+                self.dropdown_options_departments.append(dropdown.Option("Все управления"))
+            else:
+                pass
+        except Exception as e:
+            print(f"Error fetching data from the database: {str(e)}")
+
+
     def show_specialists(self, e):
         self.dropdown_options_specialists.clear()
         try:
@@ -342,6 +346,7 @@ class Report(Container):
         self.alter_dialog.open = True
         self.page.update()
 
+#! PREMIUM CALCULATION REPORT
     def alter_dialog_select_columns_data(self, e):
         try:
             cursor = connection.cursor()
@@ -489,6 +494,7 @@ class Report(Container):
         self.alter_dialog_kpe.open = True
         self.page.update()
 
+#! KPE MAP REPORT
     def select_kpe(self, e):
         cursor = connection.cursor()
         cursor.execute(
@@ -622,144 +628,156 @@ class Report(Container):
         self.alter_dialog_kpe.open = False
         self.page.update()
 
-    # TODO: SUMMARY TABLE
-    # ! THIS TABLE DOESN'T WORK
+#! SUMMARY REPORT
     def open_dialog_summary(self):
         self.page.dialog = self.alter_dialog_summary
         self.alter_dialog_summary.open = True
         self.page.update()
 
     def select_summary(self, e):
-        cursor = connection.cursor()
-        # cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
-        # user_id = cursor.fetchone()[0]
-        query_select = 'SELECT MAX(number_of_version) FROM kpe_table'
-        cursor.execute(query_select)
-        latest_version = cursor.fetchone()[0]
-        query_select_actual = f'SELECT MAX(number_of_version) FROM actual_value'
-        cursor.execute(query_select_actual)
-        latest_version_actual = cursor.fetchone()[0]
+        try:
+            cursor = connection.cursor()
+            query_select = 'SELECT MAX(date), MAX(number) FROM kpe_table'
+            cursor.execute(query_select)
+            latest_date, latest_number = cursor.fetchone()
+            print(latest_date, latest_number)
 
-        quater = self.report_quater.content.value
+            query_select_actual = 'SELECT MAX(date), MAX(number) FROM actual_value'
+            cursor.execute(query_select_actual)
+            latest_date_actual, latest_number_actual = cursor.fetchone()
 
-        if quater == "1 квартал":
-            quater_column = "1st_quater_value"
-            weight_column = "KPE_weight_1"
-            actual_quater_value = "1-й квартал"
-        elif quater == "2 квартал":
-            quater_column = "2nd_quater_value"
-            weight_column = "KPE_weight_2"
-            actual_quater_value = "2-й квартал"
-        elif quater == "3 квартал":
-            quater_column = "3rd_quater_value"
-            weight_column = "KPE_weight_3"
-            actual_quater_value = "3-й квартал"
-        else:
-            quater_column = "4th_quater_value"
-            weight_column = "KPE_weight_4"
-            actual_quater_value = "4-й квартал"
+            quater = self.report_quater.content.value
 
-        if self.report_depart.content.value == "Все управления":
-            query = f"""
-                SELECT
-                    ROW_NUMBER() OVER () AS `порядковый номер`,
-                    'агентство по труду и занятости населения Сахалинской области' AS `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
-                    nd.name AS `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
-                    s.position AS `Должность`,
-                    s.full_name AS `ФИО`,
-                    SUM( (kt.`{weight_column}` / 100) * ( (av.value * 100) / NULLIF(kt.`{quater_column}`, 0)
-                        )
-                    ) AS `Процент выполнения`
-                FROM kpe_table AS kt
-                    INNER JOIN specialists AS s ON kt.kpe_user_id = s.specialist_id
-                    INNER JOIN name_of_department AS nd ON s.specialist_department_id = nd.department_id
-                    INNER JOIN actual_value AS av ON kt.kpe_user_id = av.actual_users_id AND kt.kpe_indicators_id = av.actual_indicators_id
-                WHERE
-                    kt.number_of_version = '{latest_version}'
-                    AND av.quarter_number = '{actual_quater_value}'
-                    AND av.number_of_version = '{latest_version_actual}'
-                    AND kt.status = 'Активно'
-                GROUP BY
-                    `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
-                    `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
-                    `Должность`,
-                    `ФИО`
-            """
-        else:
-            query_select_dep_id = "SELECT department_id FROM name_of_department WHERE name = '{}'".format(
-                self.report_depart.content.value)
-            cursor.execute(query_select_dep_id)
-            department_id = cursor.fetchone()[0]
+            if quater == "1 квартал":
+                quater_column = "1st_quater_value"
+                weight_column = "KPE_weight_1"
+                actual_quater_value = "1-й квартал"
+            elif quater == "2 квартал":
+                quater_column = "2nd_quater_value"
+                weight_column = "KPE_weight_2"
+                actual_quater_value = "2-й квартал"
+            elif quater == "3 квартал":
+                quater_column = "3rd_quater_value"
+                weight_column = "KPE_weight_3"
+                actual_quater_value = "3-й квартал"
+            else:
+                quater_column = "4th_quater_value"
+                weight_column = "KPE_weight_4"
+                actual_quater_value = "4-й квартал"
 
-            query = f"""
-                SELECT
-                    ROW_NUMBER() OVER () AS `порядковый номер`,
-                    'агентство по труду и занятости населения Сахалинской области' AS `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
-                    nd.name AS `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
-                    s.position AS `Должность`,
-                    s.full_name AS `ФИО`,
-                    SUM( (kt.`{weight_column}` / 100) * ( (av.value * 100) / NULLIF(kt.`{quater_column}`, 0)
-                        )
-                    ) AS `Процент выполнения`
-                FROM kpe_table AS kt
-                    INNER JOIN specialists AS s ON kt.kpe_user_id = s.specialist_id
-                    INNER JOIN name_of_department AS nd ON s.specialist_department_id = nd.department_id
-                    INNER JOIN actual_value AS av ON kt.kpe_user_id = av.actual_users_id AND kt.kpe_indicators_id = av.actual_indicators_id
-                WHERE
-                    kt.number_of_version = '{latest_version}'
-                    AND av.number_of_version = '{latest_version_actual}'
-                    AND s.specialist_department_id = {department_id}
-                    AND av.quarter_number = '{actual_quater_value}'
-                    AND kt.status = 'Активно'
-                GROUP BY
-                    `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
-                    `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
-                    `Должность`,
-                    `ФИО`
-            """
-            # Определите структуру колонок для "Премии"
-        columns = [
-            DataColumn(Text("""№
-п/п"""), numeric=True),
-            DataColumn(Text("""Наименование структурного
-подразделения Правительства
-Сахалинской области,
-государственного органа
-или органа исполнительной
-власти Сахалинской области""")),
-            DataColumn(Text("""Наименование структурного
-подразделения органа
-исполнительной власти
-Сахалинской области""")),
-            DataColumn(Text("Должность")),
-            DataColumn(Text("ФИО")),
-            DataColumn(Text("""Процент выполнения
-КПЭ по итогам
-отчетного периода, 
-%""")),
-            # Добавьте другие колонки для Премий
-        ]
+            if self.report_depart.content.value == "Все управления":
+                query = f"""
+                    SELECT
+                        ROW_NUMBER() OVER () AS `порядковый номер`,
+                        'агентство по труду и занятости населения Сахалинской области' AS `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
+                        nd.name AS `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
+                        s.position AS `Должность`,
+                        s.full_name AS `ФИО`,
+                        SUM( (kt.`{weight_column}` / 100) * ( (av.value * 100) / NULLIF(kt.`{quater_column}`, 0)
+                            )
+                        ) AS `Процент выполнения`
+                    FROM kpe_table AS kt
+                        INNER JOIN specialists AS s ON kt.kpe_user_id = s.specialist_id
+                        INNER JOIN name_of_department AS nd ON s.specialist_department_id = nd.department_id
+                        INNER JOIN actual_value AS av ON kt.kpe_user_id = av.actual_users_id AND kt.kpe_indicators_id = av.actual_indicators_id
+                    WHERE
+                        kt.date = '{latest_date}'
+                        AND kt.number = {latest_number}
+                        AND av.quarter_number = '{actual_quater_value}'
+                        AND av.date = '{latest_date_actual}'
+                        AND av.number = {latest_number_actual}
+                        AND kt.status = 'Активно'
+                    GROUP BY
+                        `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
+                        `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
+                        `Должность`,
+                        `ФИО`
+                """
+                print(query)
+            else:
+                query_select_dep_id = "SELECT department_id FROM name_of_department WHERE name = '{}'".format(
+                    self.report_depart.content.value)
+                cursor.execute(query_select_dep_id)
+                department_id = cursor.fetchone()[0]
 
-        cursor.execute(query)
-        global results_summary
-        results_summary = cursor.fetchall()
-        print(results_summary)
+                query = f"""
+                    SELECT
+                        ROW_NUMBER() OVER () AS `порядковый номер`,
+                        'агентство по труду и занятости населения Сахалинской области' AS `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
+                        nd.name AS `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
+                        s.position AS `Должность`,
+                        s.full_name AS `ФИО`,
+                        SUM( (kt.`{weight_column}` / 100) * ( (av.value * 100) / NULLIF(kt.`{quater_column}`, 0)
+                            )
+                        ) AS `Процент выполнения`
+                    FROM kpe_table AS kt
+                        INNER JOIN specialists AS s ON kt.kpe_user_id = s.specialist_id
+                        INNER JOIN name_of_department AS nd ON s.specialist_department_id = nd.department_id
+                        INNER JOIN actual_value AS av ON kt.kpe_user_id = av.actual_users_id AND kt.kpe_indicators_id = av.actual_indicators_id
+                    WHERE
+                        kt.date = '{latest_date}'
+                        AND kt.number = {latest_number}
+                        AND av.date = '{latest_date_actual}'
+                        AND av.number = {latest_number_actual}
+                        AND s.specialist_department_id = {department_id}
+                        AND av.quarter_number = '{actual_quater_value}'
+                        AND kt.status = 'Активно'
+                    GROUP BY
+                        `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
+                        `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
+                        `Должность`,
+                        `ФИО`
+                """
 
-        query_result = results_summary
+            print(query)
+            columns = [
+                DataColumn(Text("""№
+    п/п"""), numeric=True),
+                DataColumn(Text("""Наименование структурного
+    подразделения Правительства
+    Сахалинской области,
+    государственного органа
+    или органа исполнительной
+    власти Сахалинской области""")),
+                DataColumn(Text("""Наименование структурного
+    подразделения органа
+    исполнительной власти
+    Сахалинской области""")),
+                DataColumn(Text("Должность")),
+                DataColumn(Text("ФИО")),
+                DataColumn(Text("""Процент выполнения
+    КПЭ по итогам
+    отчетного периода, 
+    %""")),
+                # Добавьте другие колонки для Премий
+            ]
 
-        data_rows = []
+            cursor.execute(query)
+            global results_summary
+            results_summary = cursor.fetchall()
+            print(results_summary)
 
-        for row in query_result:
-            cells = [DataCell(Text(str(value))) for value in row]
-            data_row = DataRow(cells=cells)
-            data_rows.append(data_row)
-        self.content.controls[1].content.controls[2].content.columns = columns
-        self.content.controls[1].content.controls[2].content.rows = data_rows
+            query_result = results_summary
 
-        self.page.dialog = self.alter_dialog_summary
-        self.alter_dialog_summary.open = False
-        self.number_of_version_kpe.content.value = latest_version
-        self.page.update()
+            data_rows = []
+
+            for row in query_result:
+                cells = [DataCell(Text(str(value))) for value in row]
+                data_row = DataRow(cells=cells)
+                data_rows.append(data_row)
+            self.content.controls[1].content.controls[2].content.columns = columns
+            self.content.controls[1].content.controls[2].content.rows = data_rows
+
+            self.page.dialog = self.alter_dialog_summary
+            self.alter_dialog_summary.open = False
+            latest_date_old_object = datetime.strptime(f"{latest_date}".replace("-",""), '%Y%m%d')
+            latest_date_new_object = latest_date_old_object.strftime('%d%m%Y')
+            self.number_of_version_kpe.content.value = f"1-{latest_date_new_object}-{latest_number}"
+            self.page.update()
+        except Exception as e:
+            self.show_block_dialog("Ошибка при выборке данных", "Ошибка")
+            print(f"Ошибка при выборке данных: {str(e)}")
+
 
     def close_dlg_summary(self, e):
         self.page.dialog = self.alter_dialog_summary
@@ -1196,38 +1214,11 @@ class Report(Container):
     # *СВОДНЫЕ ДАННЫЕ ПО ИСПОЛНЕНИЮ
             elif selected_report_type == "Сводные данные по исполнению":
                 cursor = connection.cursor()
-                cursor.execute(
-                    f"""
-                    SELECT 
-                        concat(
-                            toString(kpe_user_id), '-',
-                            substring(replace(toString(date), '-', ''), 7, 2),
-                            substring(replace(toString(date), '-', ''), 5, 2),
-                            substring(replace(toString(date), '-', ''), 1, 4),
-                            '-', toString(number)
-                        ) AS number_of_version
-                    FROM kpe_table
-                    WHERE 
-                        kpe_user_id = {int(user_id)} AND 
-                        date = (
-                            SELECT MAX(date)
-                            FROM kpe_table
-                            WHERE kpe_user_id = {int(user_id)}
-                        ) AND 
-                        number = (
-                            SELECT MAX(number)
-                            FROM kpe_table
-                            WHERE 
-                                kpe_user_id = {int(user_id)} AND 
-                                date = (
-                                    SELECT MAX(date)
-                                    FROM kpe_table
-                                    WHERE kpe_user_id = {int(user_id)}
-                                )
-                        );
-                    """
-                )
-                latest_version = cursor.fetchone()[0]
+                query_select = 'SELECT MAX(date), MAX(number) FROM kpe_table'
+                cursor.execute(query_select)
+                latest_date, latest_number = cursor.fetchone()
+                latest_date_old_object = datetime.strptime(f"{latest_date}".replace("-",""), '%Y%m%d')
+                latest_date_new_object = latest_date_old_object.strftime('%d%m%Y')
                 
                 workbook = openpyxl.Workbook()
                 sheet = workbook.active
@@ -1252,24 +1243,8 @@ class Report(Container):
                 sheet['D3'].value = '"__" _________20__ года'
                 sheet['D3'].alignment = Alignment(horizontal='center', vertical='center')
                 sheet['D3'].font = Font(size=14, name=main_font)
-                
-                # wrap_text_cells = ['A2', 'B2', 'C2', 'D2', 'E2', 'F2']
-                # for cell in wrap_text_cells:
-                #     sheet[cell]
-                # Merge cells D1 to I1 and add the specified phrase
-                # sheet.merge_cells('D1:F1')
-                # merged_cell = sheet['D1']
-                # merged_cell.alignment = Alignment(horizontal='center', vertical='center')  # Center the text
-
-                # Set the value for one of the constituent cells
-                # sheet['D1'].value = 'Приложение №4 к распоряжению министерства государственного управления Сахалинской области\n от "__"___________20____ года № __________ '
-                
-                # sheet['D1'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-
-                # Merge the cells for the long text
                 sheet.merge_cells('A4:F4')
 
-                # Set the value for the merged cell (only set in the top-left cell of the merged range)
                 sheet['A4'].value = f"РЕКОМЕНДУЕМАЯ ФОРМА СВЕДЕНИЙ О ВЫПОЛНЕНИИ КЛЮЧЕВЫХ ПОКАЗАТЕЛЕЙ ЭФФЕКТИВНОСТИ ПРОФЕССИОНАЛЬНОЙ СЛУЖЕБНОЙ ДЕЯТЕЛЬНОСТИ ГОСУДАРСТВЕННЫХ ГРАЖДАНСКИХ СЛУЖАЩИХ САХАЛИНСКОЙ ОБЛАСТИ\nза {self.report_quater.content.value} {datetime.now().year}г.\n(отчетный период)"
                 sheet['A4'].font = Font(bold=True, size=14, name=main_font)
                 sheet['A4'].alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
@@ -1294,11 +1269,6 @@ class Report(Container):
                 for cell in arr_of_cols_1:
                     sheet.column_dimensions[cell].width = 25
                 
-                #Rows height
-                # sheet.row_dimensions[1].height = 44
-                # sheet.row_dimensions[1].height = 68
-                # sheet.row_dimensions[2].height = 108
-
                 for col in range(1, 7):
                     sheet.cell(row=6, column=col).value = col
                     sheet.cell(row=6, column=col).font = Font(italic=True)
@@ -1317,7 +1287,7 @@ class Report(Container):
                     # sheet.row_dimensions[i].height = 34
 
                 last_row = sheet.max_row
-                sheet[f"F{last_row+1}"].value = latest_version
+                sheet[f"F{last_row+1}"].value = f"1-{latest_date_new_object}-{latest_number}"
                 sheet[f"F{last_row+1}"].font = Font(size=14, name=main_font)
                 sheet[f"F{last_row+1}"].alignment = Alignment(horizontal='center', vertical='center')
                 

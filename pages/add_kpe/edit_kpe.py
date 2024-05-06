@@ -757,10 +757,6 @@ class EditKPE(Container):
                 f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
             user_id = cursor.fetchone()[0]
 
-            query_select = "SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = '{}';".format(user_id)
-            cursor.execute(query_select)
-            latest_version = cursor.fetchone()[0]
-
             query_select = f"""
                 SELECT
                     ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
@@ -778,10 +774,28 @@ class EditKPE(Container):
                 FROM kpe_table AS kt
                 JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
                 JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
-                WHERE kt.kpe_user_id = {user_id} AND kt.number_of_version = '{latest_version}' AND kt.status = 'Активно'
+                WHERE
+                    kt.kpe_user_id = {int(user_id)} AND
+                    kt.status = 'Активно' AND
+                    kt.date = (
+                        SELECT MAX(date)
+                        FROM kpe_table
+                        WHERE kpe_user_id = {int(user_id)} AND status = 'Активно'
+                    ) AND
+                    kt.number = (
+                        SELECT MAX(number)
+                        FROM kpe_table
+                        WHERE
+                            kpe_user_id = {int(user_id)} AND
+                            status = 'Активно' AND
+                            date = (
+                                SELECT MAX(date)
+                                FROM kpe_table
+                                WHERE kpe_user_id = {int(user_id)} AND status = 'Активно'
+                            )
+                    )
                 ORDER BY kpe_id;
             """
-            print(query_select)
             cursor.execute(query_select)
             results = cursor.fetchall()
             query_result = results
@@ -845,15 +859,10 @@ class EditKPE(Container):
             kpe_id = cursor.fetchone()[0]
             print(kpe_id)
 
-            cursor.execute(f"SELECT number_of_version FROM kpe_table WHERE kpe_id = {kpe_id};")
-            max_version = cursor.fetchone()[0]
-            if max_version and len(max_version.split('-')) >= 3:
-                current_version = int(max_version.split('-')[2])
-            else:
-                current_version = 0
-            formatted_date = max_version.split('-')[1]
-            number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
-            print(number_of_verison_plus)
+            cursor.execute(f"SELECT MAX(number) FROM kpe_table WHERE kpe_id = {kpe_id};")
+            max_number = cursor.fetchone()[0]
+            number_plus = max_number+1
+            print(number_plus)
             changes_made = False
 
             fields_to_check = [
@@ -880,7 +889,7 @@ class EditKPE(Container):
             else:
                 print("Поля никак не изменились")
 
-            query_number_of_version = "ALTER TABLE kpe_table UPDATE number_of_version = '{}' WHERE kpe_id = {};".format(str(number_of_verison_plus), kpe_id)
+            query_number_of_version = "ALTER TABLE kpe_table UPDATE number = '{}' WHERE kpe_id = {};".format(str(number_plus), kpe_id)
             self.sql_query.append(query_number_of_version)
             self.first_qr_box.content.value = ""
             self.second_qr_box.content.value = ""
@@ -914,7 +923,6 @@ class EditKPE(Container):
             print(kpe_id)
             query_status = "ALTER TABLE kpe_table UPDATE status = 'Неактивно' WHERE kpe_id = {};".format(kpe_id)
             self.sql_query.append(query_status)
-
         self.show_block_dialog("Запись была успешно занесены в список удаления", "Успешно")
         print(self.sql_query)
         self.page.update()
@@ -934,19 +942,12 @@ class EditKPE(Container):
             cursor.execute(sql_select)
             kpe_id = cursor.fetchone()[0]
 
-            cursor.execute(f"SELECT number_of_version FROM kpe_table WHERE kpe_id = {kpe_id};")
-            max_version = cursor.fetchone()[0]
-            if max_version and len(max_version.split('-')) >= 3:
-                current_version = int(max_version.split('-')[2])
-            else:
-                current_version = 0
-
-            formatted_date = max_version.split('-')[1]
-            number_of_verison_plus = f"{1}-{formatted_date}-{current_version + 1}"
-            print(number_of_verison_plus)
+            cursor.execute(f"SELECT MAX(number) FROM kpe_table WHERE kpe_id = {kpe_id};")
+            max_number = cursor.fetchone()[0]
+            number_plus = max_number+1
 
             print(kpe_id)
-            query_number_of_version = "ALTER TABLE kpe_table UPDATE number_of_version = '{}' WHERE kpe_id = {};".format(str(number_of_verison_plus), kpe_id)
+            query_number_of_version = "ALTER TABLE kpe_table UPDATE number = '{}' WHERE kpe_id = {};".format(str(number_plus), kpe_id)
             self.sql_query.append(query_number_of_version)
         print(self.sql_query)
         for queryes in self.sql_query:
@@ -1012,65 +1013,53 @@ class EditKPE(Container):
             cursor = connection.cursor()
             cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
             user_id = cursor.fetchone()[0]
-            # *FOR AUTO ID INCRIPTION
-            cursor = connection.cursor()
-            cursor.execute(f"SELECT MAX(kpe_id) FROM kpe_table")
-            max_kpe_id = cursor.fetchone()[0]
-            # *FOR INDICATORS
-            selected_indicator = self.cb_menu_spec.content.value
-            cursor = connection.cursor()
-            indicator_id = int(self.cb_menu_spec.content.value)
-            # *FRO PLAN_INDICATOR
-            cursor = connection.cursor()
-            cursor.execute(f"SELECT kpe_indicators_id FROM kpe_table;")
-            kpe_indicator_id = cursor.fetchone()
-            # *FOR UNITS
-            # selected_unit = self.units_menu_box.content.value
-            cursor = connection.cursor()
-            # cursor.execute(f"SELECT measurement_id FROM name_of_indicators WHERE name LIKE '{selected_indicator}%'")
-            cursor.execute(
-                f"SELECT measurement_id FROM name_of_indicators WHERE indicators_id = {indicator_id};")
+            cursor.execute(f"SELECT max(kpe_id) FROM kpe_table;")
+            max_id = cursor.fetchone()[0]
+            cursor.execute(f"SELECT measurement_id FROM name_of_indicators WHERE indicators_id = '{int(self.cb_menu_spec.content.value)}'")
             units_id = cursor.fetchone()[0]
-            cursor.execute(f"SELECT MAX(number_of_version) FROM kpe_table WHERE kpe_user_id = {int(user_id)};")
-            max_version = cursor.fetchone()[0]
-            print(max_version)
-            insert_query_to_kpe_table = """
-            INSERT INTO kpe_table (
-                kpe_id, 
-                kpe_indicators_id, 
-                kpe_user_id, 
-                kpe_units_id, 
-                1st_quater_value, 
-                2nd_quater_value, 
-                3rd_quater_value, 
-                4th_quater_value, 
-                year,
-                status,
-                KPE_weight_1, 
-                KPE_weight_2, 
-                KPE_weight_3, 
-                KPE_weight_4, 
-                number_of_version
-                )
-            VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, '{}', {}, {}, {}, {}, '{}');
+            query_select = f'SELECT MAX(date), MAX(number) FROM kpe_table WHERE kpe_user_id = {int(user_id)};'
+            cursor.execute(query_select)
+            latest_date, latest_number = cursor.fetchone()
+            print(latest_date, latest_number)
+            query = """
+                INSERT INTO kpe_table (
+                    kpe_id, 
+                    kpe_indicators_id, 
+                    kpe_user_id, 
+                    kpe_units_id, 
+                    1st_quater_value, 
+                    2nd_quater_value, 
+                    3rd_quater_value, 
+                    4th_quater_value, 
+                    year, 
+                    status, 
+                    KPE_weight_1, 
+                    KPE_weight_2, 
+                    KPE_weight_3, 
+                    KPE_weight_4, 
+                    date, 
+                    number
+                    )
+                VALUES ({}+1, {}, {}, {}, {}, {}, {}, {}, {},'{}', {}, {}, {}, {},'{}', {});
             """.format(
-                int(max_kpe_id + 1),
-                int(indicator_id),
-                int(user_id),
-                int(units_id),
-                float(self.first_qr_box.content.value),
-                float(self.second_qr_box.content.value),
-                float(self.third_qr_box.content.value),
-                float(self.fourtht_qr_box.content.value),
-                float(self.year_box.content.value),
-                str("Активно"),
-                float(self.weight_first_qr_box.content.value),
-                float(self.weight_second_qr_box.content.value),
-                float(self.weight_third_qr_box.content.value),
-                float(self.weight_fourth_qr_box.content.value),
-                str(max_version)
-            )
-            cursor.execute(insert_query_to_kpe_table)
+                    int(max_id),
+                    int(self.cb_menu_spec.content.value),
+                    int(user_id),
+                    int(units_id),
+                    float(self.first_qr_box.content.value),
+                    float(self.second_qr_box.content.value),
+                    float(self.third_qr_box.content.value),
+                    float(self.fourtht_qr_box.content.value),
+                    float(self.year_box.content.value),
+                    "Активно",
+                    float(self.weight_first_qr_box.content.value),
+                    float(self.weight_second_qr_box.content.value),
+                    float(self.weight_third_qr_box.content.value),
+                    float(self.weight_fourth_qr_box.content.value),
+                    str(latest_date),
+                    int(latest_number)
+                )
+            cursor.execute(query)
             print("Success")
             self.first_qr_box.content.value = ""
             self.second_qr_box.content.value = ""
