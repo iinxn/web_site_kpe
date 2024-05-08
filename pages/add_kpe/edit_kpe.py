@@ -12,6 +12,7 @@ class EditKPE(Container):
         self.alignment = alignment.center
         self.expand = True
         self.bgcolor = primary_colors['WHITE']
+        self.user_id = self.page.session.get('user_id')
         self.selected_rows = set()
         self.sql_query = []
         self.dropdown_options_indicators = []
@@ -751,11 +752,11 @@ class EditKPE(Container):
 
     def show_kpe_table(self, e):
         try:
-            global user_id
+            global specialist_id
             cursor = connection.cursor()
             cursor.execute(
                 f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
-            user_id = cursor.fetchone()[0]
+            specialist_id = cursor.fetchone()[0]
 
             query_select = f"""
                 SELECT
@@ -775,23 +776,23 @@ class EditKPE(Container):
                 JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
                 JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
                 WHERE
-                    kt.kpe_user_id = {int(user_id)} AND
+                    kt.kpe_specialist_id = {int(specialist_id)} AND
                     kt.status = 'Активно' AND
                     kt.date = (
                         SELECT MAX(date)
                         FROM kpe_table
-                        WHERE kpe_user_id = {int(user_id)} AND status = 'Активно'
+                        WHERE kpe_specialist_id = {int(specialist_id)} AND status = 'Активно'
                     ) AND
                     kt.number = (
                         SELECT MAX(number)
                         FROM kpe_table
                         WHERE
-                            kpe_user_id = {int(user_id)} AND
+                            kpe_specialist_id = {int(specialist_id)} AND
                             status = 'Активно' AND
                             date = (
                                 SELECT MAX(date)
                                 FROM kpe_table
-                                WHERE kpe_user_id = {int(user_id)} AND status = 'Активно'
+                                WHERE kpe_specialist_id = {int(specialist_id)} AND status = 'Активно'
                             )
                     )
                 ORDER BY kpe_id;
@@ -910,14 +911,14 @@ class EditKPE(Container):
         cursor = connection.cursor()
         for selected_row in self.selected_rows:
             cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
-            user_id = cursor.fetchone()[0]
-            indicator = f"SELECT indicators_id FROM name_of_indicators WHERE name = '{selected_row[1]}' AND specialist_id = '{user_id}'"
+            specialist_id = cursor.fetchone()[0]
+            indicator = f"SELECT indicators_id FROM name_of_indicators WHERE name = '{selected_row[1]}' AND specialist_id = '{specialist_id}'"
             # print(indicator)
             cursor.execute(indicator)
             indicator_id = cursor.fetchone()[0]
             # print(indicator_id)
-            sql_select = "SELECT kpe_id FROM kpe_table WHERE kpe_user_id = {} AND kpe_indicators_id = {} AND 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
-                user_id, indicator_id, selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8], selected_row[9], selected_row[10], selected_row[11])
+            sql_select = "SELECT kpe_id FROM kpe_table WHERE kpe_specialist_id = {} AND kpe_indicators_id = {} AND 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
+                specialist_id, indicator_id, selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8], selected_row[9], selected_row[10], selected_row[11])
             cursor.execute(sql_select)
             kpe_id = cursor.fetchone()[0]
             print(kpe_id)
@@ -931,14 +932,14 @@ class EditKPE(Container):
         cursor = connection.cursor()
         for selected_row in self.selected_rows:
             cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
-            user_id = cursor.fetchone()[0]
-            indicator = f"SELECT indicators_id FROM name_of_indicators WHERE name = '{selected_row[1]}' AND specialist_id = '{user_id}'"
+            specialist_id = cursor.fetchone()[0]
+            indicator = f"SELECT indicators_id FROM name_of_indicators WHERE name = '{selected_row[1]}' AND specialist_id = '{specialist_id}'"
             # print(indicator)
             cursor.execute(indicator)
             indicator_id = cursor.fetchone()[0]
             # print(indicator_id)
-            sql_select = "SELECT kpe_id FROM kpe_table WHERE kpe_user_id = {} AND kpe_indicators_id = {} AND 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
-                user_id, indicator_id, selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8], selected_row[9], selected_row[10], selected_row[11])
+            sql_select = "SELECT kpe_id FROM kpe_table WHERE kpe_specialist_id = {} AND kpe_indicators_id = {} AND 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
+                specialist_id, indicator_id, selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8], selected_row[9], selected_row[10], selected_row[11])
             cursor.execute(sql_select)
             kpe_id = cursor.fetchone()[0]
 
@@ -1012,12 +1013,12 @@ class EditKPE(Container):
         try:
             cursor = connection.cursor()
             cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
-            user_id = cursor.fetchone()[0]
+            specialist_id = cursor.fetchone()[0]
             cursor.execute(f"SELECT max(kpe_id) FROM kpe_table;")
             max_id = cursor.fetchone()[0]
             cursor.execute(f"SELECT measurement_id FROM name_of_indicators WHERE indicators_id = '{int(self.cb_menu_spec.content.value)}'")
             units_id = cursor.fetchone()[0]
-            query_select = f'SELECT MAX(date), MAX(number) FROM kpe_table WHERE kpe_user_id = {int(user_id)};'
+            query_select = f'SELECT MAX(date), MAX(number) FROM kpe_table WHERE kpe_specialist_id = {int(specialist_id)};'
             cursor.execute(query_select)
             latest_date, latest_number = cursor.fetchone()
             print(latest_date, latest_number)
@@ -1025,7 +1026,7 @@ class EditKPE(Container):
                 INSERT INTO kpe_table (
                     kpe_id, 
                     kpe_indicators_id, 
-                    kpe_user_id, 
+                    kpe_specialist_id, 
                     kpe_units_id, 
                     1st_quater_value, 
                     2nd_quater_value, 
@@ -1037,14 +1038,15 @@ class EditKPE(Container):
                     KPE_weight_2, 
                     KPE_weight_3, 
                     KPE_weight_4, 
+                    kpe_user_id,
                     date, 
                     number
                     )
-                VALUES ({}+1, {}, {}, {}, {}, {}, {}, {}, {},'{}', {}, {}, {}, {},'{}', {});
+                VALUES ({}+1, {}, {}, {}, {}, {}, {}, {}, {},'{}', {}, {}, {}, {}, {}, '{}', {});
             """.format(
                     int(max_id),
                     int(self.cb_menu_spec.content.value),
-                    int(user_id),
+                    int(specialist_id),
                     int(units_id),
                     float(self.first_qr_box.content.value),
                     float(self.second_qr_box.content.value),
@@ -1056,6 +1058,7 @@ class EditKPE(Container):
                     float(self.weight_second_qr_box.content.value),
                     float(self.weight_third_qr_box.content.value),
                     float(self.weight_fourth_qr_box.content.value),
+                    int(self.user_id),
                     str(latest_date),
                     int(latest_number)
                 )

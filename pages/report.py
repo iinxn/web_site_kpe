@@ -14,6 +14,7 @@ class Report(Container):
         self.alignment = alignment.center
         self.expand = True
         self.bgcolor = primary_colors['WHITE']
+        self.user_id = self.page.session.get('user_id')
 
         self.dropdown_options_specialists = []
         self.dropdown_options_departments = []
@@ -353,7 +354,7 @@ class Report(Container):
             # Получение ID специалиста
             cursor.execute(
                 f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
-            user_id = cursor.fetchone()[0]
+            specialist_id = cursor.fetchone()[0]
             cursor.execute(
                     f"""
                     SELECT 
@@ -366,33 +367,34 @@ class Report(Container):
                         ) AS number_of_version
                     FROM kpe_table
                     WHERE 
-                        kpe_user_id = {int(user_id)} AND 
+                        kpe_specialist_id = {int(specialist_id)} AND 
                         date = (
                             SELECT MAX(date)
                             FROM kpe_table
-                            WHERE kpe_user_id = {int(user_id)}
+                            WHERE kpe_specialist_id = {int(specialist_id)}
                         ) AND 
                         number = (
                             SELECT MAX(number)
                             FROM kpe_table
                             WHERE 
-                                kpe_user_id = {int(user_id)} AND 
+                                kpe_specialist_id = {int(specialist_id)} AND 
                                 date = (
                                     SELECT MAX(date)
                                     FROM kpe_table
-                                    WHERE kpe_user_id = {int(user_id)}
+                                    WHERE kpe_specialist_id = {int(specialist_id)}
                                 )
                         );
                     """
             )
-            latest_version = cursor.fetchone()[0]
+            result = cursor.fetchone()
+            latest_version = result[0] if result is not None else '0'
 
             # Получение максимальных значений date и number для kpe_table
             cursor.execute(
                 f"""
                 SELECT MAX(date), MAX(number)
                 FROM kpe_table
-                WHERE kpe_user_id = {user_id}
+                WHERE kpe_specialist_id = {specialist_id}
                 """
             )
             kpe_max_date, kpe_max_number = cursor.fetchone()
@@ -402,7 +404,7 @@ class Report(Container):
                 f"""
                 SELECT MAX(date), MAX(number)
                 FROM actual_value
-                WHERE actual_users_id = {user_id}
+                WHERE actual_specialist_id = {specialist_id}
                 """
             )
             actual_max_date, actual_max_number = cursor.fetchone()
@@ -436,12 +438,12 @@ class Report(Container):
             INNER JOIN actual_value AS av ON kt.kpe_indicators_id = av.actual_indicators_id
             INNER JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
             INNER JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
-            WHERE kt.kpe_user_id = {user_id}
+            WHERE kt.kpe_specialist_id = {specialist_id}
             AND kt.date = '{kpe_max_date}'
             AND kt.number = {kpe_max_number}
             AND av.date = '{actual_max_date}'
             AND av.number = {actual_max_number}
-            AND av.actual_users_id = kt.kpe_user_id
+            AND av.actual_specialist_id = kt.kpe_specialist_id
             AND av.actual_indicators_id = kt.kpe_indicators_id
             AND av.quarter_number = '{actual_quater_value}'
             AND kt.status = 'Активно'
@@ -496,132 +498,131 @@ class Report(Container):
 
 #! KPE MAP REPORT
     def select_kpe(self, e):
-        cursor = connection.cursor()
-        cursor.execute(
-            f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
-        user_id = cursor.fetchone()[0]
+        try:
+            cursor = connection.cursor()
+            cursor.execute(
+                f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
+            specialist_id = cursor.fetchone()[0]
 
-        cursor.execute(
-                    f"""
-                    SELECT 
-                        concat(
-                            toString(kpe_user_id), '-',
-                            substring(replace(toString(date), '-', ''), 7, 2),
-                            substring(replace(toString(date), '-', ''), 5, 2),
-                            substring(replace(toString(date), '-', ''), 1, 4),
-                            '-', toString(number)
-                        ) AS number_of_version
-                    FROM kpe_table
-                    WHERE 
-                        kpe_user_id = {int(user_id)} AND 
-                        date = (
-                            SELECT MAX(date)
-                            FROM kpe_table
-                            WHERE kpe_user_id = {int(user_id)}
-                        ) AND 
-                        number = (
-                            SELECT MAX(number)
-                            FROM kpe_table
-                            WHERE 
-                                kpe_user_id = {int(user_id)} AND 
-                                date = (
-                                    SELECT MAX(date)
-                                    FROM kpe_table
-                                    WHERE kpe_user_id = {int(user_id)}
-                                )
-                        );
-                    """
-        )
-        latest_version = cursor.fetchone()[0]
-        print(user_id)
-        print(latest_version)
+            cursor.execute(
+                        f"""
+                        SELECT 
+                            concat(
+                                toString(kpe_user_id), '-',
+                                substring(replace(toString(date), '-', ''), 7, 2),
+                                substring(replace(toString(date), '-', ''), 5, 2),
+                                substring(replace(toString(date), '-', ''), 1, 4),
+                                '-', toString(number)
+                            ) AS number_of_version
+                        FROM kpe_table
+                        WHERE 
+                            kpe_specialist_id = {int(specialist_id)} AND 
+                            date = (
+                                SELECT MAX(date)
+                                FROM kpe_table
+                                WHERE kpe_specialist_id = {int(specialist_id)}
+                            ) AND 
+                            number = (
+                                SELECT MAX(number)
+                                FROM kpe_table
+                                WHERE 
+                                    kpe_specialist_id = {int(specialist_id)} AND 
+                                    date = (
+                                        SELECT MAX(date)
+                                        FROM kpe_table
+                                        WHERE kpe_specialist_id = {int(specialist_id)}
+                                    )
+                            );
+                        """
+            )
+            result = cursor.fetchone()
+            latest_version = result[0] if result is not None else '0'
+            print(specialist_id)
+            print(latest_version)
 
-        query = f"""
-            SELECT
-                ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
-                ni.name AS indicator_name,
-                um.type AS unit_of_measurement,
-                kt.1st_quater_value,
-                kt.2nd_quater_value,
-                kt.3rd_quater_value,
-                kt.4th_quater_value,
-                kt.year,
-                kt.KPE_weight_1,
-                kt.KPE_weight_2,
-                kt.KPE_weight_3,
-                kt.KPE_weight_4
-            FROM kpe_table AS kt
-            JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
-            JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
-            WHERE
-                kt.kpe_user_id = {int(user_id)} AND
-                kt.status = 'Активно' AND
-                kt.date = (
-                    SELECT MAX(date)
-                    FROM kpe_table
-                    WHERE kpe_user_id = {int(user_id)} AND status = 'Активно'
-                ) AND
-                kt.number = (
-                    SELECT MAX(number)
-                    FROM kpe_table
-                    WHERE
-                        kpe_user_id = {int(user_id)} AND
-                        status = 'Активно' AND
-                        date = (
-                            SELECT MAX(date)
-                            FROM kpe_table
-                            WHERE kpe_user_id = {int(user_id)} AND status = 'Активно'
-                        )
-                )
-            ORDER BY kpe_id;
-        """
-        print(query)
+            query = f"""
+                SELECT
+                    ROW_NUMBER() OVER (ORDER BY kpe_id) AS "порядковый номер",
+                    ni.name AS indicator_name,
+                    um.type AS unit_of_measurement,
+                    kt.1st_quater_value,
+                    kt.2nd_quater_value,
+                    kt.3rd_quater_value,
+                    kt.4th_quater_value,
+                    kt.year,
+                    kt.KPE_weight_1,
+                    kt.KPE_weight_2,
+                    kt.KPE_weight_3,
+                    kt.KPE_weight_4
+                FROM kpe_table AS kt
+                JOIN name_of_indicators AS ni ON kt.kpe_indicators_id = ni.indicators_id
+                JOIN units_of_measurement AS um ON kt.kpe_units_id = um.measurement_id
+                WHERE
+                    kt.kpe_specialist_id = {int(specialist_id)} AND
+                    kt.status = 'Активно' AND
+                    kt.date = (
+                        SELECT MAX(date)
+                        FROM kpe_table
+                        WHERE kpe_specialist_id = {int(specialist_id)} AND status = 'Активно'
+                    ) AND
+                    kt.number = (
+                        SELECT MAX(number)
+                        FROM kpe_table
+                        WHERE
+                            kpe_specialist_id = {int(specialist_id)} AND
+                            status = 'Активно' AND
+                            date = (
+                                SELECT MAX(date)
+                                FROM kpe_table
+                                WHERE kpe_specialist_id = {int(specialist_id)} AND status = 'Активно'
+                            )
+                    )
+                ORDER BY kpe_id;
+            """
+            print(query)
 
-        # kt.plan_number_of_version,
-        # kt.number_of_version
-        # Определите структуру колонок для "Карта КПЭ"
-        columns = [
-            DataColumn(Text("п/п"), numeric=True),
-            DataColumn(Text("Наименование показателя")),
-            DataColumn(Text("Ед.изм.")),
-            DataColumn(Text("""1
-кв."""), numeric=True),
-            DataColumn(Text("""2
-кв."""), numeric=True),
-            DataColumn(Text("""3
-кв."""), numeric=True),
-            DataColumn(Text("""4
-кв."""), numeric=True),
-            DataColumn(Text("год")),
-            DataColumn(Text("""   Вес КПЭ 
-1 кв."""), numeric=True),
-            DataColumn(Text("""   Вес КПЭ 
-2 кв."""), numeric=True),
-            DataColumn(Text("""   Вес КПЭ 
-3 кв."""), numeric=True),
-            DataColumn(Text("""   Вес КПЭ 
-4 кв."""), numeric=True),
-        ]
-        self.number_of_version_kpe.content.value = latest_version
+            columns = [
+                DataColumn(Text("п/п"), numeric=True),
+                DataColumn(Text("Наименование показателя")),
+                DataColumn(Text("Ед.изм.")),
+                DataColumn(Text("""1
+    кв."""), numeric=True),
+                DataColumn(Text("""2
+    кв."""), numeric=True),
+                DataColumn(Text("""3
+    кв."""), numeric=True),
+                DataColumn(Text("""4
+    кв."""), numeric=True),
+                DataColumn(Text("год")),
+                DataColumn(Text("""   Вес КПЭ 
+    1 кв."""), numeric=True),
+                DataColumn(Text("""   Вес КПЭ 
+    2 кв."""), numeric=True),
+                DataColumn(Text("""   Вес КПЭ 
+    3 кв."""), numeric=True),
+                DataColumn(Text("""   Вес КПЭ 
+    4 кв."""), numeric=True),
+            ]
+            self.number_of_version_kpe.content.value = latest_version
 
-        cursor.execute(query)
-        global results
-        results = cursor.fetchall()
-        # print(results)
-        query_result = results
+            cursor.execute(query)
+            global results
+            results = cursor.fetchall()
+            query_result = results
 
-        data_rows = []
+            data_rows = []
 
-        for row in query_result:
-            cells = [DataCell(Text(str(value))) for value in row]
-            data_row = DataRow(cells=cells)
-            data_rows.append(data_row)
-        self.content.controls[1].content.controls[2].content.columns = columns
-        self.content.controls[1].content.controls[2].content.rows = data_rows
-        self.page.dialog = self.alter_dialog_kpe
-        self.alter_dialog_kpe.open = False
-        self.page.update()
-        # self.export_report_to_excel(results)
+            for row in query_result:
+                cells = [DataCell(Text(str(value))) for value in row]
+                data_row = DataRow(cells=cells)
+                data_rows.append(data_row)
+            self.content.controls[1].content.controls[2].content.columns = columns
+            self.content.controls[1].content.controls[2].content.rows = data_rows
+            self.page.dialog = self.alter_dialog_kpe
+            self.alter_dialog_kpe.open = False
+            self.page.update()
+        except TypeError:
+            self.show_block_dialog("Карта КПЭ специалиста не заполнена", "Ошибка")
 
     def close_dlg_kpe(self, e):
         self.page.dialog = self.alter_dialog_kpe
@@ -637,14 +638,13 @@ class Report(Container):
     def select_summary(self, e):
         try:
             cursor = connection.cursor()
-            query_select = 'SELECT MAX(date), MAX(number) FROM kpe_table'
+            query_select = f'SELECT MAX(date), MAX(number) FROM kpe_table;'
             cursor.execute(query_select)
             latest_date, latest_number = cursor.fetchone()
-            print(latest_date, latest_number)
 
-            query_select_actual = 'SELECT MAX(date), MAX(number) FROM actual_value'
+            query_select_actual = f'SELECT MAX(date) FROM actual_value;'
             cursor.execute(query_select_actual)
-            latest_date_actual, latest_number_actual = cursor.fetchone()
+            latest_date_actual = cursor.fetchone()[0]
 
             quater = self.report_quater.content.value
 
@@ -677,15 +677,13 @@ class Report(Container):
                             )
                         ) AS `Процент выполнения`
                     FROM kpe_table AS kt
-                        INNER JOIN specialists AS s ON kt.kpe_user_id = s.specialist_id
+                        INNER JOIN specialists AS s ON kt.kpe_specialist_id = s.specialist_id
                         INNER JOIN name_of_department AS nd ON s.specialist_department_id = nd.department_id
-                        INNER JOIN actual_value AS av ON kt.kpe_user_id = av.actual_users_id AND kt.kpe_indicators_id = av.actual_indicators_id
+                        INNER JOIN actual_value AS av ON kt.kpe_specialist_id = av.actual_specialist_id AND kt.kpe_indicators_id = av.actual_indicators_id
                     WHERE
                         kt.date = '{latest_date}'
-                        AND kt.number = {latest_number}
                         AND av.quarter_number = '{actual_quater_value}'
                         AND av.date = '{latest_date_actual}'
-                        AND av.number = {latest_number_actual}
                         AND kt.status = 'Активно'
                     GROUP BY
                         `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
@@ -711,14 +709,12 @@ class Report(Container):
                             )
                         ) AS `Процент выполнения`
                     FROM kpe_table AS kt
-                        INNER JOIN specialists AS s ON kt.kpe_user_id = s.specialist_id
+                        INNER JOIN specialists AS s ON kt.kpe_specialist_id = s.specialist_id
                         INNER JOIN name_of_department AS nd ON s.specialist_department_id = nd.department_id
-                        INNER JOIN actual_value AS av ON kt.kpe_user_id = av.actual_users_id AND kt.kpe_indicators_id = av.actual_indicators_id
+                        INNER JOIN actual_value AS av ON kt.kpe_specialist_id = av.actual_specialist_id AND kt.kpe_indicators_id = av.actual_indicators_id
                     WHERE
                         kt.date = '{latest_date}'
-                        AND kt.number = {latest_number}
                         AND av.date = '{latest_date_actual}'
-                        AND av.number = {latest_number_actual}
                         AND s.specialist_department_id = {department_id}
                         AND av.quarter_number = '{actual_quater_value}'
                         AND kt.status = 'Активно'
@@ -749,7 +745,6 @@ class Report(Container):
     КПЭ по итогам
     отчетного периода, 
     %""")),
-                # Добавьте другие колонки для Премий
             ]
 
             cursor.execute(query)
@@ -772,7 +767,7 @@ class Report(Container):
             self.alter_dialog_summary.open = False
             latest_date_old_object = datetime.strptime(f"{latest_date}".replace("-",""), '%Y%m%d')
             latest_date_new_object = latest_date_old_object.strftime('%d%m%Y')
-            self.number_of_version_kpe.content.value = f"1-{latest_date_new_object}-{latest_number}"
+            self.number_of_version_kpe.content.value = f"{self.user_id}-{latest_date_new_object}-{latest_number}"
             self.page.update()
         except Exception as e:
             self.show_block_dialog("Ошибка при выборке данных", "Ошибка")
@@ -840,7 +835,7 @@ class Report(Container):
                 
                 cursor.execute(
                     f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
-                user_id = cursor.fetchone()[0]
+                specialist_id = cursor.fetchone()[0]
                 
                 cursor.execute(
                     f"""
@@ -854,21 +849,21 @@ class Report(Container):
                         ) AS number_of_version
                     FROM kpe_table
                     WHERE 
-                        kpe_user_id = {int(user_id)} AND 
+                        kpe_specialist_id = {int(specialist_id)} AND 
                         date = (
                             SELECT MAX(date)
                             FROM kpe_table
-                            WHERE kpe_user_id = {int(user_id)}
+                            WHERE kpe_specialist_id = {int(specialist_id)}
                         ) AND 
                         number = (
                             SELECT MAX(number)
                             FROM kpe_table
                             WHERE 
-                                kpe_user_id = {int(user_id)} AND 
+                                kpe_specialist_id = {int(specialist_id)} AND 
                                 date = (
                                     SELECT MAX(date)
                                     FROM kpe_table
-                                    WHERE kpe_user_id = {int(user_id)}
+                                    WHERE kpe_specialist_id = {int(specialist_id)}
                                 )
                         );
                     """
@@ -978,7 +973,7 @@ class Report(Container):
                 cursor = connection.cursor()
                 cursor.execute(
                     f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
-                user_id = cursor.fetchone()[0]
+                specialist_id = cursor.fetchone()[0]
                 
                 cursor.execute(
                     f"""
@@ -992,21 +987,21 @@ class Report(Container):
                         ) AS number_of_version
                     FROM kpe_table
                     WHERE 
-                        kpe_user_id = {int(user_id)} AND 
+                        kpe_specialist_id = {int(specialist_id)} AND 
                         date = (
                             SELECT MAX(date)
                             FROM kpe_table
-                            WHERE kpe_user_id = {int(user_id)}
+                            WHERE kpe_specialist_id = {int(specialist_id)}
                         ) AND 
                         number = (
                             SELECT MAX(number)
                             FROM kpe_table
                             WHERE 
-                                kpe_user_id = {int(user_id)} AND 
+                                kpe_specialist_id = {int(specialist_id)} AND 
                                 date = (
                                     SELECT MAX(date)
                                     FROM kpe_table
-                                    WHERE kpe_user_id = {int(user_id)}
+                                    WHERE kpe_specialist_id = {int(specialist_id)}
                                 )
                         );
                     """
@@ -1214,7 +1209,7 @@ class Report(Container):
     # *СВОДНЫЕ ДАННЫЕ ПО ИСПОЛНЕНИЮ
             elif selected_report_type == "Сводные данные по исполнению":
                 cursor = connection.cursor()
-                query_select = 'SELECT MAX(date), MAX(number) FROM kpe_table'
+                query_select = f'SELECT MAX(date), MAX(number) FROM kpe_table'
                 cursor.execute(query_select)
                 latest_date, latest_number = cursor.fetchone()
                 latest_date_old_object = datetime.strptime(f"{latest_date}".replace("-",""), '%Y%m%d')
@@ -1287,7 +1282,7 @@ class Report(Container):
                     # sheet.row_dimensions[i].height = 34
 
                 last_row = sheet.max_row
-                sheet[f"F{last_row+1}"].value = f"1-{latest_date_new_object}-{latest_number}"
+                sheet[f"F{last_row+1}"].value = f"{self.user_id}-{latest_date_new_object}-{latest_number}"
                 sheet[f"F{last_row+1}"].font = Font(size=14, name=main_font)
                 sheet[f"F{last_row+1}"].alignment = Alignment(horizontal='center', vertical='center')
                 

@@ -29,7 +29,7 @@ class Settings(Container):
                                 ),
                                 Container(
                                     content=Text(
-                                    value='Настройки',
+                                    value='Инструменты',
                                     size=18,
                                     color=primary_colors['WHITE'],
                                     text_align='center',
@@ -59,11 +59,9 @@ class Settings(Container):
                               # alignment='center',
                               horizontal_alignment='left',
                               controls=[
-                                Container(height=40), #space between buttons
-                                
-                                #buttons
+                                Container(height=40),                                
+                                Container(height=0),
                                 ElevatedButton(
-                                  # text='Заполнить карту КПЭ',
                                   color=primary_colors['WHITE'],
                                   bgcolor=primary_colors['GREEN'],
                                   width=500,
@@ -73,9 +71,8 @@ class Settings(Container):
                                     alignment='center',
                                       controls=[
                                         Container(
-                                          
                                           Text(
-                                            value='Смена темы',
+                                            value='Мониторинг',
                                             size=16,
                                             color=primary_colors['WHITE'],
                                             text_align='center',
@@ -84,9 +81,8 @@ class Settings(Container):
                                         )
                                       ]
                                   ),
-                                  # on_click=lambda x: x == self.page.go('/card')
+                                  on_click=lambda x: x == self.page.go('/monitoring')
                                 ),
-                                
                                 Container(height=0),
                                 ElevatedButton(
                                   color=primary_colors['WHITE'],
@@ -111,29 +107,6 @@ class Settings(Container):
                                   # on_click=lambda x: x == self.page.go('/login')
                                 ),
                                 
-                                Container(height=0),
-                                ElevatedButton(
-                                  color=primary_colors['WHITE'],
-                                  bgcolor=primary_colors['GREEN'],
-                                  width=500,
-                                  height=70,
-                                  content=Column(
-                                    horizontal_alignment='center',
-                                    alignment='center',
-                                      controls=[
-                                        Container(
-                                          Text(
-                                            value='Мониторинг',
-                                            size=16,
-                                            color=primary_colors['WHITE'],
-                                            text_align='center',
-                                            weight='bold',
-                                          )
-                                        )
-                                      ]
-                                  ),
-                                  on_click=lambda x: x == self.page.go('/monitoring')
-                                ),
                               ]
                             )
                           ), 

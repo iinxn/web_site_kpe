@@ -13,6 +13,8 @@ class Scheduled(Container):
         self.expand = True
         self.bgcolor = primary_colors['WHITE']
         self.end_edit = False
+        self.user_id = self.page.session.get("user_id")
+        print(self.user_id)
 
         self.dropdown_options_indicators = []
         self.dropdown_options_specialists = []
@@ -888,14 +890,14 @@ class Scheduled(Container):
 
             query_select = f"""
             SELECT
-                plan_user_id,
+                plan_specialist_id,
                 plan_indicators_id,
                 MAX(date) AS latest_date,
                 MAX(number) AS latest_number
             FROM planned_value
-            WHERE plan_user_id = (SELECT specialist_id FROM specialists WHERE full_name = '{self.specialist_menu_box.content.value}')
+            WHERE plan_specialist_id = (SELECT specialist_id FROM specialists WHERE full_name = '{self.specialist_menu_box.content.value}')
             GROUP BY
-                plan_user_id,
+                plan_specialist_id,
                 plan_indicators_id
             ORDER BY plan_indicators_id
             """
@@ -906,7 +908,7 @@ class Scheduled(Container):
                 query_max_number = f"""
                 SELECT MAX(number)
                 FROM planned_value
-                WHERE plan_user_id = {int(specialist_id)} 
+                WHERE plan_specialist_id = {int(specialist_id)} 
                 AND plan_indicators_id = {int(indicator_id)} 
                 AND date = '{latest_date}'
                 """
@@ -917,7 +919,7 @@ class Scheduled(Container):
                 query_exists = """
                     SELECT 1
                     FROM kpe_table
-                    WHERE kpe_user_id = {}
+                    WHERE kpe_specialist_id = {}
                     AND kpe_indicators_id = {}
                     AND date = '{}'
                     AND number = {}
@@ -926,20 +928,20 @@ class Scheduled(Container):
                 data_exists = cursor.fetchone()
                 if not data_exists:
                     query_select = """
-                    SELECT plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, status,
+                    SELECT plan_indicators_id, plan_specialist_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, status,
                         KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4
                     FROM planned_value
                     WHERE
                     date = '{}'
                     AND number = {}
                     AND plan_indicators_id = {}
-                    AND plan_user_id = {}
+                    AND plan_specialist_id = {}
                     AND status = 'Активно'
                     """.format(latest_date, latest_number, indicator_id, specialist_id)
                     cursor.execute(query_select)
                     data = cursor.fetchone()
                     if data:
-                        plan_indicators_id, user_id, units_id, first_qr_value, second_qr_value, third_qr_value, fourth_qr_value, year, status, weight_1, weight_2, weight_3, weight_4 = data
+                        plan_indicators_id, specialist_id, units_id, first_qr_value, second_qr_value, third_qr_value, fourth_qr_value, year, status, weight_1, weight_2, weight_3, weight_4 = data
                         weight_query = f"""
                         SELECT
                             SUM(KPE_weight_1) AS total_weight_1,
@@ -947,7 +949,7 @@ class Scheduled(Container):
                             SUM(KPE_weight_3) AS total_weight_3,
                             SUM(KPE_weight_4) AS total_weight_4
                         FROM planned_value
-                        WHERE plan_user_id = {specialist_id} 
+                        WHERE plan_specialist_id = {specialist_id} 
                         AND status = 'Активно'
                         AND date = '{latest_date}'
                         AND number = {latest_number}
@@ -969,7 +971,7 @@ class Scheduled(Container):
                                 kpe_table (
                                 kpe_id, 
                                 kpe_indicators_id, 
-                                kpe_user_id, 
+                                kpe_specialist_id, 
                                 kpe_units_id, 
                                 1st_quater_value, 
                                 2nd_quater_value, 
@@ -980,15 +982,16 @@ class Scheduled(Container):
                                 KPE_weight_1, 
                                 KPE_weight_2, 
                                 KPE_weight_3, 
-                                KPE_weight_4, 
+                                KPE_weight_4,
+                                kpe_user_id,
                                 date,
                                 number
                                 )
-                            VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, '{}', {}, {}, {}, {}, '{}',{});
+                            VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, '{}', {}, {}, {}, {}, {}, '{}', {});
                             """.format(
                                     int(max_plan_id),
                                     int(plan_indicators_id),
-                                    int(user_id),
+                                    int(specialist_id),
                                     int(units_id),
                                     float(first_qr_value),
                                     float(second_qr_value),
@@ -1000,6 +1003,7 @@ class Scheduled(Container):
                                     float(weight_2),
                                     float(weight_3),
                                     float(weight_4),
+                                    int(self.user_id),
                                     str(formatted_date),
                                     int(current_version)
                                 )
@@ -1058,7 +1062,7 @@ class Scheduled(Container):
                 cursor = connection.cursor()
                 cursor.execute(
                     f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.specialist_menu_box.content.value)}';")
-                user_id = cursor.fetchone()[0]
+                specialist_id = cursor.fetchone()[0]
                 cursor.execute(f"SELECT max(plan_id) FROM planned_value;")
                 max_id = cursor.fetchone()[0]
                 cursor.execute(
@@ -1068,7 +1072,7 @@ class Scheduled(Container):
                     f"""
                     SELECT 
                         concat(
-                            toString(plan_user_id), '-',
+                            toString(plan_specialist_id), '-',
                             substring(replace(toString(date), '-', ''), 7, 2),
                             substring(replace(toString(date), '-', ''), 5, 2),
                             substring(replace(toString(date), '-', ''), 1, 4),
@@ -1076,23 +1080,23 @@ class Scheduled(Container):
                         ) AS number_of_version
                     FROM planned_value
                     WHERE 
-                        plan_user_id = {int(user_id)} AND 
+                        plan_specialist_id = {int(specialist_id)} AND 
                         plan_indicators_id = {int(self.cb_menu_spec.content.value)} AND
                         date = (
                             SELECT MAX(date)
                             FROM planned_value
-                            WHERE plan_user_id = {int(user_id)} AND plan_indicators_id = {int(self.cb_menu_spec.content.value)}
+                            WHERE plan_specialist_id = {int(specialist_id)} AND plan_indicators_id = {int(self.cb_menu_spec.content.value)}
                         ) AND 
                         number = (
                             SELECT MAX(number)
                             FROM planned_value
                             WHERE 
-                                plan_user_id = {int(user_id)} AND 
+                                plan_specialist_id = {int(specialist_id)} AND 
                                 plan_indicators_id = {int(self.cb_menu_spec.content.value)} AND
                                 date = (
                                     SELECT MAX(date)
                                     FROM planned_value
-                                    WHERE plan_user_id = {int(user_id)} AND plan_indicators_id = {int(self.cb_menu_spec.content.value)}
+                                    WHERE plan_specialist_id = {int(specialist_id)} AND plan_indicators_id = {int(self.cb_menu_spec.content.value)}
                                 )
                         );
                     """
@@ -1103,12 +1107,30 @@ class Scheduled(Container):
                 else:
                     current_version = int(max_version[0].split('-')[2]) + 1
                 query = """
-                    INSERT INTO planned_value (plan_id, plan_indicators_id, plan_user_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, status, KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4, date, number)
-                    VALUES ({}+1, {}, {}, {}, {}, {}, {}, {}, {},'{}', {}, {}, {}, {},'{}', {});
+                    INSERT INTO planned_value (
+                        plan_id, 
+                        plan_indicators_id, 
+                        plan_specialist_id, 
+                        plan_units_id, 
+                        1st_quater_value, 
+                        2nd_quater_value, 
+                        3rd_quater_value, 
+                        4th_quater_value, 
+                        year, 
+                        status, 
+                        KPE_weight_1, 
+                        KPE_weight_2, 
+                        KPE_weight_3, 
+                        KPE_weight_4,
+                        plan_user_id,
+                        date, 
+                        number
+                    )
+                    VALUES ({}+1, {}, {}, {}, {}, {}, {}, {}, {},'{}', {}, {}, {}, {},{},'{}', {});
                 """.format(
                         int(max_id),
                         int(self.cb_menu_spec.content.value),
-                        int(user_id),
+                        int(specialist_id),
                         int(units_id),
                         float(self.first_qr_box.content.value),
                         float(self.second_qr_box.content.value),
@@ -1120,6 +1142,7 @@ class Scheduled(Container):
                         float(self.weight_second_qr_box.content.value),
                         float(self.weight_third_qr_box.content.value),
                         float(self.weight_fourth_qr_box.content.value),
+                        int(self.user_id),
                         str(formatted_date),
                         int(current_version)
                     )
@@ -1150,7 +1173,7 @@ class Scheduled(Container):
             cursor = connection.cursor()
             cursor.execute(
                 f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.specialist_menu_box.content.value)}';")
-            user_id = cursor.fetchone()[0]
+            specialist_id = cursor.fetchone()[0]
             query_select = f"""
             SELECT
                 ROW_NUMBER() OVER (ORDER BY plan_id) AS "порядковый номер",
@@ -1169,23 +1192,23 @@ class Scheduled(Container):
             JOIN name_of_indicators AS ni ON pn.plan_indicators_id = ni.indicators_id
             JOIN units_of_measurement AS um ON pn.plan_units_id = um.measurement_id
             WHERE
-                pn.plan_user_id = {int(user_id)} AND
+                pn.plan_specialist_id = {int(specialist_id)} AND
                 pn.status = 'Активно' AND
                 pn.date = (
                     SELECT MAX(date)
                     FROM planned_value
-                    WHERE plan_user_id = {int(user_id)} AND status = 'Активно'
+                    WHERE plan_specialist_id = {int(specialist_id)} AND status = 'Активно'
                 ) AND
                 pn.number = (
                     SELECT MAX(number)
                     FROM planned_value
                     WHERE
-                        plan_user_id = {int(user_id)} AND
+                        plan_specialist_id = {int(specialist_id)} AND
                         status = 'Активно' AND
                         date = (
                             SELECT MAX(date)
                             FROM planned_value
-                            WHERE plan_user_id = {int(user_id)} AND status = 'Активно'
+                            WHERE plan_specialist_id = {int(specialist_id)} AND status = 'Активно'
                         )
                 )
             ORDER BY plan_id;
@@ -1319,14 +1342,14 @@ class Scheduled(Container):
         cursor = connection.cursor()
         for selected_row in self.selected_rows:
             cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.specialist_menu_box.content.value)}';")
-            user_id = cursor.fetchone()[0]
-            indicator = f"SELECT indicators_id FROM name_of_indicators WHERE name = '{selected_row[1]}' AND specialist_id = '{user_id}'"
+            specialist_id = cursor.fetchone()[0]
+            indicator = f"SELECT indicators_id FROM name_of_indicators WHERE name = '{selected_row[1]}' AND specialist_id = '{specialist_id}'"
             # print(indicator)
             cursor.execute(indicator)
             indicator_id = cursor.fetchone()[0]
             # print(indicator_id)
-            sql_select = "SELECT plan_id FROM planned_value WHERE plan_user_id = {} AND plan_indicators_id = {} AND 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
-                user_id, indicator_id, selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8], selected_row[9], selected_row[10], selected_row[11])
+            sql_select = "SELECT plan_id FROM planned_value WHERE plan_specialist_id = {} AND plan_indicators_id = {} AND 1st_quater_value = {} AND 2nd_quater_value = {} AND 3rd_quater_value = {} AND 4th_quater_value = {} AND year = {} AND KPE_weight_1 = {} AND KPE_weight_2 = {} AND KPE_weight_3 = {} AND KPE_weight_4 = {};".format(
+                specialist_id, indicator_id, selected_row[3], selected_row[4], selected_row[5], selected_row[6], selected_row[7], selected_row[8], selected_row[9], selected_row[10], selected_row[11])
             cursor.execute(sql_select)
             print(sql_select)
             plan_id = cursor.fetchone()[0]

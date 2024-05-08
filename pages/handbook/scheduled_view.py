@@ -138,7 +138,7 @@ class ScheduledView(Container):
                                     columns=[
                                         DataColumn(Text("п/п"), numeric=True),
                                         DataColumn(Text("Наименование показателя")),
-                                        DataColumn(Text("ФИО специалиста")),
+                                        DataColumn(Text("Код специалиста")),
                                         DataColumn(Text("Ед.изм.")),
                                         DataColumn(Text("1 кв."), numeric=True),
                                         DataColumn(Text("2 кв."), numeric=True),
@@ -149,7 +149,9 @@ class ScheduledView(Container):
                                         DataColumn(Text("Вес КПЭ 2 кв."), numeric=True),
                                         DataColumn(Text("Вес КПЭ 3 кв."), numeric=True),
                                         DataColumn(Text("Вес КПЭ 4 кв."), numeric=True),
-                                        DataColumn(Text("Номер версии"), numeric=True),
+                                        DataColumn(Text("Код пользователя"), numeric=True),
+                                        DataColumn(Text("Дата"), numeric=True),
+                                        DataColumn(Text("Номер"), numeric=True),
                                     ],
                                     rows=[],  # Leave this empty for now
                                     border=border.all(1, primary_colors['BLACK']),
@@ -173,25 +175,27 @@ class ScheduledView(Container):
         )
         cursor = connection.cursor()
         query_select = """
-              SELECT
-                  pv.plan_id,
-                  ni.name AS indicator_name,
-                  pv.plan_user_id,
-                  um.type AS unit_of_measurement,
-                  pv.1st_quater_value,
-                  pv.2nd_quater_value,
-                  pv.3rd_quater_value,
-                  pv.4th_quater_value,
-                  pv.year,
-                  pv.KPE_weight_1,
-                  pv.KPE_weight_2,
-                  pv.KPE_weight_3,
-                  pv.KPE_weight_4,
-                  pv.number_of_version
-              FROM planned_value AS pv
-              JOIN name_of_indicators AS ni ON pv.plan_indicators_id = ni.indicators_id
-              JOIN units_of_measurement AS um ON pv.plan_units_id = um.measurement_id
-              ORDER BY pv.plan_id;
+            SELECT
+                pv.plan_id,
+                ni.name AS indicator_name,
+                pv.plan_specialist_id,
+                um.type AS unit_of_measurement,
+                pv.1st_quater_value,
+                pv.2nd_quater_value,
+                pv.3rd_quater_value,
+                pv.4th_quater_value,
+                pv.year,
+                pv.KPE_weight_1,
+                pv.KPE_weight_2,
+                pv.KPE_weight_3,
+                pv.KPE_weight_4,
+                pv.plan_user_id,
+                pv.date,
+                pv.number
+            FROM planned_value AS pv
+            JOIN name_of_indicators AS ni ON pv.plan_indicators_id = ni.indicators_id
+            JOIN units_of_measurement AS um ON pv.plan_units_id = um.measurement_id
+            ORDER BY pv.plan_id;
         """
         
         cursor.execute(query_select)

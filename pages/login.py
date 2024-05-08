@@ -86,13 +86,15 @@ class Login(Container):
             password_value = self.password_box.content.value.replace("'", "''")
 
             cursor = connection.cursor()
-            query_select = f"SELECT login FROM users WHERE login = '{login_value}' AND password = '{password_value}';"
+            query_select = f"SELECT user_id, login FROM users WHERE login = '{login_value}' AND password = '{password_value}';"
             
             cursor.execute(query_select)
-            result = cursor.fetchone()
+            result = cursor.fetchall()[0]
+            print(result)
 
             if result:
-                self.page.session.set("login", result[0])
+                self.page.session.set("user_id", result[0])
+                self.page.session.set("login", result[1])
                 self.page.go("/home")
             else:
                 self.error_box.content.value = "Вы ввели неверный логин или пароль!"

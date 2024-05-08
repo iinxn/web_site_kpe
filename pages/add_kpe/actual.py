@@ -13,6 +13,7 @@ class Actual(Container):
         self.alignment = alignment.center
         self.expand = True
         self.bgcolor = primary_colors['GREEN']
+        self.user_id = self.page.session.get('user_id')
 
         self.use_truncated_options = True
         self.dropdown_options_indicators = []
@@ -375,7 +376,7 @@ class Actual(Container):
 
             cursor.execute(
                 f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.cb_specialist_menu.content.value)}';")
-            user_id = cursor.fetchone()[0]
+            specialist_id = cursor.fetchone()[0]
             # *FOR AUTO ID INCRIPTION
             cursor.execute(f"SELECT max(actual_id) FROM actual_value;")
             max_id = cursor.fetchone()[0]
@@ -384,31 +385,31 @@ class Actual(Container):
                     f"""
                     SELECT 
                         concat(
-                            toString(kpe_user_id), '-',
+                            toString(actual_specialist_id), '-',
                             substring(replace(toString(date), '-', ''), 7, 2),
                             substring(replace(toString(date), '-', ''), 5, 2),
                             substring(replace(toString(date), '-', ''), 1, 4),
                             '-', toString(number)
                         ) AS number_of_version
-                    FROM kpe_table
+                    FROM actual_value
                     WHERE 
-                        kpe_user_id = {int(user_id)} AND 
-                        kpe_indicators_id = {int(self.cb_menu_spec.content.value)} AND
+                        actual_specialist_id = {int(specialist_id)} AND 
+                        actual_indicators_id = {int(self.cb_menu_spec.content.value)} AND
                         date = (
                             SELECT MAX(date)
-                            FROM kpe_table
-                            WHERE kpe_user_id = {int(user_id)} AND kpe_indicators_id = {int(self.cb_menu_spec.content.value)}
+                            FROM actual_value
+                            WHERE actual_specialist_id = {int(specialist_id)} AND actual_indicators_id = {int(self.cb_menu_spec.content.value)}
                         ) AND 
                         number = (
                             SELECT MAX(number)
-                            FROM kpe_table
+                            FROM actual_value
                             WHERE 
-                                kpe_user_id = {int(user_id)} AND 
-                                kpe_indicators_id = {int(self.cb_menu_spec.content.value)} AND
+                                actual_specialist_id = {int(specialist_id)} AND 
+                                actual_indicators_id = {int(self.cb_menu_spec.content.value)} AND
                                 date = (
                                     SELECT MAX(date)
-                                    FROM kpe_table
-                                    WHERE kpe_user_id = {int(user_id)} AND kpe_indicators_id = {int(self.cb_menu_spec.content.value)}
+                                    FROM actual_value
+                                    WHERE actual_specialist_id = {int(specialist_id)} AND actual_indicators_id = {int(self.cb_menu_spec.content.value)}
                                 )
                         );
                     """
@@ -419,14 +420,24 @@ class Actual(Container):
             else:
                 current_version = int(max_version[0].split('-')[2]) + 1
             query = """
-            INSERT INTO actual_value (actual_id, actual_indicators_id, actual_users_id, quarter_number, value, date, number)
-            VALUES ({}, {}, {}, '{}', {}, '{}',{});
+            INSERT INTO actual_value (
+                actual_id,
+                actual_indicators_id,
+                actual_specialist_id,
+                quarter_number,
+                value,
+                actual_user_id,
+                date,
+                number
+            )
+            VALUES ({}, {}, {}, '{}', {}, {}, '{}', {});
         """.format(
                 int(max_id) + 1,
                 int(indicator_id),
-                int(user_id),
+                int(specialist_id),
                 str(self.cb_quter_menu.content.value),
                 float(self.textfiled_input_actual_value.content.value),
+                int(self.user_id),
                 str(formatted_date),
                 int(current_version)
             )
@@ -448,10 +459,10 @@ class Actual(Container):
     def update_plan_values(self, e):
         try:
             cursor = connection.cursor()
-            # Получение user_id на основе выбранного специалиста
+            # Получение specialist_id на основе выбранного специалиста
             cursor.execute(
                 f"SELECT specialist_id FROM specialists WHERE full_name='{self.cb_specialist_menu.content.value}';")
-            user_id = cursor.fetchone()[0]
+            specialist_id = cursor.fetchone()[0]
 
             indicator_id = int(self.cb_menu_spec.content.value)
 
@@ -460,7 +471,7 @@ class Actual(Container):
                 f"""
                 SELECT MAX(date), MAX(number)
                 FROM kpe_table
-                WHERE kpe_indicators_id = {indicator_id} AND kpe_user_id = {user_id}
+                WHERE kpe_indicators_id = {indicator_id} AND kpe_specialist_id = {specialist_id}
                 """
             )
             max_date, max_number = cursor.fetchone()
@@ -478,7 +489,7 @@ class Actual(Container):
                 SELECT {quarter_column}, {weight_column}
                 FROM kpe_table
                 WHERE kpe_indicators_id = {indicator_id}
-                AND kpe_user_id = {user_id}
+                AND kpe_specialist_id = {specialist_id}
                 AND date = '{max_date}'
                 AND number = {max_number}
                 """
