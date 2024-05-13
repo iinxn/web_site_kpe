@@ -23,7 +23,6 @@ class SpecialistsHandbook(Container):
                 DataColumn(Text("ФИО")),
                 DataColumn(Text("Должность")),
                 DataColumn(Text("Статус")),
-                DataColumn(Text("Пользователь")),
                 DataColumn(Text("Редактировать")),
             ],
             rows=[],
@@ -119,17 +118,6 @@ class SpecialistsHandbook(Container):
             actions_alignment=MainAxisAlignment.END,
             on_dismiss=lambda e: print("Modal dialog dismissed!"),
         )
-        self.edit_name = Container(
-          content=Dropdown(
-                hint_text='Изменить состояние',
-                color=primary_colors['BLACK'],
-                width=400,
-                options=[
-                  dropdown.Option("Является"),
-                  dropdown.Option("Не является")
-                ],
-            ),
-        )
         self.alter_dialog_edit = AlertDialog(
             modal=True,
             title=Text("Изменить строку"),  
@@ -141,7 +129,6 @@ class SpecialistsHandbook(Container):
                 self.specialist_new_full_name,
                 self.specialist_new_position,
                 self.cb_menu_status,
-                self.edit_name,
               ]
             ),
             actions=[
@@ -324,8 +311,7 @@ class SpecialistsHandbook(Container):
         nd.name,
         sc.full_name,
         sc.position,
-        sc.status,
-        sc.is_user
+        sc.status
       FROM specialists AS sc
       JOIN name_of_department AS nd ON sc.specialist_department_id = nd.department_id
       ORDER BY sc.specialist_id;
@@ -344,22 +330,11 @@ class SpecialistsHandbook(Container):
 
     def add_new_specialist(self, e):
       cursor = connection.cursor()
-      quary_select_from_users = "SELECT full_name FROM users ORDER BY user_id"
-      cursor.execute(quary_select_from_users)
-      results_from_users = cursor.fetchall()
-      full_names_from_users = [result[0] for result in results_from_users]
-      typed_full_name = self.specialist_new_full_name.content.value
-      if typed_full_name in full_names_from_users:
-        print(f"{typed_full_name} является пользователем")
-        is_user = "Является"
-      else:
-        print(f"{typed_full_name} не является пользователем")
-        is_user = "Не является"
       if (self.specialist_new_full_name == "" or
         self.specialist_new_position == "" or
         self.cb_menu_department.content.value == "" or
         self.cb_menu_status == ""):
-        print("Please")
+        self.components_manager.show_block_dialog("Вы не заполнили поля", "Ошибка")
       else:
         try:
           cursor = connection.cursor()
@@ -368,13 +343,12 @@ class SpecialistsHandbook(Container):
           department_id = cursor.fetchone()[0]
           cursor.execute(f"SELECT max(specialist_id) FROM specialists;")
           max_id = cursor.fetchone()[0]
-          query = "INSERT INTO TABLE specialists (specialist_id, specialist_department_id, full_name, position, status, is_user) VALUES ({}+1,{},'{}','{}','{}','{}');".format(
+          query = "INSERT INTO TABLE specialists (specialist_id, specialist_department_id, full_name, position, status) VALUES ({}+1,{},'{}','{}','{}');".format(
             int(max_id),
             int(department_id),
             self.specialist_new_full_name.content.value,
             self.specialist_new_position.content.value,
             self.cb_menu_status.content.value,
-            is_user
             )
           cursor.execute(query)
           print("Запись успешно добавлена в базу данных")
@@ -413,7 +387,6 @@ class SpecialistsHandbook(Container):
         self.specialist_new_full_name.content.value = selected_row[2]
         self.specialist_new_position.content.value = selected_row[3]
         self.cb_menu_status.content.value = selected_row[4]
-        self.edit_name.content.value = selected_row[5]
         self.page.dialog = self.alter_dialog_edit
         self.alter_dialog_edit.open = True
         self.page.update()
@@ -439,10 +412,6 @@ class SpecialistsHandbook(Container):
       if self.cb_menu_status.content.value != selected_row[4]:
         query_status = "ALTER TABLE specialists UPDATE status = '{}' WHERE specialist_id = {}".format(self.cb_menu_status.content.value, selected_row[0])
         cursor.execute(query_status)
-        self.selected_rows.clear()
-      if self.edit_name.content.value != selected_row[5]:
-        query_is_user = "ALTER TABLE specialists UPDATE is_user = '{}' WHERE specialist_id = {}".format(self.edit_name.content.value, selected_row[0])
-        cursor.execute(query_is_user)
         self.selected_rows.clear()
       self.page.dialog = self.alter_dialog_edit
       self.alter_dialog_edit.open = False

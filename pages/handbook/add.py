@@ -37,7 +37,7 @@ class Add(Container):
         )
         
         self.dropdown_options_specialists = []
-        dropdown_options_specialists_alter_dialoge = []
+        self.dropdown_options_specialists_alter_dialoge = []
         dropdown_options_units_1 = []
         dropdown_options_units_2 = []
         dropdown_options_departments = []
@@ -131,7 +131,7 @@ class Add(Container):
                 hint_text='Выберите специалиста',
                 color=primary_colors['BLACK'],
                 width=330,
-                options=dropdown_options_specialists_alter_dialoge,
+                options=self.dropdown_options_specialists_alter_dialoge,
             )
         )
         
@@ -374,6 +374,7 @@ class Add(Container):
 
         for row in specialists_full_name:
             self.dropdown_options_specialists.append(dropdown.Option(row[0]))
+            self.dropdown_options_specialists_alter_dialoge.append(dropdown.Option(row[0]))
             
         self.page.update()
       except Exception as e:
@@ -398,18 +399,21 @@ class Add(Container):
         cursor.execute(query_select)
         results = cursor.fetchall()
         query_result = results
-        data_rows = []
-        for row in query_result:
-            cells = [DataCell(Text(str(value))) for value in row]
-            data_row = DataRow(cells=cells)
-            checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-            cells.append(DataCell(checkbox))
-            data_rows.append(data_row)
-        self.data_table.rows = data_rows
-        self.selected_rows.clear()
-        self.page.dialog = self.alter_dialog_add_new_specialists
-        self.alter_dialog_add_new_specialists.open = False
-        self.page.update()
+        if not query_result:
+          self.components_manager.show_block_dialog("У пользователя нет заполненных показателей", "Информация")
+        else:
+          data_rows = []
+          for row in query_result:
+              cells = [DataCell(Text(str(value))) for value in row]
+              data_row = DataRow(cells=cells)
+              checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
+              cells.append(DataCell(checkbox))
+              data_rows.append(data_row)
+          self.data_table.rows = data_rows
+          self.selected_rows.clear()
+          self.page.dialog = self.alter_dialog_add_new_specialists
+          self.alter_dialog_add_new_specialists.open = False
+          self.page.update()
       except:
         self.components_manager.show_block_dialog("Вы не выбрали управление или специалиста", "Ошибка")
 
@@ -506,7 +510,7 @@ class Add(Container):
             cursor.execute(query_specialist)
             self.show_indicators(e)
         else:
-            self.components_manager.show_block_dialog("Изменений не было обнаружено")
+            self.components_manager.show_block_dialog("Предупреждение","Изменений не было обнаружено")
 
     def close_edit_dialog(self, e):
         self.page.dialog = self.alter_dialog_add_new_specialists

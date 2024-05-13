@@ -276,13 +276,31 @@ class Scheduled(Container):
             title=Text("Добавление показателя в справочник"),
             content=Container(
                 width=800,
-                content = Row(
-                    spacing='30',
-                    alignment='center',
-                    controls=[
-                        self.textfiled_input_new_indicator,
-                        self.units_menu_box
-                    ]
+                height=100,
+                content = Container(
+                    content=Column(
+                        controls=[
+                            Container(
+                                Text(
+                                    value='Перед добавлением показателей, необходимо заполнить справочник единицы измерения!!!',
+                                    # weight='bold',
+                                    size=18,
+                                    text_align='center'
+                                ),
+                            ),
+                            Container(
+                                Row(
+                                    spacing='30',
+                                    alignment='center',
+                                    controls=[
+                                        self.textfiled_input_new_indicator,
+                                        self.units_menu_box
+                                    ]
+                                ),
+                            )
+                        ]
+                    )
+                    
                 )
             ),
             actions=[

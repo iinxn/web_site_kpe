@@ -18,7 +18,7 @@ class Department(Container):
         # Creating the DataTable
         self.data_table = DataTable(
             columns=[
-                DataColumn(Text("Код упрвления"), numeric=True),
+                DataColumn(Text("Код управления"), numeric=True),
                 DataColumn(Text("Наименование")),
                 DataColumn(Text("Редактирование")),
             ],
