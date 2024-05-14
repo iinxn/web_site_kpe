@@ -283,7 +283,6 @@ class Scheduled(Container):
                             Container(
                                 Text(
                                     value='Перед добавлением показателей, необходимо заполнить справочник единицы измерения!!!',
-                                    # weight='bold',
                                     size=18,
                                     text_align='center'
                                 ),
@@ -903,8 +902,6 @@ class Scheduled(Container):
             max_plan_id = cursor.fetchone()[0]
             query_select = 'SELECT plan_indicators_id FROM planned_value'
             cursor.execute(query_select)
-            indicator_original_list = cursor.fetchall()
-            indicators = [item[0] for item in indicator_original_list]
 
             query_select = f"""
             SELECT
@@ -921,116 +918,118 @@ class Scheduled(Container):
             """
             cursor.execute(query_select)
             latest_data = cursor.fetchall()
-
-            for specialist_id, indicator_id, latest_date, latest_number in latest_data:
-                query_max_number = f"""
-                SELECT MAX(number)
-                FROM planned_value
-                WHERE plan_specialist_id = {int(specialist_id)} 
-                AND plan_indicators_id = {int(indicator_id)} 
-                AND date = '{latest_date}'
-                """
-                cursor.execute(query_max_number)
-                current_version = cursor.fetchone()[0] or 0
-
-                max_plan_id += 1
-                query_exists = """
-                    SELECT 1
-                    FROM kpe_table
-                    WHERE kpe_specialist_id = {}
-                    AND kpe_indicators_id = {}
-                    AND date = '{}'
-                    AND number = {}
-                """.format(specialist_id, indicator_id, latest_date, latest_number)
-                cursor.execute(query_exists)
-                data_exists = cursor.fetchone()
-                if not data_exists:
-                    query_select = """
-                    SELECT plan_indicators_id, plan_specialist_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, status,
-                        KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4
+            if not latest_data:
+                self.show_block_dialog('Карта КПЭ выбранного специалиста пуста', 'Ошибка')
+            else:
+                for specialist_id, indicator_id, latest_date, latest_number in latest_data:
+                    query_max_number = f"""
+                    SELECT MAX(number)
                     FROM planned_value
-                    WHERE
-                    date = '{}'
-                    AND number = {}
-                    AND plan_indicators_id = {}
-                    AND plan_specialist_id = {}
-                    AND status = 'Активно'
-                    """.format(latest_date, latest_number, indicator_id, specialist_id)
-                    cursor.execute(query_select)
-                    data = cursor.fetchone()
-                    if data:
-                        plan_indicators_id, specialist_id, units_id, first_qr_value, second_qr_value, third_qr_value, fourth_qr_value, year, status, weight_1, weight_2, weight_3, weight_4 = data
-                        weight_query = f"""
-                        SELECT
-                            SUM(KPE_weight_1) AS total_weight_1,
-                            SUM(KPE_weight_2) AS total_weight_2,
-                            SUM(KPE_weight_3) AS total_weight_3,
-                            SUM(KPE_weight_4) AS total_weight_4
+                    WHERE plan_specialist_id = {int(specialist_id)} 
+                    AND plan_indicators_id = {int(indicator_id)} 
+                    AND date = '{latest_date}'
+                    """
+                    cursor.execute(query_max_number)
+                    current_version = cursor.fetchone()[0] or 0
+
+                    max_plan_id += 1
+                    query_exists = """
+                        SELECT 1
+                        FROM kpe_table
+                        WHERE kpe_specialist_id = {}
+                        AND kpe_indicators_id = {}
+                        AND date = '{}'
+                        AND number = {}
+                    """.format(specialist_id, indicator_id, latest_date, latest_number)
+                    cursor.execute(query_exists)
+                    data_exists = cursor.fetchone()
+                    if not data_exists:
+                        query_select = """
+                        SELECT plan_indicators_id, plan_specialist_id, plan_units_id, 1st_quater_value, 2nd_quater_value, 3rd_quater_value, 4th_quater_value, year, status,
+                            KPE_weight_1, KPE_weight_2, KPE_weight_3, KPE_weight_4
                         FROM planned_value
-                        WHERE plan_specialist_id = {specialist_id} 
+                        WHERE
+                        date = '{}'
+                        AND number = {}
+                        AND plan_indicators_id = {}
+                        AND plan_specialist_id = {}
                         AND status = 'Активно'
-                        AND date = '{latest_date}'
-                        AND number = {latest_number}
-                        """
-                        cursor.execute(weight_query)
-                        sum_weight_1, sum_weight_2, sum_weight_3, sum_weight_4 = cursor.fetchone()
-                        print(sum_weight_1)
-                        print(sum_weight_2)
-                        print(sum_weight_3)
-                        print(sum_weight_4)
-                        if sum_weight_1 < 100 or sum_weight_2 < 100 or sum_weight_3 < 100 or sum_weight_4 < 100:
-                            self.show_block_dialog(
-                                f"Сумма Веса КПЭ\n1 квартала = {sum_weight_1}%\n2 квартала = {sum_weight_2}%\n3 квартала = {sum_weight_3}%\n4 квартала = {sum_weight_4}%\nСумма каждого квартала должна равняться 100%", 
-                                "Предупреждение"
-                            )
-                        else:
-                            insert_query_to_kpe_table = """
-                            INSERT INTO
-                                kpe_table (
-                                kpe_id, 
-                                kpe_indicators_id, 
-                                kpe_specialist_id, 
-                                kpe_units_id, 
-                                1st_quater_value, 
-                                2nd_quater_value, 
-                                3rd_quater_value, 
-                                4th_quater_value, 
-                                year,
-                                status,
-                                KPE_weight_1, 
-                                KPE_weight_2, 
-                                KPE_weight_3, 
-                                KPE_weight_4,
-                                kpe_user_id,
-                                date,
-                                number
+                        """.format(latest_date, latest_number, indicator_id, specialist_id)
+                        cursor.execute(query_select)
+                        data = cursor.fetchone()
+                        if data:
+                            plan_indicators_id, specialist_id, units_id, first_qr_value, second_qr_value, third_qr_value, fourth_qr_value, year, status, weight_1, weight_2, weight_3, weight_4 = data
+                            weight_query = f"""
+                            SELECT
+                                SUM(KPE_weight_1) AS total_weight_1,
+                                SUM(KPE_weight_2) AS total_weight_2,
+                                SUM(KPE_weight_3) AS total_weight_3,
+                                SUM(KPE_weight_4) AS total_weight_4
+                            FROM planned_value
+                            WHERE plan_specialist_id = {specialist_id} 
+                            AND status = 'Активно'
+                            AND date = '{latest_date}'
+                            AND number = {latest_number}
+                            """
+                            cursor.execute(weight_query)
+                            sum_weight_1, sum_weight_2, sum_weight_3, sum_weight_4 = cursor.fetchone()
+                            print(sum_weight_1)
+                            print(sum_weight_2)
+                            print(sum_weight_3)
+                            print(sum_weight_4)
+                            if sum_weight_1 < 100 or sum_weight_2 < 100 or sum_weight_3 < 100 or sum_weight_4 < 100:
+                                self.show_block_dialog(
+                                    f"Сумма Веса КПЭ\n1 квартала = {sum_weight_1}%\n2 квартала = {sum_weight_2}%\n3 квартала = {sum_weight_3}%\n4 квартала = {sum_weight_4}%\nСумма каждого квартала должна равняться 100%", 
+                                    "Предупреждение"
                                 )
-                            VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, '{}', {}, {}, {}, {}, {}, '{}', {});
-                            """.format(
-                                    int(max_plan_id),
-                                    int(plan_indicators_id),
-                                    int(specialist_id),
-                                    int(units_id),
-                                    float(first_qr_value),
-                                    float(second_qr_value),
-                                    float(third_qr_value),
-                                    float(fourth_qr_value),
-                                    float(year),
-                                    str(status),
-                                    float(weight_1),
-                                    float(weight_2),
-                                    float(weight_3),
-                                    float(weight_4),
-                                    int(self.user_id),
-                                    str(formatted_date),
-                                    int(current_version)
-                                )
-                            cursor.execute(insert_query_to_kpe_table)
-                            print("Success")
-                            self.specialist_menu_box.content.value = ""
-                            self.show_block_dialog("Вы завершили формирование карты КПЭ","Карта КПЭ сформирована")
-                else:
-                    self.show_block_dialog("Данные уже есть в карте КПЭ","Информация")
+                            else:
+                                insert_query_to_kpe_table = """
+                                INSERT INTO
+                                    kpe_table (
+                                    kpe_id, 
+                                    kpe_indicators_id, 
+                                    kpe_specialist_id, 
+                                    kpe_units_id, 
+                                    1st_quater_value, 
+                                    2nd_quater_value, 
+                                    3rd_quater_value, 
+                                    4th_quater_value, 
+                                    year,
+                                    status,
+                                    KPE_weight_1, 
+                                    KPE_weight_2, 
+                                    KPE_weight_3, 
+                                    KPE_weight_4,
+                                    kpe_user_id,
+                                    date,
+                                    number
+                                    )
+                                VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, '{}', {}, {}, {}, {}, {}, '{}', {});
+                                """.format(
+                                        int(max_plan_id),
+                                        int(plan_indicators_id),
+                                        int(specialist_id),
+                                        int(units_id),
+                                        float(first_qr_value),
+                                        float(second_qr_value),
+                                        float(third_qr_value),
+                                        float(fourth_qr_value),
+                                        float(year),
+                                        str(status),
+                                        float(weight_1),
+                                        float(weight_2),
+                                        float(weight_3),
+                                        float(weight_4),
+                                        int(self.user_id),
+                                        str(formatted_date),
+                                        int(current_version)
+                                    )
+                                cursor.execute(insert_query_to_kpe_table)
+                                print("Success")
+                                self.specialist_menu_box.content.value = ""
+                                self.show_block_dialog("Вы завершили формирование карты КПЭ","Карта КПЭ сформирована")
+                    else:
+                        self.show_block_dialog("Данные уже есть в карте КПЭ","Информация")
         except Exception as ex:
             print(ex)
             self.show_block_dialog("Произошла ошибка","Ошибка")

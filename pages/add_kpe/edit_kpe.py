@@ -286,7 +286,9 @@ class EditKPE(Container):
                         Row(
                             spacing='50',
                             alignment='center',
-                            controls=[]
+                            controls=[
+                                self.units_menu_box,
+                            ]
                         )
                     ),
                     Container(height=50),
@@ -416,7 +418,7 @@ class EditKPE(Container):
                 ]
             ),
             actions=[
-                TextButton("Добавить", on_click=self.add_new_specialist),
+                TextButton("Добавить", on_click=self.add_new_row_to_kpe_table),
                 TextButton("Закрыть", on_click=self.close_new_kpe_dialog),
             ],
             actions_alignment=MainAxisAlignment.END,
@@ -428,17 +430,31 @@ class EditKPE(Container):
             title=Text("Добавление показателя в справочник"),
             content=Container(
                 width=800,
-                content=Row(
-                    spacing='30',
-                    alignment='center',
+                height=100,
+                content=Column(
                     controls=[
-                        self.textfiled_input_new_indicator,
-                        self.units_menu_box
+                        Container(
+                            Text(
+                                value='Перед добавлением показателей, необходимо заполнить справочник единицы измерения!!!',
+                                text_align='center',
+                                size=18
+                            )
+                        ),
+                        Container(
+                            Row(
+                                spacing='30',
+                                alignment='center',
+                                controls=[
+                                    self.textfiled_input_new_indicator,
+                                    self.units_menu_box
+                                ]
+                            )
+                        )
                     ]
                 )
             ),
             actions=[
-                TextButton("Добавить", on_click=self.alter_dialoge_input_data),
+                TextButton("Добавить", on_click=self.alter_dialoge_input_new_indicator),
                 TextButton("Назад", on_click=self.close_dlg_new_indicator),
             ],
             actions_alignment=MainAxisAlignment.END,
@@ -800,32 +816,34 @@ class EditKPE(Container):
             cursor.execute(query_select)
             results = cursor.fetchall()
             query_result = results
-            data_rows = []
+            if not query_result:
+                self.show_block_dialog('Карта КПЭ этого специалиста не сформирована', 'Ошибка')
+            else:
+                data_rows = []
 
-            for row in query_result:
-                cells = [DataCell(Text(str(value))) for value in row]
-                data_row = DataRow(cells=cells)
+                for row in query_result:
+                    cells = [DataCell(Text(str(value))) for value in row]
+                    data_row = DataRow(cells=cells)
 
-                checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
-                cells.append(DataCell(checkbox))
-                data_rows.append(data_row)
-            self.data_table.rows = data_rows
-            self.page.update()
+                    checkbox = Checkbox(value=False, on_change=lambda e, row=row: self.toggle_row_selection(e, row))
+                    cells.append(DataCell(checkbox))
+                    data_rows.append(data_row)
+                self.data_table.rows = data_rows
+                self.page.update()
         except:
             self.show_block_dialog("Вы не выбрали специалиста", "Ошибка")
 
-    def show_alter_dialog_add_new_specialists(self, e):
-        self.page.dialog = self.alter_dialog_add_new_specialists
+    def show_alter_dialog_add_new_row_to_kpe_tables(self, e):
+        self.page.dialog = self.alter_dialog_add_new_row_to_kpe_tables
         self.page.dialog.open = True
         self.page.update()
 
-    def close_dlg_add_new_specialists(self, e):
-        self.page.dialog = self.alter_dialog_add_new_specialists
+    def close_dlg_add_new_row_to_kpe_tables(self, e):
+        self.page.dialog = self.alter_dialog_add_new_row_to_kpe_tables
         self.page.dialog.open = False
         self.page.update()
 
     def toggle_row_selection(self, e, row):
-        # Toggle the row's selection when the Checkbox value changes
         if row not in self.selected_rows:
             self.selected_rows.add(row)
             print("yes")
@@ -835,6 +853,7 @@ class EditKPE(Container):
 
     def show_edit_dialog(self):
         selected_row = next(iter(self.selected_rows))
+        self.units_menu_box.content.value = selected_row[2]
         self.first_qr_box.content.value = selected_row[3]
         self.second_qr_box.content.value = selected_row[4]
         self.third_qr_box.content.value = selected_row[5]
@@ -859,14 +878,15 @@ class EditKPE(Container):
             cursor.execute(sql_select)
             kpe_id = cursor.fetchone()[0]
             print(kpe_id)
-
-            cursor.execute(f"SELECT MAX(number) FROM kpe_table WHERE kpe_id = {kpe_id};")
-            max_number = cursor.fetchone()[0]
-            number_plus = max_number+1
-            print(number_plus)
+            
             changes_made = False
+            # Fetch measurement_id based on type name
+            cursor.execute(f"SELECT measurement_id FROM units_of_measurement WHERE type = '{self.units_menu_box.content.value}'")
+            measurement_id = cursor.fetchone()[0]
 
+            # Iterate over fields to check
             fields_to_check = [
+                (self.units_menu_box.content.value, selected_row[2], 'kpe_units_id'),
                 (self.first_qr_box.content.value, selected_row[3], '1st_quater_value'),
                 (self.second_qr_box.content.value, selected_row[4], '2nd_quater_value'),
                 (self.third_qr_box.content.value, selected_row[5], '3rd_quater_value'),
@@ -877,21 +897,27 @@ class EditKPE(Container):
                 (self.weight_third_qr_box.content.value, selected_row[10], 'KPE_weight_3'),
                 (self.weight_fourth_qr_box.content.value, selected_row[11], 'KPE_weight_4'),
             ]
-
             for new_value, old_value, column_name in fields_to_check:
                 if new_value != old_value:
-                    query = f"ALTER TABLE kpe_table UPDATE {column_name} = {new_value} WHERE kpe_id = {kpe_id};"
+                    cursor.execute(f"SELECT MAX(number) FROM kpe_table WHERE kpe_id = {kpe_id};")
+                    max_number = cursor.fetchone()[0]
+                    number_plus = max_number+1
+                    print(number_plus)
+                    if column_name == 'kpe_units_id':
+                        cursor.execute(f"SELECT measurement_id FROM units_of_measurement WHERE type = '{new_value}'")
+                        measurement_id = cursor.fetchone()[0]
+                    query = f"ALTER TABLE kpe_table UPDATE {column_name} = {measurement_id if column_name == 'kpe_units_id' else new_value} WHERE kpe_id = {kpe_id};"
+                    query_number_of_version = "ALTER TABLE kpe_table UPDATE number = {} WHERE kpe_id = {};".format(str(number_plus), kpe_id)
+                    self.sql_query.append(query_number_of_version)
                     self.sql_query.append(query)
+                    for queryes in self.sql_query:
+                        print(queryes)
                     changes_made = True
-
             if changes_made:
                 self.page.dialog = self.alter_dialog_edit
                 self.alter_dialog_edit.open = False
             else:
                 print("Поля никак не изменились")
-
-            query_number_of_version = "ALTER TABLE kpe_table UPDATE number = '{}' WHERE kpe_id = {};".format(str(number_plus), kpe_id)
-            self.sql_query.append(query_number_of_version)
             self.first_qr_box.content.value = ""
             self.second_qr_box.content.value = ""
             self.third_qr_box.content.value = ""
@@ -902,6 +928,7 @@ class EditKPE(Container):
             self.weight_third_qr_box.content.value = ""
             self.weight_fourth_qr_box.content.value = ""
             self.cb_menu_spec.content.value = ""
+            self.units_menu_box.content.value = ""
             self.show_block_dialog("Данные были успешно занесены в список изменений", "Успешно")
             self.page.update()
         except:
@@ -970,7 +997,7 @@ class EditKPE(Container):
             self.alter_dialog_no_in_list.open = True
         self.page.update()
 
-    def alter_dialoge_input_data(self, e):
+    def alter_dialoge_input_new_indicator(self, e):
         try:
             cursor = connection.cursor()
             sql_select_specialist_id = "SELECT specialist_id FROM specialists WHERE full_name = '{}'".format(self.report_spec.content.value)
@@ -1009,7 +1036,7 @@ class EditKPE(Container):
         self.alter_dialog_add_new.open = True
         self.page.update()
 
-    def add_new_specialist(self, e):
+    def add_new_row_to_kpe_table(self, e):
         try:
             cursor = connection.cursor()
             cursor.execute(f"SELECT specialist_id FROM specialists WHERE full_name='{str(self.report_spec.content.value)}';")
