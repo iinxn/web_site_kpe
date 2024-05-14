@@ -977,7 +977,7 @@ class Scheduled(Container):
                             print(sum_weight_2)
                             print(sum_weight_3)
                             print(sum_weight_4)
-                            if sum_weight_1 < 100 or sum_weight_2 < 100 or sum_weight_3 < 100 or sum_weight_4 < 100:
+                            if sum_weight_1 < 100 or sum_weight_2 < 100 or sum_weight_3 < 100 or sum_weight_4 < 100 or sum_weight_1 > 100 or sum_weight_2 > 100 or sum_weight_3 > 100 or sum_weight_4 > 100:
                                 self.show_block_dialog(
                                     f"Сумма Веса КПЭ\n1 квартала = {sum_weight_1}%\n2 квартала = {sum_weight_2}%\n3 квартала = {sum_weight_3}%\n4 квартала = {sum_weight_4}%\nСумма каждого квартала должна равняться 100%", 
                                     "Предупреждение"

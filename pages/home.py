@@ -59,7 +59,7 @@ class Home(Container):
                                           Container(
                                             
                                             Text(
-                                              value='Инструменты',
+                                              value='Мониторинг',
                                               size=16,
                                               color=primary_colors['GREEN'],
                                               text_align='center',
@@ -68,7 +68,7 @@ class Home(Container):
                                           )
                                         ]
                                     ),
-                                    on_click=lambda x: x == self.page.go('/settings')
+                                    on_click=lambda x: x == self.page.go('/monitoring')
                                   ),
                                 ),
                               ]
