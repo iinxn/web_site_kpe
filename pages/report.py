@@ -652,18 +652,22 @@ class Report(Container):
                 quater_column = "1st_quater_value"
                 weight_column = "KPE_weight_1"
                 actual_quater_value = "1-й квартал"
+                quater_value = 1
             elif quater == "2 квартал":
                 quater_column = "2nd_quater_value"
                 weight_column = "KPE_weight_2"
                 actual_quater_value = "2-й квартал"
+                quater_value = 2
             elif quater == "3 квартал":
                 quater_column = "3rd_quater_value"
                 weight_column = "KPE_weight_3"
                 actual_quater_value = "3-й квартал"
+                quater_value = 3
             else:
                 quater_column = "4th_quater_value"
                 weight_column = "KPE_weight_4"
                 actual_quater_value = "4-й квартал"
+                quater_value = 4
 
             if self.report_depart.content.value == "Все управления":
                 query = f"""
@@ -681,10 +685,12 @@ class Report(Container):
                         INNER JOIN name_of_department AS nd ON s.specialist_department_id = nd.department_id
                         INNER JOIN actual_value AS av ON kt.kpe_specialist_id = av.actual_specialist_id AND kt.kpe_indicators_id = av.actual_indicators_id
                     WHERE
-                        kt.date = '{latest_date}'
+                        toQuarter(kt.date) = {quater_value}
                         AND av.quarter_number = '{actual_quater_value}'
-                        AND av.date = '{latest_date_actual}'
+                        AND toQuarter(av.date) = {quater_value}
                         AND kt.status = 'Активно'
+                        AND toYear(kt.date) = toYear(now())
+                        AND toYear(av.date) = toYear(now())
                     GROUP BY
                         `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
                         `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
@@ -713,11 +719,13 @@ class Report(Container):
                         INNER JOIN name_of_department AS nd ON s.specialist_department_id = nd.department_id
                         INNER JOIN actual_value AS av ON kt.kpe_specialist_id = av.actual_specialist_id AND kt.kpe_indicators_id = av.actual_indicators_id
                     WHERE
-                        kt.date = '{latest_date}'
-                        AND av.date = '{latest_date_actual}'
+                        toQuarter(kt.date) = {quater_value}
                         AND s.specialist_department_id = {department_id}
                         AND av.quarter_number = '{actual_quater_value}'
+                        AND toQuarter(av.date) = {quater_value}
                         AND kt.status = 'Активно'
+                        AND toYear(kt.date) = toYear(now())
+                        AND toYear(av.date) = toYear(now())
                     GROUP BY
                         `Наименование структурного подразделения Правительства Сахалинской области, государственного органа или органа исполнительной власти Сахалинской области`,
                         `Наименование структурного подразделения органа исполнительной власти Сахалинской области`,
@@ -943,15 +951,32 @@ class Report(Container):
 
                 # Set alignment for the entire sheet
                 last_row = sheet.max_row + 2
-                print(position_name_dep[0])
-                print(position_name_dep[1])
-                sheet.cell(row=last_row, column=1).value = "{} {} {} {}".format(position_name_dep[0], str(
-                    position_name_dep[1]).lower(),'_'*22, self.report_spec.content.value)
-                sheet.merge_cells(f'A{last_row}:I{last_row}')  # Merge the cells for the record
+                
+                
+                parts = str(self.report_spec.content.value).split()
+                # Берем первую букву фамилии и добавляем точку
+                initials = parts[0] + " " + parts[1][0] + "." + parts[2][0] + "."
+                
+                name_of_dep= str(position_name_dep[1]).lower()
+                
+                # Заменяем "-ие" на "-ая"
+                if "управление" in name_of_dep:
+                    name_of_dep = name_of_dep.replace("управление", "управления")
+                print(name_of_dep)  # Выведет "управлением обеспечения"
+
+                position = str(position_name_dep[0])
+                if "управления" in position:
+                    position = position.replace("управления", "").strip()
+                print(position)
+                sheet.cell(row=last_row, column=1).value = "{} {} {} {}".format(position, name_of_dep,'_'*22, initials)
+
+                
+                sheet.merge_cells(f'A{last_row}:L{last_row}')  # Merge the cells for the record
                 sheet.cell(row=last_row, column=1).font = Font(size=14, name=main_font)
 
-                sheet[f'L{last_row}'].value = latest_version
-                sheet[f'L{last_row}'].font = Font(size=14, name=main_font)
+                sheet.cell(row = last_row+1, column=10).value = f'Номер версии: {latest_version}'
+                sheet.cell(row = last_row+1, column=10).font = Font(size=14, name=main_font)
+                sheet.merge_cells(f'J{last_row+1}:L{last_row+1}')
                 
                 sheet.row_dimensions[1].height = 50
                 sheet.row_dimensions[4].height = 50
@@ -1189,7 +1214,7 @@ class Report(Container):
                 sheet.cell(row=last_row+17, column=2).font = Font(size=14, name=main_font)
                 sheet.merge_cells(f'B{last_row+17}:F{last_row+17}')
                 
-                sheet[f'G{last_row+17}'].value = latest_version
+                sheet[f'G{last_row+17}'].value = f'Номер версии: {latest_version}'
                 sheet[f'G{last_row+17}'].font = Font(size=14, name=main_font)
                 
                 sheet.row_dimensions[1].height = 50
@@ -1282,7 +1307,7 @@ class Report(Container):
                     # sheet.row_dimensions[i].height = 34
 
                 last_row = sheet.max_row
-                sheet[f"F{last_row+1}"].value = f"{self.user_id}-{latest_date_new_object}-{latest_number}"
+                sheet[f"F{last_row+1}"].value = f"Номер версии: {self.user_id}-{latest_date_new_object}-{latest_number}"
                 sheet[f"F{last_row+1}"].font = Font(size=14, name=main_font)
                 sheet[f"F{last_row+1}"].alignment = Alignment(horizontal='center', vertical='center')
                 

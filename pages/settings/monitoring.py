@@ -80,6 +80,12 @@ class Monitoring(Container):
                       spacing='50',
                       alignment='center',
                       controls=[
+                          Text(
+                            value="Количество специалистов, которые не заполнили карту КПЭ по управлениям на текущий квартал",
+                            text_align='center',
+                            size=20,
+                            weight='bold'
+                          )
                         
                       ]
                     )
@@ -89,9 +95,6 @@ class Monitoring(Container):
                     content=Column(
                       controls=[
                         Container(
-                          Text(
-                            value="Количество специалистов, которые не заполнили карту КПЭ по управлениям"
-                          )
                         ),
                         Container(
                           self.pie_chart
@@ -107,20 +110,21 @@ class Monitoring(Container):
         self.create_diagrams()
     def create_pie_chart(self, departments):
       # Создание фигуры и оси для диаграммы
-      fig, ax = plt.subplots(figsize=(30,20))
+      fig, ax = plt.subplots(figsize=(25,20))
 
       # Названия и значения для секторов диаграммы
       self.labels = list(departments.keys())
       sizes = list(departments.values())
 
       # Создание круговой диаграммы
-      patches, texts, autotexts = ax.pie(sizes, labels=self.labels, startangle=90, autopct=lambda p: '{:.0f}'.format(p * sum(sizes) / 100))
+      patches, texts, autotexts = ax.pie(sizes, labels=self.labels, startangle=90, autopct=lambda p: '{:.0f}'.format(p * sum(sizes) / 100), textprops={'fontsize': 20})
 
       # Для круглой диаграммы
       ax.axis('equal')
 
       # Возвращение фигуры для использования в MatplotlibChart
       return fig
+
     def create_diagrams(self):
       cursor = connection.cursor()
       query_not_in_kpe_table = """
@@ -151,6 +155,7 @@ class Monitoring(Container):
       """
       cursor.execute(query_not_in_kpe_table)
       result = cursor.fetchall()
+      print(result)
       departments = {}
 
       for department, specialist in result:
@@ -165,15 +170,14 @@ class Monitoring(Container):
       # Добавление MatplotlibChart в интерфейс
       
       self.pie_chart.figure = pie_chart_figure
+      
+      for department, specialists in departments.items():
+        self.content.controls.append(Text(value=f"{department}:", size=20, color=primary_colors['WHITE'], weight='bold'))
+        specialist_names = [specialist[1] for specialist in result if specialist[0] == department]
+        for specialist_name in specialist_names:
+          self.content.controls.append(Text(value=specialist_name, size=18,color=primary_colors['WHITE']))
+          
+        self.content.controls.append(Container(height=20))
+
+      
       self.page.update()
-
-      # Добавление обработчика кликов по секторам диаграммы
-      def on_sector_click(event, pie_chart=self.pie_chart, departments=departments):
-          # Получение индекса сектора, на который нажали
-          hit, ind = pie_chart.figure.gca().contains(event)
-          if hit:
-              department = self.labels[ind['ind'][0]]
-              print(f"Вы выбрали управление: {department}")
-
-      # Связывание события клика с функцией on_sector_click
-      self.pie_chart.figure.canvas.mpl_connect('button_press_event', on_sector_click)
