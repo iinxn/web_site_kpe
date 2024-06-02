@@ -652,22 +652,18 @@ class Report(Container):
                 quater_column = "1st_quater_value"
                 weight_column = "KPE_weight_1"
                 actual_quater_value = "1-й квартал"
-                quater_value = 1
             elif quater == "2 квартал":
                 quater_column = "2nd_quater_value"
                 weight_column = "KPE_weight_2"
                 actual_quater_value = "2-й квартал"
-                quater_value = 2
             elif quater == "3 квартал":
                 quater_column = "3rd_quater_value"
                 weight_column = "KPE_weight_3"
                 actual_quater_value = "3-й квартал"
-                quater_value = 3
             else:
                 quater_column = "4th_quater_value"
                 weight_column = "KPE_weight_4"
                 actual_quater_value = "4-й квартал"
-                quater_value = 4
 
             if self.report_depart.content.value == "Все управления":
                 query = f"""
@@ -685,9 +681,7 @@ class Report(Container):
                         INNER JOIN name_of_department AS nd ON s.specialist_department_id = nd.department_id
                         INNER JOIN actual_value AS av ON kt.kpe_specialist_id = av.actual_specialist_id AND kt.kpe_indicators_id = av.actual_indicators_id
                     WHERE
-                        toQuarter(kt.date) = {quater_value}
-                        AND av.quarter_number = '{actual_quater_value}'
-                        AND toQuarter(av.date) = {quater_value}
+                        av.quarter_number = '{actual_quater_value}'
                         AND kt.status = 'Активно'
                         AND toYear(kt.date) = toYear(now())
                         AND toYear(av.date) = toYear(now())
@@ -719,10 +713,8 @@ class Report(Container):
                         INNER JOIN name_of_department AS nd ON s.specialist_department_id = nd.department_id
                         INNER JOIN actual_value AS av ON kt.kpe_specialist_id = av.actual_specialist_id AND kt.kpe_indicators_id = av.actual_indicators_id
                     WHERE
-                        toQuarter(kt.date) = {quater_value}
-                        AND s.specialist_department_id = {department_id}
+                        s.specialist_department_id = {department_id}
                         AND av.quarter_number = '{actual_quater_value}'
-                        AND toQuarter(av.date) = {quater_value}
                         AND kt.status = 'Активно'
                         AND toYear(kt.date) = toYear(now())
                         AND toYear(av.date) = toYear(now())
